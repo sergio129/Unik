@@ -13,6 +13,12 @@ const getWhatsAppStatus = async (req, res) => {
     try {
         const status = whatsappService.getStatus();
         
+        // Si hay un error en el estado, verificar si podemos solucionarlo
+        if (status.error && status.error.includes("Could not find expected browser (chrome)")) {
+            console.log("Detectado error de Chrome faltante, intentando reiniciar WhatsApp");
+            await whatsappService.restartConnection();
+        }
+        
         return res.status(200).json({
             success: true,
             message: 'Estado de WhatsApp obtenido correctamente',

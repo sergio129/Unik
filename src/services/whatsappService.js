@@ -8,6 +8,62 @@ const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
 
+// Añadir detección del navegador Chrome
+const findChromePath = () => {
+    // Rutas comunes de Chrome en Windows
+    const windowsPaths = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${process.env.ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${process.env.ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${process.env['ProgramFiles(x86)']}\\Google\\Chrome\\Application\\chrome.exe`
+    ];
+    
+    // Rutas comunes de Chrome en MacOS
+    const macPaths = [
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '~/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    ];
+    
+    // Rutas comunes de Chrome en Linux
+    const linuxPaths = [
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium'
+    ];
+    
+    // Detectar sistema operativo
+    const isWin = process.platform === 'win32';
+    const isMac = process.platform === 'darwin';
+    const isLinux = process.platform === 'linux';
+    
+    // Verificar las rutas según el sistema operativo
+    let chromePaths = [];
+    
+    if (isWin) {
+        chromePaths = windowsPaths;
+    } else if (isMac) {
+        chromePaths = macPaths;
+    } else if (isLinux) {
+        chromePaths = linuxPaths;
+    }
+    
+    // Buscar el archivo de Chrome en las rutas posibles
+    for (const chromePath of chromePaths) {
+        try {
+            if (fs.existsSync(chromePath)) {
+                console.log(`Chrome encontrado en: ${chromePath}`);
+                return chromePath;
+            }
+        } catch (error) {
+            // Ignorar error y continuar con la siguiente ruta
+        }
+    }
+    
+    return null;
+};
+
 // Importar los servicios necesarios para pedidos
 let pedidosService = null;
 try {
@@ -54,6 +110,15 @@ const initializeWhatsApp = () => {
     connectionStatus.error = null;
 
     console.log('Inicializando cliente de WhatsApp...');
+    
+    // Intentar encontrar la ruta a Chrome instalado en el sistema
+    const chromePath = process.env.CHROME_PATH || findChromePath();
+    
+    if (!chromePath) {
+        console.warn('No se pudo encontrar Chrome instalado en el sistema. Asegúrate de tener Chrome instalado o especifica la ruta en CHROME_PATH');
+    } else {
+        console.log(`Usando Chrome instalado en: ${chromePath}`);
+    }
 
     // Crear instancia del cliente con autenticación local
     client = new Client({
@@ -63,8 +128,7 @@ const initializeWhatsApp = () => {
         puppeteer: {
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
-            executablePath: process.env.CHROME_PATH || undefined, // Usa una variable de entorno para definir la ruta a Chrome
-            // Si no se define CHROME_PATH, puppeteer-core intentará usar el Chrome instalado en el sistema
+            executablePath: chromePath // Usa la ruta de Chrome detectada
         }
     });
 
@@ -174,13 +238,17 @@ const getStatus = () => {
 const restartConnection = async () => {
     console.log('Reiniciando conexión de WhatsApp...');
     
-    // Destruir cliente si existe
-    if (client) {
+    // Destruir cliente si existe y está inicializado correctamente
+    if (client && client.pupBrowser && client.pupPage) {
         try {
             await client.destroy();
+            console.log('Cliente de WhatsApp cerrado correctamente');
         } catch (error) {
             console.error('Error al destruir cliente de WhatsApp:', error);
+            // Continuamos aunque haya error al destruir
         }
+    } else {
+        console.log('No hay un cliente activo que destruir o el cliente no está completamente inicializado');
     }
     
     // Resetear cliente y estado
