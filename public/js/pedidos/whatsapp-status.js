@@ -44,7 +44,7 @@ const WhatsAppStatus = {
             // Crear el indicador
             statusContainer.innerHTML = `
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-light border shadow-sm dropdown-toggle" type="button" id="whatsapp-status-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-sm btn-light border shadow-sm dropdown-toggle" type="button" id="whatsapp-status-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <span class="whatsapp-connection-indicator disconnected"></span>
                         <i class="fab fa-whatsapp"></i> WhatsApp
                     </button>
@@ -95,7 +95,7 @@ const WhatsAppStatus = {
                             <h5 class="modal-title" id="whatsappQrModalLabel">
                                 <i class="fab fa-whatsapp"></i> Conectar WhatsApp
                             </h5>
-                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                            <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Cerrar">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
@@ -126,7 +126,7 @@ const WhatsAppStatus = {
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                             <button type="button" id="btn-refresh-qr" class="btn btn-primary">
                                 <i class="fas fa-sync"></i> Actualizar código QR
                             </button>
@@ -283,7 +283,14 @@ const WhatsAppStatus = {
     
     // Muestra el modal de código QR para escanear
     showQrCode() {
-        $('#whatsappQrModal').modal('show');
+        // En Bootstrap 5, la forma de mostrar modales ha cambiado
+        const qrModal = document.getElementById('whatsappQrModal');
+        if (qrModal) {
+            const modal = new bootstrap.Modal(qrModal);
+            modal.show();
+        } else {
+            console.error('No se encontró el modal de código QR');
+        }
     },
     
     // Carga el código QR desde el servidor
