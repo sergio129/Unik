@@ -8,7 +8,7 @@ const { Op } = require('sequelize');
 // Obtener todas las notificaciones del usuario actual
 exports.obtenerNotificaciones = async (req, res) => {
     try {
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         const pagina = parseInt(req.query.pagina) || 1;
         const limite = parseInt(req.query.limite) || 20;
         const offset = (pagina - 1) * limite;
@@ -50,7 +50,7 @@ exports.obtenerNotificaciones = async (req, res) => {
 // Obtener notificaciones no leídas
 exports.obtenerNotificacionesNoLeidas = async (req, res) => {
     try {
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         const limite = parseInt(req.query.limite) || 10;
         
         const notificaciones = await Notificacion.findAll({
@@ -86,7 +86,7 @@ exports.obtenerNotificacionesNoLeidas = async (req, res) => {
 // Obtener conteo de notificaciones no leídas
 exports.obtenerConteoNoLeidas = async (req, res) => {
     try {
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         const conteo = await Notificacion.count({
             where: {
@@ -109,7 +109,7 @@ exports.obtenerConteoNoLeidas = async (req, res) => {
 exports.obtenerNotificacionPorId = async (req, res) => {
     try {
         const notificacionId = req.params.id;
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         const notificacion = await Notificacion.findOne({
             where: {
