@@ -202,26 +202,26 @@ function initPedidosTable() {
                     switch (data) {
                         case 'pendiente':
                             textoEstado = 'Pendiente';
-                            claseBadge = 'badge-warning';
+                            claseBadge = 'bg-warning';
                             break;
                         case 'en_proceso':
                             textoEstado = 'En Proceso';
-                            claseBadge = 'badge-info';
+                            claseBadge = 'bg-info';
                             break;
                         case 'completado':
                             textoEstado = 'Completado';
-                            claseBadge = 'badge-success';
+                            claseBadge = 'bg-success';
                             break;
                         case 'cancelado':
                             textoEstado = 'Cancelado';
-                            claseBadge = 'badge-danger';
+                            claseBadge = 'bg-danger';
                             break;
                         default:
                             textoEstado = data;
-                            claseBadge = 'badge-secondary';
+                            claseBadge = 'bg-secondary';
                     }
                     
-                    return '<span class="badge badge-pill ' + claseBadge + '">' + textoEstado + '</span>';
+                    return '<span class="badge rounded-pill ' + claseBadge + '">' + textoEstado + '</span>';
                 }
             },
             { 
@@ -233,26 +233,26 @@ function initPedidosTable() {
                     switch (data) {
                         case 'baja':
                             textoPrioridad = 'Baja';
-                            claseBadge = 'badge-secondary';
+                            claseBadge = 'bg-secondary';
                             break;
                         case 'media':
                             textoPrioridad = 'Media';
-                            claseBadge = 'badge-primary';
+                            claseBadge = 'bg-primary';
                             break;
                         case 'alta':
                             textoPrioridad = 'Alta';
-                            claseBadge = 'badge-warning';
+                            claseBadge = 'bg-warning';
                             break;
                         case 'urgente':
                             textoPrioridad = 'Urgente';
-                            claseBadge = 'badge-danger';
+                            claseBadge = 'bg-danger';
                             break;
                         default:
                             textoPrioridad = data;
-                            claseBadge = 'badge-secondary';
+                            claseBadge = 'bg-secondary';
                     }
                     
-                    return '<span class="badge badge-pill ' + claseBadge + '">' + textoPrioridad + '</span>';
+                    return '<span class="badge rounded-pill ' + claseBadge + '">' + textoPrioridad + '</span>';
                 }
             },
             { 
@@ -1354,19 +1354,19 @@ function verDetallePedido(pedidoId) {
             
             switch (pedido.estado) {
                 case 'pendiente':
-                    estadoBadge.removeClass().addClass('badge badge-pill badge-warning');
+                    estadoBadge.removeClass().addClass('badge bg-warning rounded-pill');
                     break;
                 case 'en_proceso':
-                    estadoBadge.removeClass().addClass('badge badge-pill badge-info');
+                    estadoBadge.removeClass().addClass('badge bg-info rounded-pill');
                     break;
                 case 'completado':
-                    estadoBadge.removeClass().addClass('badge badge-pill badge-success');
+                    estadoBadge.removeClass().addClass('badge bg-success rounded-pill');
                     break;
                 case 'cancelado':
-                    estadoBadge.removeClass().addClass('badge badge-pill badge-danger');
+                    estadoBadge.removeClass().addClass('badge bg-danger rounded-pill');
                     break;
                 default:
-                    estadoBadge.removeClass().addClass('badge badge-pill badge-secondary');
+                    estadoBadge.removeClass().addClass('badge bg-secondary rounded-pill');
             }
             
             const prioridadBadge = $('#detalle-prioridad');
@@ -1374,19 +1374,19 @@ function verDetallePedido(pedidoId) {
             
             switch (pedido.prioridad) {
                 case 'baja':
-                    prioridadBadge.removeClass().addClass('badge badge-pill badge-secondary');
+                    prioridadBadge.removeClass().addClass('badge bg-secondary rounded-pill');
                     break;
                 case 'media':
-                    prioridadBadge.removeClass().addClass('badge badge-pill badge-primary');
+                    prioridadBadge.removeClass().addClass('badge bg-primary rounded-pill');
                     break;
                 case 'alta':
-                    prioridadBadge.removeClass().addClass('badge badge-pill badge-warning');
+                    prioridadBadge.removeClass().addClass('badge bg-warning rounded-pill');
                     break;
                 case 'urgente':
-                    prioridadBadge.removeClass().addClass('badge badge-pill badge-danger');
+                    prioridadBadge.removeClass().addClass('badge bg-danger rounded-pill');
                     break;
                 default:
-                    prioridadBadge.removeClass().addClass('badge badge-pill badge-secondary');
+                    prioridadBadge.removeClass().addClass('badge bg-secondary rounded-pill');
             }
             
             // Otra información
