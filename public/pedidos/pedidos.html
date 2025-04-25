@@ -11,6 +11,8 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/components/notifications.css">
     <link rel="stylesheet" href="/css/pedidos/pedidos.css">
@@ -284,27 +286,76 @@
 
                 <!-- Pedidos Table -->
                 <div class="card mb-4">
-                    <div class="card-header bg-white">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Lista de Pedidos a Proveedores</h5>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-primary active" id="btn-vista-tabla">
+                                <i class="fas fa-list"></i> Vista de lista
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btn-vista-calendario">
+                                <i class="fas fa-calendar-alt"></i> Vista de calendario
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="tabla-pedidos" class="table table-bordered table-striped" width="100%">
-                                <thead>
-                                    <tr>
-                                        <th>Código</th>
-                                        <th>Proveedor</th>
-                                        <th>Fecha</th>
-                                        <th>Entrega Est.</th>
-                                        <th>Estado</th>
-                                        <th>Prioridad</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Los datos se cargarán dinámicamente -->
-                                </tbody>
-                            </table>
+                        <!-- Vista de tabla -->
+                        <div id="vista-tabla" class="view-container">
+                            <div class="table-responsive">
+                                <table id="tabla-pedidos" class="table table-bordered table-striped" width="100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Proveedor</th>
+                                            <th>Fecha</th>
+                                            <th>Entrega Est.</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Vista de calendario -->
+                        <div id="vista-calendario" class="view-container" style="display:none">
+                            <div class="calendar-toolbar mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="calendar-filters">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="filtro-pendiente" value="pendiente" checked>
+                                            <label class="form-check-label text-warning" for="filtro-pendiente">Pendientes</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="filtro-en-proceso" value="en_proceso" checked>
+                                            <label class="form-check-label text-info" for="filtro-en-proceso">En proceso</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="filtro-completado" value="completado">
+                                            <label class="form-check-label text-success" for="filtro-completado">Completados</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="checkbox" id="filtro-cancelado" value="cancelado">
+                                            <label class="form-check-label text-danger" for="filtro-cancelado">Cancelados</label>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="calendar-prev">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="calendar-today">
+                                            Hoy
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="calendar-next">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="pedidos-calendar" style="height: 600px;"></div>
                         </div>
                     </div>
                 </div>
@@ -880,6 +931,10 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
+    
     <!-- QR Code -->
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     
@@ -902,6 +957,7 @@
     <script src="/js/pedidos/whatsapp-status.js"></script>
     <script src="/js/pedidos/whatsapp-chat.js"></script>
     <script src="/js/pedidos/dashboard-charts.js"></script>
+    <script src="/js/pedidos/pedidos-calendar.js"></script>
     <script src="/js/pedidos/pedidos.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="../js/common/global-whatsapp-init.js"></script>

@@ -537,6 +537,15 @@ function cargarPedidos() {
             
             // Actualizar estadísticas
             cargarEstadisticas();
+            
+            // Notificar a la vista de calendario sobre los cambios
+            if (window.pedidosCalendario) {
+                // Disparar evento con los datos de pedidos actualizados
+                const eventoPedidosActualizados = new CustomEvent('pedidosActualizados', {
+                    detail: data.data.pedidos
+                });
+                document.dispatchEvent(eventoPedidosActualizados);
+            }
         } else {
             showNotification('Error: ' + data.message, 'error');
         }

@@ -144,7 +144,7 @@ exports.obtenerNotificacionPorId = async (req, res) => {
 exports.marcarComoLeida = async (req, res) => {
     try {
         const notificacionId = req.params.id;
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         const notificacion = await Notificacion.findOne({
             where: {
@@ -180,7 +180,7 @@ exports.marcarComoLeida = async (req, res) => {
 exports.marcarComoVista = async (req, res) => {
     try {
         const notificacionId = req.params.id;
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         const notificacion = await Notificacion.findOne({
             where: {
@@ -214,7 +214,7 @@ exports.marcarComoVista = async (req, res) => {
 // Marcar todas las notificaciones como leídas
 exports.marcarTodasLeidas = async (req, res) => {
     try {
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         await Notificacion.update(
             { leida: true, vista: true },
@@ -237,7 +237,7 @@ exports.marcarTodasLeidas = async (req, res) => {
 exports.eliminarNotificacion = async (req, res) => {
     try {
         const notificacionId = req.params.id;
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         const resultado = await Notificacion.destroy({
             where: {
@@ -278,7 +278,7 @@ exports.crearNotificacion = async (notificacionData) => {
 // Actualizar preferencias de notificación
 exports.actualizarPreferencias = async (req, res) => {
     try {
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         const { preferencias } = req.body;
         
         if (!preferencias || typeof preferencias !== 'object') {
@@ -306,7 +306,7 @@ exports.actualizarPreferencias = async (req, res) => {
 // Obtener preferencias de notificación
 exports.obtenerPreferencias = async (req, res) => {
     try {
-        const usuarioId = req.usuario.id;
+        const usuarioId = req.user.id;  // Cambiado de req.usuario.id a req.user.id
         
         // Lógica para obtener las preferencias de la base de datos
         // Esta implementación puede variar según la estructura de tu base de datos
