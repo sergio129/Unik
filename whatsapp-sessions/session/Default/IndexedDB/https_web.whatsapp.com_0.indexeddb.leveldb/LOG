@@ -1,21 +1,36 @@
-2025/04/25-09:26:05.891 50b0 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/04/25-09:26:05.892 50b0 Recovering log #926
-2025/04/25-09:26:05.916 50b0 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000926.log 
-2025/04/25-09:26:07.636 50b0 Level-0 table #933: started
-2025/04/25-09:26:07.657 50b0 Level-0 table #933: 627619 bytes OK
-2025/04/25-09:26:07.664 50b0 Delete type=0 #926
-2025/04/25-09:26:07.665 50b0 Manual compaction at level-0 from ' N\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' O\x01\x00\x00\x00' @ 0 : 0; will stop at ' N\x01\x00\x00\x05' @ 413469 : 1
-2025/04/25-09:26:07.665 50b0 Compacting 1@0 + 1@1 files
-2025/04/25-09:26:07.716 50b0 Generated table #934@0: 34484 keys, 787717 bytes
-2025/04/25-09:26:07.716 50b0 Compacted 1@0 + 1@1 files => 787717 bytes
-2025/04/25-09:26:07.730 50b0 compacted to: files[ 0 1 1 0 0 0 0 ]
-2025/04/25-09:26:07.730 50b0 Delete type=2 #933
-2025/04/25-09:26:07.731 50b0 Manual compaction at level-0 from ' N\x01\x00\x00\x05' @ 413469 : 1 .. ' O\x01\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/04/25-09:26:08.992 be8 Compacting 1@1 + 1@2 files
-2025/04/25-09:26:09.070 be8 Generated table #935@1: 54214 keys, 2212472 bytes
-2025/04/25-09:26:09.080 be8 Generated table #936@1: 5738 keys, 94511 bytes
-2025/04/25-09:26:09.080 be8 Compacted 1@1 + 1@2 files => 2306983 bytes
-2025/04/25-09:26:09.089 be8 compacted to: files[ 0 0 2 0 0 0 0 ]
-2025/04/25-09:26:09.090 be8 Delete type=2 #929
-2025/04/25-09:26:09.090 be8 Delete type=2 #930
-2025/04/25-09:26:09.090 be8 Delete type=2 #934
+2025/04/25-10:02:57.932 4098 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/04/25-10:02:57.933 4098 Recovering log #932
+2025/04/25-10:02:57.942 4098 Level-0 table #938: started
+2025/04/25-10:02:57.951 4098 Level-0 table #938: 96335 bytes OK
+2025/04/25-10:02:57.952 4098 Recovering log #938
+2025/04/25-10:02:57.979 4098 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000938.log 
+2025/04/25-10:02:57.983 4098 Delete type=0 #932
+2025/04/25-10:02:57.983 4098 Delete type=2 #940
+2025/04/25-10:02:57.983 4098 Delete type=2 #941
+2025/04/25-10:03:00.336 9d8 Moved #938 to level-1 96335 bytes OK: files[ 0 1 2 0 0 0 0 ]
+2025/04/25-10:03:00.977 3384 Compacting 1@1 + 2@2 files
+2025/04/25-10:03:00.991 3384 Level-0 table #941: started
+2025/04/25-10:03:01.005 3384 Level-0 table #941: 394285 bytes OK
+2025/04/25-10:03:01.013 3384 Delete type=0 #938
+2025/04/25-10:03:01.091 3384 Generated table #939@1: 53017 keys, 2211130 bytes
+2025/04/25-10:03:01.104 3384 Generated table #942@1: 7940 keys, 129937 bytes
+2025/04/25-10:03:01.104 3384 Compacted 1@1 + 2@2 files => 2341067 bytes
+2025/04/25-10:03:01.110 3384 compacted to: files[ 1 0 2 0 0 0 0 ]
+2025/04/25-10:03:01.110 3384 Manual compaction at level-0 from ' O\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' P\x01\x00\x00\x00' @ 0 : 0; will stop at ' O\x01\x00\x00\x05' @ 433718 : 1
+2025/04/25-10:03:01.111 3384 Compacting 1@0 + 0@1 files
+2025/04/25-10:03:01.130 3384 Generated table #943@0: 8566 keys, 178632 bytes
+2025/04/25-10:03:01.130 3384 Compacted 1@0 + 0@1 files => 178632 bytes
+2025/04/25-10:03:01.136 3384 compacted to: files[ 0 1 2 0 0 0 0 ]
+2025/04/25-10:03:01.137 3384 Delete type=2 #941
+2025/04/25-10:03:01.138 4098 Manual compaction at level-0 from ' O\x01\x00\x00\x05' @ 433718 : 1 .. ' P\x01\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/04/25-10:03:03.261 9d8 Compacting 1@1 + 2@2 files
+2025/04/25-10:03:03.412 9d8 Generated table #944@1: 50423 keys, 2207699 bytes
+2025/04/25-10:03:03.440 9d8 Generated table #945@1: 12947 keys, 211726 bytes
+2025/04/25-10:03:03.440 9d8 Compacted 1@1 + 2@2 files => 2419425 bytes
+2025/04/25-10:03:03.448 9d8 compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/04/25-10:03:03.449 9d8 Delete type=2 #935
+2025/04/25-10:03:03.449 9d8 Delete type=2 #936
+2025/04/25-10:03:03.449 9d8 Delete type=2 #938
+2025/04/25-10:03:03.449 9d8 Delete type=2 #939
+2025/04/25-10:03:03.449 9d8 Delete type=2 #942
+2025/04/25-10:03:03.449 9d8 Delete type=2 #943

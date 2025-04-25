@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/components/notifications.css">
+  <link rel="stylesheet" href="../css/pedidos/whatsapp.css">
 </head>
 <body>
   <header>
@@ -264,8 +265,21 @@
     </div>
   </footer>
 
+ <!-- Elemento de audio para notificaciones de chat -->
+ <audio id="notification-sound" src="/sounds/notification.mp3" preload="auto"></audio>
+
+ <!-- Botón flotante de chat de WhatsApp -->
+ <button class="whatsapp-notification-btn" id="whatsapp-chat-btn" title="Chat con Proveedores">
+   <i class="fab fa-whatsapp"></i>
+   <span id="whatsapp-chat-global-badge" class="notification-badge" style="display: none;">0</span>
+ </button>
+
+  <!-- Socket.IO para notificaciones en tiempo real -->
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/utils/stock-notifications.js"></script>
   <script src="js/common/global-whatsapp-init.js"></script>
+  <script src="../js/common/global-whatsapp-init.js"></script>
+  <script src="../js/pedidos/whatsapp-chat.js"></script>
 </body>
 </html>

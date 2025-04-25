@@ -17,6 +17,8 @@
   <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <!-- Añadimos CSS para WhatsApp Chat -->
+  <link rel="stylesheet" href="../css/pedidos/whatsapp.css">
   <style>
     .report-section {
       margin-top: 2rem;
@@ -468,7 +470,22 @@
     </div>
   </footer>
 
+  <!-- Elemento de audio para notificaciones de chat -->
+  <audio id="notification-sound" src="/sounds/notification.mp3" preload="auto"></audio>
+
+  <!-- Botón flotante de chat de WhatsApp -->
+  <button class="whatsapp-notification-btn" id="whatsapp-chat-btn" title="Chat con Proveedores">
+    <i class="fab fa-whatsapp"></i>
+    <span id="whatsapp-chat-global-badge" class="notification-badge" style="display: none;">0</span>
+  </button>
+
+  <!-- Socket.IO para notificaciones en tiempo real -->
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  
   <script src="../js/inventario/inventario.js"></script>
   <script src="../js/inventario/reportes.js"></script>
+  <script src="../js/common/global-whatsapp-init.js"></script>
+  <script src="../js/pedidos/whatsapp-chat.js"></script>
+  <script src="../js/pedidos/whatsapp-status.js"></script>
 </body>
 </html>
