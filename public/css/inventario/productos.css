@@ -1,0 +1,374 @@
+/* Estilos para códigos de barras */
+.codigo-barras-container {
+  margin-bottom: 1rem;
+}
+
+.codigo-barras-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.codigo-barras-item .input-group {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.codigo-barras-item select {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+/* Nuevos estilos para la sección de códigos de barras en formulario */
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.barcode-list {
+  margin-bottom: 1rem;
+}
+
+.empty-barcodes {
+  text-align: center;
+  padding: 1rem;
+  color: #888;
+  font-style: italic;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border: 1px dashed #ddd;
+}
+
+/* Estilos para el diálogo de confirmación, asegurando que tenga mayor z-index */
+#confirm-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999; /* Mayor z-index para estar por encima de las otras modales */
+  pointer-events: none; /* No interceptar eventos a menos que esté activo */
+}
+
+.confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 9999;
+}
+
+.confirm-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.confirm-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  width: 90%;
+  max-width: 400px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 10000; /* Aún mayor z-index para estar por encima del overlay */
+}
+
+.confirm-dialog.active {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: all;
+}
+
+.confirm-dialog-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.confirm-dialog-header i {
+  font-size: 24px;
+  margin-right: 15px;
+  color: #3498db;
+}
+
+.confirm-dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.confirm-dialog-content {
+  padding: 20px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  gap: 10px;
+}
+
+/* Estilos para el historial de precios */
+.historial-precios {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.historial-precios table {
+  width: 100%;
+}
+
+.historial-precios th,
+.historial-precios td {
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.historial-precios .precio-cambio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.historial-precios .precio-anterior {
+  text-decoration: line-through;
+  color: #777;
+}
+
+.historial-precios .precio-nuevo {
+  font-weight: bold;
+  color: #333;
+}
+
+.historial-precios .precio-aumento {
+  color: #d9534f;
+  font-weight: bold;
+}
+
+.historial-precios .precio-reduccion {
+  color: #5cb85c;
+  font-weight: bold;
+}
+
+/* Estilos para unidades de medida */
+.unidad-medida-select {
+  min-width: 120px;
+}
+
+/* Botones y acciones */
+.btn-duplicate {
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.btn-duplicate:hover {
+  background-color: var(--primary-light);
+}
+
+/* Estilo para scanner activo */
+.scanner-active {
+  background-color: var(--success-light);
+  border-color: var(--success);
+}
+
+/* Estilos para la modal de búsqueda por código de barras */
+#barcode-search-results {
+  margin-top: 20px;
+}
+
+.loading-result, .empty-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  color: #666;
+}
+
+.loading-result i, .empty-result i {
+  font-size: 3em;
+  margin-bottom: 15px;
+  color: #ccc;
+}
+
+.empty-result i.fa-exclamation-triangle {
+  color: #f0ad4e;
+}
+
+.empty-result i.fa-exclamation-circle {
+  color: #d9534f;
+}
+
+.product-result {
+  border: 1px solid #e9e9e9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.product-result-header {
+  display: flex;
+  padding: 15px;
+  background: #f9f9f9;
+  border-bottom: 1px solid #e9e9e9;
+}
+
+.product-image {
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  border: 1px solid #e9e9e9;
+}
+
+.product-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.product-image .no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #aaa;
+}
+
+.product-image .no-image i {
+  font-size: 2em;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.4em;
+  color: #333;
+}
+
+.product-code, .product-category {
+  margin: 5px 0;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.product-stock {
+  margin-top: 10px;
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.product-stock.low-stock {
+  color: #d9534f;
+}
+
+.product-stock i {
+  margin-right: 5px;
+}
+
+.product-details {
+  padding: 15px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: bold;
+  color: #666;
+}
+
+.detail-value {
+  font-weight: normal;
+  color: #333;
+}
+
+.product-actions {
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  border-top: 1px solid #e9e9e9;
+  background: #f9f9f9;
+}
+
+/* Estilos para filas de productos según nivel de stock */
+tr.stock-critical {
+  background-color: rgba(220, 53, 69, 0.1); /* Rojo claro para stock en 0 */
+  transition: background-color 0.3s ease;
+}
+
+tr.stock-critical:hover {
+  background-color: rgba(220, 53, 69, 0.15);
+}
+
+tr.stock-warning {
+  background-color: rgba(255, 193, 7, 0.1); /* Amarillo claro para stock bajo */
+  transition: background-color 0.3s ease;
+}
+
+tr.stock-warning:hover {
+  background-color: rgba(255, 193, 7, 0.15);
+}
+
+/* Asegurar que el texto en la celda de stock también mantenga su color */
+tr.stock-critical td.text-danger {
+  color: #dc3545 !important; /* Rojo para texto de stock en 0 */
+  font-weight: bold;
+}
+
+tr.stock-warning td.text-warning {
+  color: #ffc107 !important; /* Amarillo para texto de stock bajo */
+  font-weight: bold;
+}

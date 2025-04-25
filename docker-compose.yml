@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Servicio de base de datos MySQL
+  db:
+    container_name: unika-db
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=unika_db
+      - MYSQL_USER=unika_user
+      - MYSQL_PASSWORD=unika_password
+      - MYSQL_ROOT_HOST=%
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=caching_sha2_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb_buffer_pool_size=32M --max_allowed_packet=16M
+    restart: unless-stopped
+    networks:
+      - unika-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    cap_add:
+      - SYS_NICE  # Mejorar rendimiento de MySQL
+
+  # Servicio de la aplicación Node.js
+  app:
+    container_name: unika-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=unika_user
+      - DB_PASSWORD=unika_password
+      - DB_NAME=unika_db
+      - DB_PORT=3306
+      - PORT=3000
+      - JWT_SECRET=unika_secret_key_for_docker_environment
+      - JWT_EXPIRES_IN=24h
+      - WAIT_HOSTS=db:3306
+      - WAIT_HOSTS_TIMEOUT=300
+      - WAIT_SLEEP_INTERVAL=5
+      - WAIT_HOST_CONNECT_TIMEOUT=30
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - unika-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  unika-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  mysql_data:
+    driver: local

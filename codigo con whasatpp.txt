@@ -1,0 +1,2135 @@
+/**
+ * Módulo de Gestión de Pedidos a Proveedores
+ * Este archivo contiene la lógica para administrar pedidos a proveedores, incluyendo
+ * crear nuevos pedidos, listar pedidos existentes, actualizar estados,
+ * y manejar los productos dentro de cada pedido.
+ */
+
+// Variables globales
+let pedidosTable;
+let productosDisponibles = [];
+let proveedoresDisponibles = [];
+let productosPedidoActual = [];
+let pedidoActual = null;
+let modoEdicion = false;
+let whatsappStatus = false; // Estado de la conexión de WhatsApp
+
+// Constantes
+const URL_API_PEDIDOS = '/api/pedidos';
+const URL_API_PRODUCTOS = '/api/productos';
+const URL_API_PROVEEDORES = '/api/proveedores';
+const WHATSAPP_NUMERO_EMPRESA = '+573103904286'; // Número de WhatsApp de la empresa
+
+// Inicialización cuando el documento está listo
+$(document).ready(function() {
+    console.log('Inicializando módulo de pedidos a proveedores...');
+    
+    // Verificar si el usuario está autenticado
+    if (!isAuthenticated()) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // Inicializar el nombre de usuario en la interfaz
+    initUserInfo();
+
+    // Cargar el menú lateral según el rol del usuario
+    cargarMenuSidebar();
+
+    // Configurar el logout
+    $('#btn-logout').click(function(e) {
+        e.preventDefault();
+        logout();
+    });
+
+    // Inicializar la tabla de pedidos
+    initPedidosTable();
+
+    // Cargar datos iniciales
+    cargarProveedores();
+    cargarProductos();
+    cargarEstadisticas();
+    cargarPedidos();  // Cargar los pedidos iniciales
+
+    // Configurar eventos para botones principales
+    configurarEventos();
+	  // Inicializar la fecha actual en el modal de pedidos
+    $('#fecha-pedido-display').val(moment().format('DD/MM/YYYY'));
+    
+    // Configurar valor predeterminado para la fecha de entrega estimada (7 días después)
+    $('#fecha-entrega').val(moment().add(7, 'days').format('YYYY-MM-DD'));
+});
+	
+
+/**
+ * Configura todos los eventos de la interfaz de usuario
+ */
+function configurarEventos() {
+    console.log('Configurando eventos de la interfaz...');
+    
+    // Evento para el botón de nuevo pedido
+    $('#btn-nuevo-pedido').off('click').on('click', function() {
+        console.log('Botón Nuevo Pedido clickeado');
+        abrirModalNuevoPedido();
+    });
+
+    // Botón para gestionar proveedores
+    $('#btn-gestionar-proveedores').off('click').on('click', function() {
+        abrirModalGestionProveedores();
+    });
+	  // Botón para agregar un nuevo proveedor rápidamente
+    $('#btn-nuevo-proveedor-rapido').off('click').on('click', function() {
+        abrirModalNuevoProveedor();
+    });
+
+    // Otros botones y eventos
+    $('#btn-guardar-pedido').off('click').on('click', guardarPedido);
+    $('#btn-agregar-producto').off('click').on('click', agregarProductoAlPedido);
+    $('#btn-cambiar-estado').off('click').on('click', cambiarEstadoPedido);
+    $('#btn-limpiar-filtros').off('click').on('click', limpiarFiltros);
+    $('#btn-nuevo-proveedor').off('click').on('click', abrirModalNuevoProveedor);
+    $('#btn-guardar-proveedor').off('click').on('click', guardarProveedor);
+	 $('#btn-limpiar-productos').off('click').on('click', limpiarProductosPedido);
+    
+    // Búsqueda rápida de productos
+    $('#buscar-producto').off('keyup').on('keyup', function() {
+        buscarProductoRapido($(this).val());
+    });
+    
+    // Mostrar detalles del proveedor al seleccionar uno
+    $('#proveedor-select').off('change').on('change', function() {
+        const proveedorId = $(this).val();
+        if (proveedorId) {
+            mostrarInfoProveedor(proveedorId);
+            cargarHistorialPedidosProveedor(proveedorId);
+        } else {
+            $('#info-proveedor').text('');
+            $('#historial-pedidos-proveedor').html('<div class="text-center py-3 text-muted"><i class="fas fa-info-circle"></i> Seleccione un proveedor para ver su historial</div>');
+        }
+    });
+    
+    // Mostrar stock actual al seleccionar un producto
+    $('#producto-select').off('change').on('change', function() {
+        const productoId = $(this).val();
+        if (productoId) {
+            mostrarStockProducto(productoId);
+        } else {
+            $('#stock-actual').text('');
+        }
+    });
+    
+    // Escanear código de barras (simulación)
+    $('#btn-escanear-codigo').off('click').on('click', simularEscaneoCodigoBarras);
+    
+    // Form de filtros
+    $('#filter-form').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        filtrarPedidos();
+    });
+    
+    // Prevenir envío automático del formulario de pedido
+    $('#pedido-form').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        console.log('Formulario de pedido intentó enviarse, pero fue prevenido');
+        return false;
+    });
+
+    // Configuración adicional para modales
+    $('#pedidoModal').on('hidden.bs.modal', function() {
+        limpiarFormularioPedido();
+    });
+    
+    // Configurar eventos para eliminar productos de un pedido
+    $('#tabla-productos-pedido').on('click', '.btn-eliminar-producto', function() {
+        const index = $(this).data('index');
+        eliminarProductoDePedido(index);
+    });
+}
+
+/**
+ * Limpia todos los productos del pedido actual
+ */
+function limpiarProductosPedido() {
+    if (productosPedidoActual.length === 0) {
+        showNotification('No hay productos para limpiar', 'info');
+        return;
+    }
+    
+    if (confirm('¿Está seguro de querer eliminar todos los productos del pedido?')) {
+        productosPedidoActual = [];
+        actualizarTablaPedido();
+        actualizarContadorProductos();
+        showNotification('Lista de productos limpiada', 'success');
+    }
+}
+
+/**
+ * Inicializa la tabla de pedidos con DataTables
+ */
+function initPedidosTable() {
+    pedidosTable = $('#tabla-pedidos').DataTable({
+        responsive: true,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.10.22/i18n/Spanish.json'
+        },
+        columns: [
+            { data: 'codigo' },
+            { 
+                data: null,
+                render: function(data, type, row) {
+                    // Tomar el proveedor_id y buscar el nombre del proveedor
+                    const proveedor = proveedoresDisponibles.find(p => p.id === row.proveedor_id);
+                    return proveedor ? proveedor.nombre : `Proveedor ID: ${row.proveedor_id}`;
+                }
+            },
+            { 
+                data: 'fecha_pedido',
+                render: function(data) {
+                    return moment(data).format('DD/MM/YYYY HH:mm');
+                }
+            },
+            { 
+                data: 'fecha_entrega_estimada',
+                render: function(data) {
+                    return data ? moment(data).format('DD/MM/YYYY') : 'No especificada';
+                }
+            },
+            { 
+                data: 'estado',
+                render: function(data) {
+                    let claseBadge = '';
+                    let textoEstado = '';
+                    
+                    switch (data) {
+                        case 'pendiente':
+                            textoEstado = 'Pendiente';
+                            claseBadge = 'badge-warning';
+                            break;
+                        case 'en_proceso':
+                            textoEstado = 'En Proceso';
+                            claseBadge = 'badge-info';
+                            break;
+                        case 'completado':
+                            textoEstado = 'Completado';
+                            claseBadge = 'badge-success';
+                            break;
+                        case 'cancelado':
+                            textoEstado = 'Cancelado';
+                            claseBadge = 'badge-danger';
+                            break;
+                        default:
+                            textoEstado = data;
+                            claseBadge = 'badge-secondary';
+                    }
+                    
+                    return '<span class="badge badge-pill ' + claseBadge + '">' + textoEstado + '</span>';
+                }
+            },
+            { 
+                data: 'prioridad',
+                render: function(data) {
+                    let claseBadge = '';
+                    let textoPrioridad = '';
+                    
+                    switch (data) {
+                        case 'baja':
+                            textoPrioridad = 'Baja';
+                            claseBadge = 'badge-secondary';
+                            break;
+                        case 'media':
+                            textoPrioridad = 'Media';
+                            claseBadge = 'badge-primary';
+                            break;
+                        case 'alta':
+                            textoPrioridad = 'Alta';
+                            claseBadge = 'badge-warning';
+                            break;
+                        case 'urgente':
+                            textoPrioridad = 'Urgente';
+                            claseBadge = 'badge-danger';
+                            break;
+                        default:
+                            textoPrioridad = data;
+                            claseBadge = 'badge-secondary';
+                    }
+                    
+                    return '<span class="badge badge-pill ' + claseBadge + '">' + textoPrioridad + '</span>';
+                }
+            },
+            { 
+                data: null,
+                orderable: false,
+                className: 'action-buttons',
+                render: function(data) {
+                    return `
+                        <button class="btn btn-sm btn-info btn-action btn-ver" data-id="${data.id}" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${data.estado !== 'completado' && data.estado !== 'cancelado' ? 
+                        `<button class="btn btn-sm btn-primary btn-action btn-editar" data-id="${data.id}" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>` : ''}
+                    `;
+                }
+            }
+        ],
+        createdRow: function(row, data) {
+            // Aplicar clase especial a filas según prioridad
+            if (data.prioridad === 'urgente') {
+                $(row).addClass('prioridad-urgente');
+            } else if (data.prioridad === 'alta') {
+                $(row).addClass('prioridad-alta');
+            }
+        },
+        order: [[2, 'desc']] // Ordenar por fecha
+    });
+
+    // Eventos para botones de acción
+    $('#tabla-pedidos').on('click', '.btn-ver', function() {
+        const pedidoId = $(this).data('id');
+        verDetallePedido(pedidoId);
+    });
+
+    $('#tabla-pedidos').on('click', '.btn-editar', function() {
+        const pedidoId = $(this).data('id');
+        editarPedido(pedidoId);
+    });
+}
+
+/**
+ * Carga la lista de proveedores desde la API
+ */
+function cargarProveedores() {
+    console.log('Iniciando carga de proveedores...');
+    
+    // Mostrar indicador de carga en el selector
+    const selectProveedor = $('#proveedor-select');
+    selectProveedor.empty();
+    selectProveedor.append('<option value="">Cargando proveedores...</option>');
+    selectProveedor.prop('disabled', true);
+    
+    // Preparar selector de filtro también
+    const filterProveedor = $('#filter-proveedor');
+    filterProveedor.empty();
+    filterProveedor.append('<option value="">Cargando...</option>');
+    filterProveedor.prop('disabled', true);
+
+    fetch(URL_API_PROVEEDORES, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        console.log('Respuesta de API proveedores recibida:', response.status);
+        if (!response.ok) {
+            throw new Error(`Error al cargar los proveedores: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos de proveedores recibidos:', data);
+        
+        // Habilitar el selector
+        selectProveedor.prop('disabled', false);
+        filterProveedor.prop('disabled', false);
+        
+        // Limpiar selectores
+        selectProveedor.empty();
+        selectProveedor.append('<option value="">Seleccionar proveedor...</option>');
+        
+        filterProveedor.empty();
+        filterProveedor.append('<option value="">Todos</option>');
+        
+        // Extraer proveedores de la respuesta, manejando diferentes estructuras posibles
+        let proveedoresList = [];
+        
+        if (data && data.success === true && data.data && data.data.proveedores) {
+            // Formato actual: { success: true, data: { proveedores: [] } }
+            proveedoresList = data.data.proveedores;
+        } else if (data && data.success === true && data.data && Array.isArray(data.data)) {
+            // Formato anterior: data.data[]
+            proveedoresList = data.data;
+        } else if (data && data.success === true && Array.isArray(data.proveedores)) {
+            // Nuevo formato: { success: true, proveedores: [] }
+            proveedoresList = data.proveedores;
+        } else if (Array.isArray(data)) {
+            // Formato directo: data[]
+            proveedoresList = data;
+        }
+        
+        // Asignar proveedores a la variable global
+        proveedoresDisponibles = proveedoresList;
+        
+        console.log(`Se cargaron ${proveedoresDisponibles.length} proveedores`);
+        
+        if (proveedoresDisponibles.length === 0) {
+            selectProveedor.append('<option value="" disabled>No hay proveedores disponibles</option>');
+            console.warn('No se encontraron proveedores en la respuesta de la API');
+        } else {
+            // Poblar selectores con los proveedores
+            proveedoresDisponibles.forEach(proveedor => {
+                console.log(`Agregando proveedor: ${proveedor.id} - ${proveedor.nombre}`);
+                selectProveedor.append(`<option value="${proveedor.id}">${proveedor.nombre}</option>`);
+                filterProveedor.append(`<option value="${proveedor.id}">${proveedor.nombre}</option>`);
+            });
+        }
+    })
+    .catch(error => {
+        // Habilitar el selector y mostrar error
+        selectProveedor.prop('disabled', false);
+        filterProveedor.prop('disabled', false);
+        
+        selectProveedor.empty();
+        selectProveedor.append('<option value="">Seleccionar proveedor...</option>');
+        selectProveedor.append('<option value="" disabled>Error al cargar proveedores</option>');
+        
+        filterProveedor.empty();
+        filterProveedor.append('<option value="">Todos</option>');
+        
+        console.error('Error al cargar proveedores:', error);
+        showNotification('Error al cargar proveedores: ' + error.message, 'error');
+    });
+}
+
+/**
+ * Carga la lista de productos disponibles desde la API
+ */
+function cargarProductos() {
+    console.log('Iniciando carga de productos...');
+    
+    // Mostrar indicador de carga en el selector
+    const selectProducto = $('#producto-select');
+    selectProducto.empty();
+    selectProducto.append('<option value="">Cargando productos...</option>');
+    selectProducto.prop('disabled', true);
+    
+    fetch(URL_API_PRODUCTOS, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        console.log('Respuesta de API productos recibida:', response.status);
+        if (!response.ok) {
+            throw new Error(`Error al cargar los productos: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos de productos recibidos:', data);
+        
+        // Habilitar el selector
+        selectProducto.prop('disabled', false);
+        selectProducto.empty();
+        selectProducto.append('<option value="">Seleccionar producto...</option>');
+        
+        if (data.success) {
+            productosDisponibles = data.data;
+            console.log(`Se cargaron ${productosDisponibles.length} productos`);
+            
+            if (productosDisponibles.length === 0) {
+                selectProducto.append('<option value="" disabled>No hay productos disponibles</option>');
+            } else {
+                // Poblar selector de productos
+                productosDisponibles.forEach(producto => {
+                    selectProducto.append(`<option value="${producto.id}" data-precio="${producto.precio_venta || producto.precio || 0}">${producto.nombre} (${producto.codigo})</option>`);
+                });
+            }
+        } else {
+            selectProducto.append('<option value="" disabled>Error al cargar productos</option>');
+            console.error('Error en respuesta de productos:', data.message);
+        }
+    })
+    .catch(error => {
+        // Habilitar el selector y mostrar error
+        selectProducto.prop('disabled', false);
+        selectProducto.empty();
+        selectProducto.append('<option value="">Seleccionar producto...</option>');
+        selectProducto.append('<option value="" disabled>Error al cargar productos</option>');
+        
+        console.error('Error al cargar productos:', error);
+        showNotification('Error al cargar productos: ' + error.message, 'error');
+    });
+}
+
+/**
+ * Carga estadísticas de pedidos para el dashboard
+ */
+function cargarEstadisticas() {
+    fetch(`${URL_API_PEDIDOS}/estadisticas/resumen`, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar estadísticas');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const stats = data.data;
+            
+            // Actualizar contadores
+            $('#stats-total-pedidos').text(stats.totalPedidos || 0);
+            
+            // Contar por estado
+            let pendientes = 0;
+            let enProceso = 0;
+            let completados = 0;
+            
+            if (stats.pedidosPorEstado && Array.isArray(stats.pedidosPorEstado)) {
+                stats.pedidosPorEstado.forEach(item => {
+                    if (item.estado === 'pendiente') pendientes = item.total;
+                    if (item.estado === 'en_proceso') enProceso = item.total;
+                    if (item.estado === 'completado') completados = item.total;
+                });
+            }
+            
+            $('#stats-pendientes').text(pendientes);
+            $('#stats-en-proceso').text(enProceso);
+            $('#stats-completados').text(completados);
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar estadísticas:', error);
+        showNotification('Error al cargar estadísticas', 'error');
+    });
+}
+
+/**
+ * Carga la lista de pedidos según los filtros aplicados
+ */
+function cargarPedidos() {
+    // Mostrar spinner de carga
+    $('#tabla-pedidos tbody').html('<tr><td colspan="8" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Cargando...</span></div></td></tr>');
+    
+    // Obtener filtros
+    const estado = $('#filter-estado').val();
+    const proveedor_id = $('#filter-proveedor').val();
+    const fecha_inicio = $('#filter-fecha-inicio').val();
+    const fecha_fin = $('#filter-fecha-fin').val();
+    
+    // Construir URL con parámetros de filtrado
+    let url = URL_API_PEDIDOS + '?';
+    if (estado) url += `estado=${estado}&`;
+    if (proveedor_id) url += `proveedor_id=${proveedor_id}&`;
+    if (fecha_inicio) url += `fecha_inicio=${fecha_inicio}&`;
+    if (fecha_fin) url += `fecha_fin=${fecha_fin}&`;
+    
+    fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar pedidos');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Limpiar tabla y añadir nuevos datos
+            pedidosTable.clear();
+            pedidosTable.rows.add(data.data.pedidos).draw();
+            
+            // Actualizar estadísticas
+            cargarEstadisticas();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar pedidos:', error);
+        showNotification('Error al cargar pedidos', 'error');
+        
+        // Mostrar mensaje de error en la tabla
+        $('#tabla-pedidos tbody').html('<tr><td colspan="8" class="text-center text-danger">Error al cargar pedidos</td></tr>');
+    });
+}
+
+/**
+ * Aplica filtros a la tabla de pedidos
+ */
+function filtrarPedidos() {
+    cargarPedidos();
+}
+
+/**
+ * Limpia todos los filtros y recarga los datos
+ */
+function limpiarFiltros() {
+    $('#filter-estado').val('');
+    $('#filter-proveedor').val('');
+    $('#filter-fecha-inicio').val('');
+    $('#filter-fecha-fin').val('');
+    cargarPedidos();
+}
+
+/**
+ * Abre el modal para crear un nuevo pedido
+ */
+function abrirModalNuevoPedido() {
+    modoEdicion = false;
+    pedidoActual = null;
+    productosPedidoActual = [];
+    
+    // Configurar el modal
+    $('#pedidoModalLabel').text('Nuevo Pedido a Proveedor');
+    
+    // Limpiar y reiniciar el formulario
+    limpiarFormularioPedido();
+    
+    // Actualizar la tabla sin validaciones que puedan causar errores
+    const tbody = $('#tabla-productos-pedido tbody');
+    tbody.empty();
+    tbody.append('<tr><td colspan="3" class="text-center">No hay productos en este pedido</td></tr>');
+    
+    // Actualizar contador
+    $('#contador-productos').text('0');
+    
+    // Abrir el modal
+    $('#pedidoModal').modal('show');
+}
+
+/**
+ * Abre el modal para gestionar proveedores
+ */
+function abrirModalGestionProveedores() {
+    // Cargar la tabla de proveedores
+    cargarTablaProveedores();
+    
+    // Abrir el modal
+    $('#proveedorModal').modal('show');
+}
+
+/**
+ * Carga la tabla de proveedores con datos actualizados
+ */
+function cargarTablaProveedores() {
+    // Mostrar spinner de carga
+    $('#tabla-proveedores tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Cargando...</span></div></td></tr>');
+    
+    fetch(URL_API_PROVEEDORES, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar proveedores');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Manejar la nueva estructura de la respuesta
+        let proveedores = [];
+        
+        if (data && data.success === true && data.data && data.data.proveedores) {
+            // Nuevo formato: { success: true, data: { proveedores: [] } }
+            proveedores = data.data.proveedores;
+        } else if (data && data.success === true && Array.isArray(data.data)) {
+            // Formato anterior: { success: true, data: [] }
+            proveedores = data.data;
+        } else if (Array.isArray(data)) {
+            // Formato directo: []
+            proveedores = data;
+        }
+        
+        // Limpiar tabla
+        $('#tabla-proveedores tbody').empty();
+        
+        if (proveedores.length === 0) {
+            $('#tabla-proveedores tbody').html('<tr><td colspan="6" class="text-center">No hay proveedores registrados</td></tr>');
+            return;
+        }
+        
+        // Verificar estado de WhatsApp para mostrar indicadores
+        const whatsappConectado = window.WhatsAppStatus ? window.WhatsAppStatus.isConnected() : false;
+        
+        // Añadir proveedores a la tabla
+        proveedores.forEach(proveedor => {
+            // Preparar icono de WhatsApp si tiene teléfono
+            let whatsappIcon = '';
+            if (proveedor.telefono) {
+                const iconClass = whatsappConectado ? 'text-success' : 'text-muted';
+                const tooltip = whatsappConectado ? 
+                    'Enviar mensaje por WhatsApp' : 
+                    'WhatsApp no está conectado';
+                
+                whatsappIcon = `
+                    <span class="ml-2 whatsapp-icon-wrapper" data-toggle="tooltip" title="${tooltip}">
+                        <i class="fab fa-whatsapp ${iconClass}"></i>
+                    </span>`;
+            }
+            
+            $('#tabla-proveedores tbody').append(`
+                <tr>
+                    <td>${proveedor.id}</td>
+                    <td>${proveedor.nombre}</td>
+                    <td>
+                        ${proveedor.telefono || '-'}
+                        ${whatsappIcon}
+                    </td>
+                    <td>${proveedor.email || '-'}</td>
+                    <td>${proveedor.direccion || '-'}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-sm btn-primary btn-editar-proveedor" data-id="${proveedor.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${proveedor.telefono && whatsappConectado ? 
+                                `<button class="btn btn-sm btn-success btn-whatsapp-proveedor" data-id="${proveedor.id}" data-telefono="${proveedor.telefono}">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `);
+        });
+        
+        // Activar tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Configurar eventos para botones de editar
+        $('.btn-editar-proveedor').off('click').on('click', function() {
+            const proveedorId = $(this).data('id');
+            editarProveedor(proveedorId);
+        });
+        
+        // Configurar eventos para botones de WhatsApp
+        $('.btn-whatsapp-proveedor').off('click').on('click', function() {
+            const proveedorId = $(this).data('id');
+            const telefono = $(this).data('telefono');
+            enviarMensajeWhatsApp(proveedorId, telefono);
+        });
+    })
+    .catch(error => {
+        console.error('Error al cargar proveedores:', error);
+        $('#tabla-proveedores tbody').html('<tr><td colspan="6" class="text-center text-danger">Error al cargar proveedores</td></tr>');
+    });
+}
+
+/**
+ * Abre el modal para crear un nuevo proveedor
+ */
+function abrirModalNuevoProveedor() {
+    // Limpiar formulario
+    $('#proveedor-id').val('');
+    $('#proveedor-nombre').val('');
+    $('#proveedor-telefono').val('');
+    $('#proveedor-email').val('');
+    $('#proveedor-direccion').val('');
+    $('#proveedor-notas').val('');
+    
+    // Configurar título
+    $('#editProveedorModalLabel').text('Nuevo Proveedor');
+    
+    // Configurar botón de guardar
+    $('#btn-guardar-proveedor').off('click').on('click', guardarProveedor);
+    
+    // Abrir modal
+    $('#proveedorModal').modal('hide');
+    $('#editProveedorModal').modal('show');
+}
+
+/**
+ * Abre el modal para editar un proveedor existente
+ */
+function editarProveedor(proveedorId) {
+    // Buscar el proveedor en la lista
+    const proveedor = proveedoresDisponibles.find(p => p.id == proveedorId);
+    
+    if (!proveedor) {
+        showNotification('Proveedor no encontrado', 'error');
+        return;
+    }
+    
+    // Llenar formulario
+    $('#proveedor-id').val(proveedor.id);
+    $('#proveedor-nombre').val(proveedor.nombre);
+    $('#proveedor-telefono').val(proveedor.telefono || '');
+    $('#proveedor-email').val(proveedor.email || '');
+    $('#proveedor-direccion').val(proveedor.direccion || '');
+    $('#proveedor-notas').val(proveedor.notas || '');
+    
+    // Configurar título
+    $('#editProveedorModalLabel').text('Editar Proveedor');
+    
+    // Configurar botón de guardar
+    $('#btn-guardar-proveedor').off('click').on('click', guardarProveedor);
+    
+    // Abrir modal
+    $('#proveedorModal').modal('hide');
+    $('#editProveedorModal').modal('show');
+}
+
+/**
+ * Guarda un nuevo proveedor o actualiza uno existente
+ */
+function guardarProveedor() {
+    // Validar campos requeridos
+    const nombre = $('#proveedor-nombre').val();
+    
+    if (!nombre) {
+        showNotification('El nombre del proveedor es obligatorio', 'warning');
+        return;
+    }
+    
+    // Recopilar datos del formulario
+    const proveedorData = {
+        nombre: nombre,
+        telefono: $('#proveedor-telefono').val(),
+        email: $('#proveedor-email').val(),
+        direccion: $('#proveedor-direccion').val(),
+        notas: $('#proveedor-notas').val()
+    };
+    
+    // Determinar si es creación o actualización
+    const proveedorId = $('#proveedor-id').val();
+    const isEditing = !!proveedorId;
+    
+    // URL y método según operación
+    let url = URL_API_PROVEEDORES;
+    let method = 'POST';
+    
+    if (isEditing) {
+        url = `${URL_API_PROVEEDORES}/${proveedorId}`;
+        method = 'PUT';
+    }
+    
+    // Mostrar spinner en botón
+    const btnGuardar = $('#btn-guardar-proveedor');
+    const textoOriginal = btnGuardar.text();
+    btnGuardar.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...');
+    btnGuardar.prop('disabled', true);
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(proveedorData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al guardar proveedor');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showNotification(isEditing ? 'Proveedor actualizado' : 'Proveedor creado', 'success');
+            $('#editProveedorModal').modal('hide');
+            $('#proveedorModal').modal('show');
+            
+            // Recargar lista de proveedores
+            cargarProveedores();
+            cargarTablaProveedores();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al guardar proveedor', 'error');
+    })
+    .finally(() => {
+        // Restaurar botón
+        btnGuardar.text(textoOriginal);
+        btnGuardar.prop('disabled', false);
+    });
+}
+
+/**
+ * Limpia el formulario de pedido
+ */
+function limpiarFormularioPedido() {
+    $('#pedido-id').val('');
+    $('#proveedor-select').val('');
+    $('#fecha-entrega').val('');
+    $('#prioridad-select').val('media');
+    $('#origen-select').val('tienda');
+    $('#direccion-entrega').val('');
+    $('#notas-pedido').val('');
+    $('#producto-select').val('');
+    $('#cantidad-producto').val(1);
+    
+    productosPedidoActual = [];
+    actualizarTablaPedido();
+}
+
+/**
+ * Agrega un producto al pedido actual
+ */
+function agregarProductoAlPedido(e) {
+    // Prevenir el comportamiento predeterminado del formulario
+    if (e) e.preventDefault();
+    
+    const productoId = $('#producto-select').val();
+    const cantidad = parseInt($('#cantidad-producto').val() || 1);
+    
+    // Validar que se haya seleccionado un producto
+    if (!productoId) {
+        showNotification('Debe seleccionar un producto', 'warning');
+        return;
+    }
+    
+    // Validar que la cantidad sea válida
+    if (isNaN(cantidad) || cantidad <= 0) {
+        showNotification('La cantidad debe ser mayor a 0', 'warning');
+        return;
+    }
+    
+    // Imprimir información para depuración
+    console.log('Buscando producto con ID:', productoId);
+    console.log('Total productos disponibles:', productosDisponibles.length);
+    
+    // Obtener el producto seleccionado directamente del array de productos disponibles
+    const productoSeleccionado = productosDisponibles.find(p => String(p.id) === String(productoId));
+    
+    // Validar que se encontró el producto
+    if (!productoSeleccionado) {
+        showNotification('Producto no encontrado. Intente seleccionar el producto nuevamente.', 'error');
+        console.error('Producto no encontrado. ID buscado:', productoId);
+        return;
+    }
+    
+    // Usar datos directamente del objeto producto encontrado, usando el código como identificador principal
+    const productoParaPedido = {
+        id: parseInt(productoSeleccionado.id), // Mantener para compatibilidad con la interfaz
+        codigo: productoSeleccionado.codigo,   // Este es el valor importante para la BD
+        nombre: productoSeleccionado.nombre + (productoSeleccionado.codigo ? ' (' + productoSeleccionado.codigo + ')' : ''),
+        cantidad: cantidad
+    };
+    
+    console.log('Agregando producto al pedido:', productoParaPedido);
+    
+    // Añadir al array de productos del pedido
+    productosPedidoActual.push(productoParaPedido);
+    
+    // Actualizar tabla
+    actualizarTablaPedido();
+    
+    // Limpiar selección
+    $('#producto-select').val('');
+    $('#cantidad-producto').val(1);
+    
+    // Actualizar el contador de productos
+    actualizarContadorProductos();
+    
+    // Mostrar confirmación
+    showNotification('Producto agregado al pedido', 'success');
+}
+
+/**
+ * Actualiza la tabla de productos del pedido
+ */
+function actualizarTablaPedido() {
+    const tbody = $('#tabla-productos-pedido tbody');
+    tbody.empty();
+    
+    if (productosPedidoActual.length === 0) {
+        tbody.append('<tr><td colspan="3" class="text-center">No hay productos en este pedido</td></tr>');
+    } else {
+        productosPedidoActual.forEach((producto, index) => {
+            tbody.append(`
+                <tr>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.cantidad}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger btn-eliminar-producto" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+        });
+    }
+    
+    // Vincular el evento para eliminar productos
+    $('.btn-eliminar-producto').off('click').on('click', function() {
+        const index = $(this).data('index');
+        eliminarProductoDePedido(index);
+    });
+}
+
+/**
+ * Elimina un producto del pedido actual por su índice
+ */
+function eliminarProductoDePedido(index) {
+    if (index >= 0 && index < productosPedidoActual.length) {
+        productosPedidoActual.splice(index, 1);
+        actualizarTablaPedido();
+        showNotification('Producto eliminado del pedido', 'info');
+    }
+}
+
+/**
+ * Muestra información adicional del proveedor seleccionado
+ */
+function mostrarInfoProveedor(proveedorId) {
+    const proveedor = proveedoresDisponibles.find(p => p.id == proveedorId);
+    if (proveedor) {
+        let infoText = '';
+        if (proveedor.telefono) infoText += `📞 ${proveedor.telefono} `;
+        if (proveedor.email) infoText += `📧 ${proveedor.email}`;
+        $('#info-proveedor').text(infoText);
+    } else {
+        $('#info-proveedor').text('');
+    }
+}
+
+/**
+ * Muestra el stock actual del producto seleccionado
+ */
+function mostrarStockProducto(productoId) {
+    const producto = productosDisponibles.find(p => p.id == productoId);
+    if (producto) {
+        $('#stock-actual').text(`Stock actual: ${producto.stock || 0} unidades`);
+    } else {
+        $('#stock-actual').text('');
+    }
+}
+
+/**
+ * Busca productos basados en texto ingresado y actualiza el select
+ */
+function buscarProductoRapido(texto) {
+    if (!texto || texto.length < 2) return;
+    
+    // Filtrar productos que coincidan con el texto
+    const productosFiltrados = productosDisponibles.filter(p => 
+        p.nombre.toLowerCase().includes(texto.toLowerCase()) || 
+        p.codigo.toLowerCase().includes(texto.toLowerCase())
+    );
+    
+    // Actualizar el selector con los resultados
+    const selectProducto = $('#producto-select');
+    selectProducto.empty();
+    selectProducto.append('<option value="">Seleccionar producto...</option>');
+    
+    if (productosFiltrados.length > 0) {
+        productosFiltrados.forEach(producto => {
+            selectProducto.append(`<option value="${producto.id}">${producto.nombre} (${producto.codigo})</option>`);
+        });
+        
+        // Si hay un solo resultado, seleccionarlo automáticamente
+        if (productosFiltrados.length === 1) {
+            selectProducto.val(productosFiltrados[0].id);
+            mostrarStockProducto(productosFiltrados[0].id);
+        }
+    } else {
+        selectProducto.append('<option value="" disabled>No se encontraron productos</option>');
+    }
+}
+
+/**
+ * Simula el escaneo de un código de barras
+ */
+function simularEscaneoCodigoBarras() {
+    $('#buscar-producto').val('');
+    
+    // Mostrar una notificación de escaneo
+    showNotification('Simulando escaneo de código de barras...', 'info');
+    
+    // Simular un tiempo de procesamiento
+    setTimeout(() => {
+        // Seleccionar un producto aleatorio para la simulación
+        if (productosDisponibles.length > 0) {
+            const indiceAleatorio = Math.floor(Math.random() * productosDisponibles.length);
+            const productoAleatorio = productosDisponibles[indiceAleatorio];
+            
+            $('#buscar-producto').val(productoAleatorio.codigo);
+            $('#producto-select').val(productoAleatorio.id);
+            $('#cantidad-producto').val(1);
+            mostrarStockProducto(productoAleatorio.id);
+            
+            showNotification(`Producto escaneado: ${productoAleatorio.nombre}`, 'success');
+        } else {
+            showNotification('No hay productos disponibles para escanear', 'warning');
+        }
+    }, 1000);
+}
+
+/**
+ * Carga el historial de pedidos del proveedor seleccionado
+ */
+function cargarHistorialPedidosProveedor(proveedorId) {
+    const historialContainer = $('#historial-pedidos-proveedor');
+    historialContainer.html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"></div> Cargando historial...</div>');
+    
+    fetch(`${URL_API_PEDIDOS}?proveedor_id=${proveedorId}&limit=5`, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar historial de pedidos');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.data && data.data.pedidos) {
+            const pedidos = data.data.pedidos;
+            
+            if (pedidos.length === 0) {
+                historialContainer.html('<div class="text-center py-3 text-muted">No hay pedidos anteriores con este proveedor</div>');
+                return;
+            }
+            
+            // Crear una lista de pedidos anteriores
+            let html = '<div class="list-group list-group-flush">';
+            
+            pedidos.forEach(pedido => {
+                const fechaPedido = moment(pedido.fecha_pedido).format('DD/MM/YYYY');
+                const colorEstado = getColorEstado(pedido.estado);
+                
+                html += `
+                    <div class="list-group-item list-group-item-action py-2 px-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${pedido.codigo}</h6>
+                            <small>${fechaPedido}</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge badge-${colorEstado} badge-pill">${formatEstado(pedido.estado)}</span>
+                            <button type="button" class="btn btn-sm btn-outline-info btn-ver-pedido-anterior" 
+                                data-id="${pedido.id}">Ver</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            historialContainer.html(html);
+            
+            // Configurar eventos para los botones de ver pedido
+            $('.btn-ver-pedido-anterior').off('click').on('click', function() {
+                const pedidoId = $(this).data('id');
+                $('#pedidoModal').modal('hide');
+                setTimeout(() => {
+                    verDetallePedido(pedidoId);
+                }, 500);
+            });
+        } else {
+            historialContainer.html('<div class="text-center py-3 text-danger">Error al cargar historial</div>');
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar historial:', error);
+        historialContainer.html('<div class="text-center py-3 text-danger">Error al cargar historial</div>');
+    });
+}
+
+/**
+ * Actualiza el contador de productos en el pedido
+ */
+function actualizarContadorProductos() {
+    $('#contador-productos').text(productosPedidoActual.length);
+}
+
+/**
+ * Obtiene el color de badge según el estado
+ */
+function getColorEstado(estado) {
+    switch (estado) {
+        case 'pendiente': return 'warning';
+        case 'en_proceso': return 'info';
+        case 'completado': return 'success';
+        case 'cancelado': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+/**
+ * Guarda un nuevo pedido o actualiza uno existente
+ */
+function guardarPedido() {
+    // Validar datos básicos
+    const proveedorId = $('#proveedor-select').val();
+    if (!proveedorId) {
+        showNotification('Debe seleccionar un proveedor', 'warning');
+        return;
+    }
+    
+    if (productosPedidoActual.length === 0) {
+        showNotification('Debe agregar al menos un producto al pedido', 'warning');
+        return;
+    }
+    
+    console.log('Productos antes de validar:', JSON.stringify(productosPedidoActual));
+    
+    // Validar productos - asegurarnos de que cada producto tenga un código válido
+    let productosValidos = [];
+    
+    for (let i = 0; i < productosPedidoActual.length; i++) {
+        const producto = productosPedidoActual[i];
+        
+        // Si el producto ya tiene código, lo consideramos válido
+        if (producto.codigo) {
+            productosValidos.push(producto);
+            continue;
+        }
+        
+        // Si no tiene código pero tiene nombre con formato "Nombre (CÓDIGO)"
+        if (producto.nombre) {
+            const match = producto.nombre.match(/\(([^)]+)\)/);
+            if (match && match[1]) {
+                const codigoExtraido = match[1];
+                producto.codigo = codigoExtraido;
+                productosValidos.push(producto);
+                continue;
+            }
+        }
+        
+        // Si tiene ID, intentamos encontrar el código
+        if (producto.id) {
+            const productoEnLista = productosDisponibles.find(p => parseInt(p.id) === parseInt(producto.id));
+            if (productoEnLista && productoEnLista.codigo) {
+                producto.codigo = productoEnLista.codigo;
+                productosValidos.push(producto);
+                continue;
+            }
+        }
+        
+        // Si no pudimos encontrar el código, es inválido
+        console.error('Producto sin código identificable:', producto);
+        showNotification(`No se pudo identificar el código del producto: ${producto.nombre || 'Sin nombre'}`, 'warning');
+    }
+    
+    // Verificar si tenemos productos válidos después de la validación
+    if (productosValidos.length === 0) {
+        showNotification('No hay productos válidos para agregar al pedido. Verifique que los productos tengan códigos correctos.', 'error');
+        return;
+    }
+    
+    // Informar si se descartaron productos
+    if (productosValidos.length < productosPedidoActual.length) {
+        const diferencia = productosPedidoActual.length - productosValidos.length;
+        showNotification(`Se han descartado ${diferencia} productos sin información de código`, 'warning');
+        
+        // Actualizar la lista global con solo los productos válidos
+        productosPedidoActual = productosValidos;
+        actualizarTablaPedido();
+    }
+    
+    // Hacer una verificación final para asegurarnos de que todos los productos tienen código
+    const todosProductosValidos = productosValidos.every(p => p.codigo);
+    if (!todosProductosValidos) {
+        showNotification('Hay productos sin código en el pedido. Por favor, elimine y añada nuevamente los productos con problemas.', 'error');
+        return;
+    }
+    
+    // Log de depuración para ver los productos finales
+    console.log('Productos validados:', productosValidos);
+    
+    // Preparar datos del pedido
+    const pedidoData = {
+        proveedor_id: proveedorId,
+        fecha_entrega_estimada: $('#fecha-entrega').val() || null,
+        prioridad: $('#prioridad-select').val() || 'media',
+        origen: $('#origen-select').val() || 'tienda',
+        direccion_entrega: $('#direccion-entrega').val() || '',
+        notas: $('#notas-pedido').val() || '',
+        detalles: productosValidos.map(p => ({
+            producto_id: p.codigo, // Usar el código como ID del producto para la BD
+            cantidad: parseInt(p.cantidad) || 1
+        }))
+    };
+    
+    console.log('Datos del pedido a enviar:', JSON.stringify(pedidoData));
+    
+    // Mostrar spinner en botón de guardar
+    const botonGuardar = $('#btn-guardar-pedido');
+    const textoOriginal = botonGuardar.html();
+    botonGuardar.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...');
+    botonGuardar.prop('disabled', true);
+    
+    let url = URL_API_PEDIDOS;
+    let method = 'POST';
+    
+    // Si estamos en modo edición, cambiar URL y método
+    if (modoEdicion && pedidoActual) {
+        url = `${URL_API_PEDIDOS}/${pedidoActual.id}`;
+        method = 'PUT';
+    }
+    
+    // Mostrar información de depuración
+    console.log('Enviando pedido a:', url);
+    console.log('Método:', method);
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(pedidoData)
+    })
+    .then(response => {
+        console.log('Respuesta recibida:', response.status);
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Error en la respuesta:', text);
+                throw new Error(`Error al guardar el pedido: ${response.status} ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        if (data.success) {
+            $('#pedidoModal').modal('hide');
+            
+            const mensaje = modoEdicion ? 'Pedido actualizado exitosamente' : 'Pedido creado exitosamente';
+            showNotification(mensaje, 'success');
+            
+            // Recargar lista de pedidos
+            cargarPedidos();
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al guardar el pedido: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Restaurar botón
+        botonGuardar.html(textoOriginal);
+        botonGuardar.prop('disabled', false);
+    });
+}
+
+/**
+ * Abre el modal para ver los detalles de un pedido
+ */
+function verDetallePedido(pedidoId) {
+    fetch(`${URL_API_PEDIDOS}/${pedidoId}`, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar detalles del pedido');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const pedido = data.data;
+            pedidoActual = pedido;
+            
+            // Buscar nombre del proveedor
+            const proveedor = proveedoresDisponibles.find(p => p.id === pedido.proveedor_id);
+            const nombreProveedor = proveedor ? proveedor.nombre : `Proveedor ID: ${pedido.proveedor_id}`;
+            
+            // Llenar información general
+            $('#detalle-codigo').text(pedido.codigo);
+            
+            // Mostrar nombre del proveedor con opción de WhatsApp si está disponible
+            if (proveedor && proveedor.telefono && window.WhatsAppStatus && window.WhatsAppStatus.isConnected()) {
+                $('#detalle-proveedor').html(`
+                    ${nombreProveedor} 
+                    <button type="button" class="btn btn-sm btn-whatsapp ml-2" 
+                        title="Enviar mensaje por WhatsApp"
+                        onclick="enviarMensajeWhatsApp(${proveedor.id}, '${proveedor.telefono}')">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                `);
+            } else {
+                $('#detalle-proveedor').text(nombreProveedor);
+            }
+            
+            $('#detalle-fecha').text(moment(pedido.fecha_pedido).format('DD/MM/YYYY HH:mm'));
+            $('#detalle-fecha-entrega').text(pedido.fecha_entrega_estimada ? moment(pedido.fecha_entrega_estimada).format('DD/MM/YYYY') : 'No especificada');
+            
+            // Estado y prioridad con clases de badge
+            const estadoBadge = $('#detalle-estado');
+            estadoBadge.text(formatEstado(pedido.estado));
+            
+            switch (pedido.estado) {
+                case 'pendiente':
+                    estadoBadge.removeClass().addClass('badge badge-pill badge-warning');
+                    break;
+                case 'en_proceso':
+                    estadoBadge.removeClass().addClass('badge badge-pill badge-info');
+                    break;
+                case 'completado':
+                    estadoBadge.removeClass().addClass('badge badge-pill badge-success');
+                    break;
+                case 'cancelado':
+                    estadoBadge.removeClass().addClass('badge badge-pill badge-danger');
+                    break;
+                default:
+                    estadoBadge.removeClass().addClass('badge badge-pill badge-secondary');
+            }
+            
+            const prioridadBadge = $('#detalle-prioridad');
+            prioridadBadge.text(formatPrioridad(pedido.prioridad));
+            
+            switch (pedido.prioridad) {
+                case 'baja':
+                    prioridadBadge.removeClass().addClass('badge badge-pill badge-secondary');
+                    break;
+                case 'media':
+                    prioridadBadge.removeClass().addClass('badge badge-pill badge-primary');
+                    break;
+                case 'alta':
+                    prioridadBadge.removeClass().addClass('badge badge-pill badge-warning');
+                    break;
+                case 'urgente':
+                    prioridadBadge.removeClass().addClass('badge badge-pill badge-danger');
+                    break;
+                default:
+                    prioridadBadge.removeClass().addClass('badge badge-pill badge-secondary');
+            }
+            
+            // Otra información
+            $('#detalle-origen').text(formatOrigen(pedido.origen));
+            $('#detalle-direccion').text(pedido.direccion_entrega || 'No especificada');
+            $('#detalle-notas').text(pedido.notas || 'Sin notas');
+            
+            // Productos del pedido
+            const tablaProductos = $('#tabla-detalle-productos tbody');
+            tablaProductos.empty();
+            
+            if (pedido.detalles && pedido.detalles.length > 0) {
+                pedido.detalles.forEach(detalle => {
+                    tablaProductos.append(`
+                        <tr>
+                            <td>${detalle.codigo_producto || 'N/A'}</td>
+                            <td>${detalle.nombre_producto}</td>
+                            <td class="text-center">${detalle.cantidad}</td>
+                        </tr>
+                    `);
+                });
+            } else {
+                tablaProductos.append('<tr><td colspan="3" class="text-center">No hay productos en este pedido</td></tr>');
+            }
+            
+            // Historial de seguimiento
+            const historialContainer = $('#historial-seguimiento');
+            historialContainer.empty();
+            
+            if (pedido.seguimientos && pedido.seguimientos.length > 0) {
+                pedido.seguimientos.forEach(seguimiento => {
+                    let iconoClase = 'fa-info-circle';
+                    let fondoClase = 'bg-info';
+                    
+                    // Asignar icono según el estado nuevo
+                    switch (seguimiento.estado_nuevo) {
+                        case 'pendiente':
+                            iconoClase = 'fa-clock';
+                            fondoClase = 'bg-warning';
+                            break;
+                        case 'en_proceso':
+                            iconoClase = 'fa-spinner';
+                            fondoClase = 'bg-info';
+                            break;
+                        case 'enviado':
+                            iconoClase = 'fa-shipping-fast';
+                            fondoClase = 'bg-primary';
+                            break;
+                        case 'completado':
+                            iconoClase = 'fa-check-circle';
+                            fondoClase = 'bg-success';
+                            break;
+                        case 'cancelado':
+                            iconoClase = 'fa-times-circle';
+                            fondoClase = 'bg-danger';
+                            break;
+                    }
+                    
+                    historialContainer.append(`
+                        <div class="timeline-item">
+                            <div class="timeline-badge ${fondoClase}">
+                                <i class="fas ${iconoClase} text-white"></i>
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h4>${formatEstado(seguimiento.estado_nuevo)}</h4>
+                                </div>
+                                <div class="timeline-body">
+                                    <p>${seguimiento.comentario || 'Sin comentarios'}</p>
+                                </div>
+                                <div class="timeline-footer">
+                                    <small>
+                                        <i class="fas fa-user"></i> ${seguimiento.usuario ? `${seguimiento.usuario.nombre}` : 'Usuario desconocido'} | 
+                                        <i class="fas fa-calendar"></i> ${moment(seguimiento.fecha).format('DD/MM/YYYY HH:mm')}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+            } else {
+                historialContainer.append('<div class="text-center p-3">No hay historial de cambios</div>');
+            }
+            
+            // Configurar selector de estado según el estado actual
+            configurarSelectorEstado(pedido.estado);
+            
+            // Agregar opción de notificar por WhatsApp si está disponible
+            const btnContainer = $('.modal-footer', '#detallePedidoModal');
+            $('.btn-whatsapp-notify', btnContainer).remove(); // Eliminar botón si existe
+            
+            if (proveedor && proveedor.telefono && window.WhatsAppStatus && window.WhatsAppStatus.isConnected()) {
+                btnContainer.prepend(`
+                    <button type="button" class="btn btn-whatsapp btn-whatsapp-notify mr-2" 
+                        onclick="notificarPedidoPorWhatsApp(${pedido.id}, ${proveedor.id}, '${proveedor.telefono}')">
+                        <i class="fab fa-whatsapp"></i> Notificar estado
+                    </button>
+                `);
+            }
+            
+            // Configurar botón de editar según estado
+            const btnEditar = $('#btn-editar-pedido');
+            if (pedido.estado === 'completado' || pedido.estado === 'cancelado') {
+                btnEditar.hide();
+            } else {
+                btnEditar.show();
+                btnEditar.off('click').on('click', function() {
+                    $('#detallePedidoModal').modal('hide');
+                    editarPedido(pedido.id);
+                });
+            }
+            
+            // Abrir modal
+            $('#detallePedidoModal').modal('show');
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al cargar detalles del pedido', 'error');
+    });
+}
+
+/**
+ * Configura las opciones disponibles en el selector de estado según el estado actual
+ */
+function configurarSelectorEstado(estadoActual) {
+    const selectEstado = $('#estado-select');
+    selectEstado.empty();
+    
+    // Agregar opciones según transiciones permitidas
+    switch (estadoActual) {
+        case 'pendiente':
+            selectEstado.append('<option value="pendiente">Pendiente</option>');
+            selectEstado.append('<option value="en_proceso">En Proceso</option>');
+            selectEstado.append('<option value="cancelado">Cancelado</option>');
+            $('#btn-cambiar-estado').prop('disabled', false);
+            break;
+        case 'en_proceso':
+            selectEstado.append('<option value="en_proceso">En Proceso</option>');
+            selectEstado.append('<option value="completado">Completado</option>');
+            selectEstado.append('<option value="cancelado">Cancelado</option>');
+            $('#btn-cambiar-estado').prop('disabled', false);
+            break;
+        case 'completado':
+            selectEstado.append('<option value="completado">Completado</option>');
+            $('#btn-cambiar-estado').prop('disabled', true);
+            break;
+        case 'cancelado':
+            selectEstado.append('<option value="cancelado">Cancelado</option>');
+            $('#btn-cambiar-estado').prop('disabled', true);
+            break;
+        default:
+            selectEstado.append('<option value="pendiente">Pendiente</option>');
+            selectEstado.append('<option value="en_proceso">En Proceso</option>');
+            selectEstado.append('<option value="completado">Completado</option>');
+            selectEstado.append('<option value="cancelado">Cancelado</option>');
+            $('#btn-cambiar-estado').prop('disabled', false);
+    }
+    
+    selectEstado.val(estadoActual);
+}
+
+/**
+ * Cambia el estado de un pedido
+ */
+function cambiarEstadoPedido() {
+    if (!pedidoActual) return;
+    
+    const nuevoEstado = $('#estado-select').val();
+    
+    // Validar que el estado sea diferente al actual
+    if (nuevoEstado === pedidoActual.estado) {
+        showNotification('El pedido ya está en ese estado', 'info');
+        return;
+    }
+    
+    // Configurar el modal de cambio de estado
+    $('#nuevoEstadoTexto').text(formatEstado(nuevoEstado));
+    $('#comentario-cambio-estado').val(''); // Limpiar el comentario anterior
+    
+    // Configurar el botón de confirmar
+    $('#btn-confirmar-cambio-estado').off('click').on('click', function() {
+        const comentario = $('#comentario-cambio-estado').val() || `Cambio de estado: ${formatEstado(pedidoActual.estado)} a ${formatEstado(nuevoEstado)}`;
+        
+        // Ocultar modal
+        $('#cambioEstadoModal').modal('hide');
+        
+        // Mostrar spinner en botón de cambiar estado
+        const botonCambiar = $('#btn-cambiar-estado');
+        const textoOriginal = botonCambiar.html();
+        botonCambiar.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...');
+        botonCambiar.prop('disabled', true);
+        
+        fetch(`${URL_API_PEDIDOS}/${pedidoActual.id}/estado`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify({
+                estado: nuevoEstado,
+                comentario: comentario
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cambiar el estado del pedido');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Actualizar pedido actual con la respuesta
+                pedidoActual = data.data;
+                
+                // Mostrar mensaje especial para pedidos completados (recepción de inventario)
+                if (nuevoEstado === 'completado') {
+                    showNotification('Pedido completado. Los productos han sido añadidos al inventario.', 'success');
+                } else {
+                    showNotification('Estado del pedido actualizado exitosamente', 'success');
+                }
+                
+                // Recargar la interfaz
+                verDetallePedido(pedidoActual.id);
+                
+                // Recargar lista de pedidos
+                cargarPedidos();
+            } else {
+                showNotification('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al cambiar el estado del pedido:', error);
+            showNotification('Error al cambiar el estado del pedido', 'error');
+        })
+        .finally(() => {
+            // Restaurar botón
+            botonCambiar.html(textoOriginal);
+            botonCambiar.prop('disabled', false);
+        });
+    });
+    
+    // Mostrar el modal
+    $('#cambioEstadoModal').modal('show');
+}
+
+/**
+ * Abre el modal para editar un pedido existente
+ */
+function editarPedido(pedidoId) {
+    fetch(`${URL_API_PEDIDOS}/${pedidoId}`, {
+        headers: {
+            'Authorization': `Bearer ${getToken()}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error al cargar el pedido para edición');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            modoEdicion = true;
+            pedidoActual = data.data;
+            
+            // Configurar el modal
+            $('#pedidoModalLabel').text('Editar Pedido ' + pedidoActual.codigo);
+            
+            // Llenar el formulario con los datos del pedido
+            $('#pedido-id').val(pedidoActual.id);
+            $('#proveedor-select').val(pedidoActual.proveedor_id);
+            $('#fecha-entrega').val(pedidoActual.fecha_entrega_estimada ? moment(pedidoActual.fecha_entrega_estimada).format('YYYY-MM-DD') : '');
+            $('#prioridad-select').val(pedidoActual.prioridad);
+            $('#origen-select').val(pedidoActual.origen);
+            $('#direccion-entrega').val(pedidoActual.direccion_entrega || '');
+            $('#notas-pedido').val(pedidoActual.notas || '');
+            
+            // Cargar productos del pedido
+            productosPedidoActual = [];
+            
+            if (pedidoActual.detalles && pedidoActual.detalles.length > 0) {
+                pedidoActual.detalles.forEach(detalle => {
+                    productosPedidoActual.push({
+                        id: detalle.producto_id,
+                        nombre: detalle.nombre_producto,
+                        precio: detalle.precio_unitario,
+                        cantidad: detalle.cantidad,
+                        subtotal: detalle.subtotal
+                    });
+                });
+            }
+            
+            // Actualizar tabla de productos
+            actualizarTablaPedido();
+            
+            // Abrir el modal
+            $('#pedidoModal').modal('show');
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar el pedido para edición:', error);
+        showNotification('Error al cargar el pedido para edición', 'error');
+    });
+}
+
+/**
+ * Envía un mensaje por WhatsApp al proveedor
+ */
+function enviarMensajeWhatsApp(proveedorId, telefono) {
+    // Verificar que tenemos un teléfono válido
+    if (!telefono) {
+        showNotification('El proveedor no tiene un número de teléfono registrado', 'error');
+        return;
+    }
+    
+    // Verificar que WhatsApp está conectado
+    if (!window.WhatsAppStatus || !window.WhatsAppStatus.isConnected()) {
+        showNotification('WhatsApp no está conectado. Por favor, verifique la conexión', 'warning');
+        return;
+    }
+    
+    // Obtener información del proveedor
+    const proveedor = proveedoresDisponibles.find(p => p.id == proveedorId);
+    if (!proveedor) {
+        showNotification('Proveedor no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal para envío de mensaje
+    if (!$('#whatsappMessageModal').length) {
+        $('body').append(`
+            <div class="modal fade" id="whatsappMessageModal" tabindex="-1" role="dialog" aria-labelledby="whatsappMessageModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="whatsappMessageModalLabel">
+                                <i class="fab fa-whatsapp"></i> Enviar mensaje por WhatsApp
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="whatsapp-message-form">
+                                <div class="form-group">
+                                    <label for="whatsapp-destinatario">Destinatario:</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        </div>
+                                        <input type="text" class="form-control" id="whatsapp-destinatario" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="whatsapp-numero">Número de teléfono:</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                        </div>
+                                        <input type="text" class="form-control" id="whatsapp-numero" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="whatsapp-mensaje">Mensaje:</label>
+                                    <textarea class="form-control" id="whatsapp-mensaje" rows="5" placeholder="Escriba su mensaje aquí..."></textarea>
+                                    <small class="form-text text-muted">El mensaje se enviará desde el número registrado en el sistema.</small>
+                                </div>
+                            </form>
+                            <div id="whatsapp-sending-status" class="alert d-none mt-3"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="button" id="btn-enviar-whatsapp" class="btn btn-success">
+                                <i class="fab fa-whatsapp"></i> Enviar mensaje
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+    
+    // Llenar datos en el formulario
+    $('#whatsapp-destinatario').val(proveedor.nombre);
+    $('#whatsapp-numero').val(telefono);
+    $('#whatsapp-mensaje').val('');
+    $('#whatsapp-sending-status').addClass('d-none');
+    
+    // Configurar evento para envío de mensaje
+    $('#btn-enviar-whatsapp').off('click').on('click', function() {
+        const mensaje = $('#whatsapp-mensaje').val().trim();
+        
+        if (!mensaje) {
+            showNotification('Por favor, ingrese un mensaje para enviar', 'warning');
+            return;
+        }
+        
+        // Mostrar spinner en botón y deshabilitar
+        const btnEnviar = $(this);
+        const textoOriginal = btnEnviar.html();
+        btnEnviar.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...');
+        btnEnviar.prop('disabled', true);
+        
+        // Mostrar estado de envío
+        $('#whatsapp-sending-status').removeClass('d-none alert-success alert-danger')
+            .addClass('alert-info')
+            .html('<i class="fas fa-spinner fa-spin"></i> Enviando mensaje...');
+        
+        // Enviar mensaje a través de la API
+        fetch('/api/whatsapp/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify({
+                numero: telefono,
+                mensaje: mensaje
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mensaje enviado exitosamente
+                $('#whatsapp-sending-status').removeClass('alert-info alert-danger')
+                    .addClass('alert-success')
+                    .html('<i class="fas fa-check-circle"></i> Mensaje enviado correctamente.');
+                
+                // Cerrar el modal después de 2 segundos
+                setTimeout(() => {
+                    $('#whatsappMessageModal').modal('hide');
+                }, 2000);
+            } else {
+                // Error al enviar mensaje
+                $('#whatsapp-sending-status').removeClass('alert-info alert-success')
+                    .addClass('alert-danger')
+                    .html(`<i class="fas fa-times-circle"></i> Error: ${data.message || 'No se pudo enviar el mensaje.'}`);
+                
+                // Restaurar botón
+                btnEnviar.html(textoOriginal);
+                btnEnviar.prop('disabled', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error al enviar mensaje WhatsApp:', error);
+            
+            $('#whatsapp-sending-status').removeClass('alert-info alert-success')
+                .addClass('alert-danger')
+                .html(`<i class="fas fa-times-circle"></i> Error: ${error.message || 'No se pudo enviar el mensaje.'}`);
+            
+            // Restaurar botón
+            btnEnviar.html(textoOriginal);
+            btnEnviar.prop('disabled', false);
+        });
+    });
+    
+    // Mostrar modal
+    $('#whatsappMessageModal').modal('show');
+}
+
+/**
+ * Notifica el estado actual del pedido al proveedor por WhatsApp
+ */
+function notificarPedidoPorWhatsApp(pedidoId, proveedorId, telefonoProveedor) {
+    // Verificar conexión de WhatsApp
+    if (!window.WhatsAppStatus || !window.WhatsAppStatus.isConnected()) {
+        showNotification('WhatsApp no está conectado. Por favor, verifique la conexión.', 'warning');
+        return;
+    }
+    
+    // Verificar que tenemos un teléfono válido
+    if (!telefonoProveedor) {
+        showNotification('El proveedor no tiene un número de teléfono registrado', 'error');
+        return;
+    }
+    
+    // Obtener información del proveedor
+    const proveedor = proveedoresDisponibles.find(p => p.id == proveedorId);
+    if (!proveedor) {
+        showNotification('Proveedor no encontrado', 'error');
+        return;
+    }
+    
+    // Si no tenemos un pedido actual, buscar sus datos primero
+    if (!pedidoActual || pedidoActual.id != pedidoId) {
+        fetch(`${URL_API_PEDIDOS}/${pedidoId}`, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error al cargar datos del pedido');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                pedidoActual = data.data;
+                prepararNotificacionWhatsApp(pedidoActual, proveedor);
+            } else {
+                showNotification('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al cargar datos del pedido', 'error');
+        });
+    } else {
+        // Ya tenemos los datos del pedido, proceder directamente
+        prepararNotificacionWhatsApp(pedidoActual, proveedor);
+    }
+}
+
+/**
+ * Prepara el mensaje para notificar el estado del pedido por WhatsApp
+ */
+function prepararNotificacionWhatsApp(pedido, proveedor) {
+    // Crear el modal si no existe
+    if (!$('#whatsappNotifyModal').length) {
+        $('body').append(`
+            <div class="modal fade" id="whatsappNotifyModal" tabindex="-1" role="dialog" aria-labelledby="whatsappNotifyModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="whatsappNotifyModalLabel">
+                                <i class="fab fa-whatsapp"></i> Notificar Estado por WhatsApp
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="whatsapp-notify-form">
+                                <div class="form-group">
+                                    <label for="whatsapp-notify-destinatario">Proveedor:</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        </div>
+                                        <input type="text" class="form-control" id="whatsapp-notify-destinatario" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="whatsapp-notify-pedido">Pedido:</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fas fa-shopping-cart"></i></span>
+                                        </div>
+                                        <input type="text" class="form-control" id="whatsapp-notify-pedido" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="whatsapp-notify-mensaje">Mensaje:</label>
+                                    <textarea class="form-control" id="whatsapp-notify-mensaje" rows="6"></textarea>
+                                    <small class="form-text text-muted">
+                                        Puede editar este mensaje antes de enviarlo.
+                                    </small>
+                                </div>
+                            </form>
+                            <div id="whatsapp-notify-status" class="alert d-none mt-3"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="button" id="btn-enviar-whatsapp-notify" class="btn btn-success">
+                                <i class="fab fa-whatsapp"></i> Enviar notificación
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+    
+    // Generar mensaje según el estado del pedido
+    let mensaje = `Hola ${proveedor.nombre},\n\n`;
+    
+    // Mensaje base según estado del pedido
+    switch (pedido.estado) {
+        case 'pendiente':
+            mensaje += `Le informamos que su pedido ${pedido.codigo} ha sido registrado y está pendiente de procesamiento.\n\n`;
+            break;
+        case 'en_proceso':
+            mensaje += `Su pedido ${pedido.codigo} está siendo procesado y se encuentra en preparación.\n\n`;
+            break;
+        case 'enviado':
+            mensaje += `Su pedido ${pedido.codigo} ha sido enviado y está en camino.\n\n`;
+            break;
+        case 'completado':
+            mensaje += `Confirmamos la recepción de su pedido ${pedido.codigo}. El inventario ya ha sido actualizado.\n\n`;
+            break;
+        case 'cancelado':
+            mensaje += `Lamentamos informarle que su pedido ${pedido.codigo} ha sido cancelado.\n\n`;
+            break;
+        default:
+            mensaje += `Actualización sobre su pedido ${pedido.codigo}.\n\n`;
+    }
+    
+    // Añadir información de productos si están disponibles
+    if (pedido.detalles && pedido.detalles.length > 0) {
+        mensaje += `Detalle del pedido:\n`;
+        pedido.detalles.forEach(detalle => {
+            mensaje += `- ${detalle.nombre_producto}: ${detalle.cantidad} unidades\n`;
+        });
+        mensaje += `\n`;
+    }
+    
+    // Añadir fecha estimada de entrega si está disponible
+    if (pedido.fecha_entrega_estimada) {
+        mensaje += `Fecha estimada de entrega: ${moment(pedido.fecha_entrega_estimada).format('DD/MM/YYYY')}\n\n`;
+    }
+    
+    // Añadir nota de agradecimiento
+    mensaje += `Gracias por su colaboración.\n`;
+    mensaje += `Equipo de La UNIKa`;
+    
+    // Llenar datos en el formulario
+    $('#whatsapp-notify-destinatario').val(proveedor.nombre);
+    $('#whatsapp-notify-pedido').val(`${pedido.codigo} (${formatEstado(pedido.estado)})`);
+    $('#whatsapp-notify-mensaje').val(mensaje);
+    
+    // Configurar el evento de envío
+    $('#btn-enviar-whatsapp-notify').off('click').on('click', function() {
+        const mensajeAEnviar = $('#whatsapp-notify-mensaje').val().trim();
+        
+        if (!mensajeAEnviar) {
+            showNotification('Por favor, ingrese un mensaje para enviar', 'warning');
+            return;
+        }
+        
+        // Mostrar spinner en botón
+        const botonEnviar = $(this);
+        const textoOriginal = botonEnviar.html();
+        botonEnviar.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...');
+        botonEnviar.prop('disabled', true);
+        
+        // Mostrar estado de envío
+        $('#whatsapp-notify-status').removeClass('d-none alert-success alert-danger')
+            .addClass('alert-info')
+            .html('<i class="fas fa-spinner fa-spin"></i> Enviando notificación...');
+        
+        // Enviar mensaje
+        fetch('/api/whatsapp/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify({
+                numero: proveedor.telefono,
+                mensaje: mensajeAEnviar
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mensaje enviado exitosamente
+                $('#whatsapp-notify-status').removeClass('alert-info alert-danger')
+                    .addClass('alert-success')
+                    .html('<i class="fas fa-check-circle"></i> Notificación enviada correctamente.');
+                
+                // Cerrar el modal después de 2 segundos
+                setTimeout(() => {
+                    $('#whatsappNotifyModal').modal('hide');
+                }, 2000);
+                
+                showNotification('Notificación enviada al proveedor', 'success');
+            } else {
+                // Error al enviar mensaje
+                $('#whatsapp-notify-status').removeClass('alert-info alert-success')
+                    .addClass('alert-danger')
+                    .html(`<i class="fas fa-times-circle"></i> Error: ${data.message || 'No se pudo enviar la notificación.'}`);
+                
+                // Restaurar botón
+                botonEnviar.html(textoOriginal);
+                botonEnviar.prop('disabled', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error al enviar notificación por WhatsApp:', error);
+            
+            $('#whatsapp-notify-status').removeClass('alert-info alert-success')
+                .addClass('alert-danger')
+                .html(`<i class="fas fa-times-circle"></i> Error: ${error.message || 'No se pudo enviar la notificación.'}`);
+            
+            // Restaurar botón
+            botonEnviar.html(textoOriginal);
+            botonEnviar.prop('disabled', false);
+        });
+    });
+    
+    // Mostrar el modal
+    $('#whatsappNotifyModal').modal('show');
+}
+
+/**
+ * Formatea el texto del estado para mostrar
+ */
+function formatEstado(estado) {
+    switch (estado) {
+        case 'pendiente': return 'Pendiente';
+        case 'en_proceso': return 'En Proceso';
+        case 'enviado': return 'Enviado';
+        case 'completado': return 'Completado';
+        case 'cancelado': return 'Cancelado';
+        default: return estado;
+    }
+}
+
+/**
+ * Formatea el texto de la prioridad para mostrar
+ */
+function formatPrioridad(prioridad) {
+    switch (prioridad) {
+        case 'baja': return 'Baja';
+        case 'media': return 'Media';
+        case 'alta': return 'Alta';
+        case 'urgente': return 'Urgente';
+        default: return prioridad;
+    }
+}
+
+/**
+ * Formatea el texto del origen del pedido para mostrar
+ */
+function formatOrigen(origen) {
+    switch (origen) {
+        case 'tienda': return 'Tienda';
+        case 'almacen': return 'Almacén';
+        case 'reposicion': return 'Reposición de Stock';
+        case 'nuevo_producto': return 'Nuevos Productos';
+        case 'urgencia': return 'Por Agotamiento';
+        case 'promocion': return 'Promoción';
+        case 'otro': return 'Otro';
+        default: return origen;
+    }
+}
+
+// Cargar pedidos cuando la página esté lista
+$(document).ready(function() {
+    cargarPedidos();
+});

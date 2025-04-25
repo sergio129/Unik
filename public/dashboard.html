@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La UNIKA - Panel de Control</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/components/notifications.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">
+          <i class="fas fa-store-alt"></i>
+          <span>LA UNIKA</span>
+        </div>
+        <ul>
+          <li><a href="/dashboard" class="active"><i class="fas fa-home"></i> Inicio</a></li>
+          <li class="admin-only"><a href="/admin/usuarios"><i class="fas fa-users-cog"></i> Administrar Usuarios</a></li>
+          <li><a href="/inventario"><i class="fas fa-boxes"></i> Inventario</a></li>
+          <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+          <li><a href="/pedidos"><i class="fas fa-truck"></i> Pedidos</a></li>
+        </ul>
+        <div class="user-menu">
+          <span id="user-display"></span>
+          <button class="secondary"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="slide-up">
+        <h1>Panel de Control</h1>
+        <p class="mb-4">Bienvenido al sistema de gestión de inventario de LA UNIKA.</p>
+        
+        <div class="dashboard">
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Inventario</span>
+              <i class="fas fa-boxes text-primary"></i>
+            </div>
+            <div class="dashboard-card-value" id="total-productos">...</div>
+            <div class="dashboard-card-description">Productos en inventario</div>
+            <a href="/inventario" class="button mt-3">
+              <i class="fas fa-eye"></i> Ver inventario
+            </a>
+          </div>
+          
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Ventas del día</span>
+              <i class="fas fa-chart-line text-success"></i>
+            </div>
+            <div class="dashboard-card-value" id="ventas-hoy">...</div>
+            <div class="dashboard-card-description" id="transacciones-hoy">...</div>
+            <a href="/ventas" class="button mt-3">
+              <i class="fas fa-receipt"></i> Ver ventas
+            </a>
+          </div>
+          
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Pedidos</span>
+              <i class="fas fa-truck text-warning"></i>
+            </div>
+            <div class="dashboard-card-value" id="pedidos-pendientes">...</div>
+            <div class="dashboard-card-description">Pedidos pendientes</div>
+            <a href="/pedidos" class="button mt-3">
+              <i class="fas fa-clipboard-list"></i> Ver pedidos
+            </a>
+          </div>
+
+          <!-- Tarjeta de administración de usuarios (solo visible para admins) -->
+          <div class="dashboard-card fade-in admin-only">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Administración</span>
+              <i class="fas fa-users-cog text-primary"></i>
+            </div>
+            <div class="dashboard-card-value">Usuarios</div>
+            <div class="dashboard-card-description">Gestión de perfiles y roles</div>
+            <a href="/admin/usuarios" class="button mt-3">
+              <i class="fas fa-user-shield"></i> Gestionar usuarios
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-5">
+        <div class="card slide-up">
+          <div class="card-header">
+            <h2>Actividad Reciente</h2>
+            <button class="secondary">Ver todo</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Actividad</th>
+                  <th>Usuario</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody id="activity-log">
+                <tr>
+                  <td>15/04/2025 10:30</td>
+                  <td>Venta realizada</td>
+                  <td>Carlos</td>
+                  <td><span class="badge badge-success">$2,500</span></td>
+                </tr>
+                <tr>
+                  <td>15/04/2025 09:45</td>
+                  <td>Producto agregado</td>
+                  <td>María</td>
+                  <td><span class="badge badge-primary">15 unidades</span></td>
+                </tr>
+                <tr>
+                  <td>15/04/2025 09:15</td>
+                  <td>Pedido entregado</td>
+                  <td>Juan</td>
+                  <td><span class="badge badge-warning">Pedido #1024</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-5 slide-up">
+        <div class="card">
+          <div class="card-header">
+            <h2>Productos con bajo inventario</h2>
+          </div>
+          <div id="low-stock-message" class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="low-stock-count">Cargando productos con bajo inventario...</span>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Stock Actual</th>
+                  <th>Stock Mínimo</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="low-stock-products">
+                <!-- Los productos con bajo stock se cargarán aquí desde la API -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal para crear pedido a proveedor -->
+  <div id="pedido-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-truck"></i> Crear Pedido a Proveedor</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="pedido-form">
+          <input type="hidden" id="producto-id">
+          
+          <div class="form-group">
+            <label>Producto</label>
+            <div class="input-group">
+              <i class="fas fa-box"></i>
+              <input type="text" id="producto-nombre" class="form-control" readonly>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="proveedor">Proveedor *</label>
+              <div class="input-group">
+                <i class="fas fa-building"></i>
+                <select id="proveedor" class="form-control" required>
+                  <option value="">Seleccione un proveedor</option>
+                  <option value="1">Proveedor 1</option>
+                  <option value="2">Proveedor 2</option>
+                  <!-- Se llenará dinámicamente -->
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group half">
+              <label for="cantidad">Cantidad a ordenar *</label>
+              <div class="input-group">
+                <i class="fas fa-layer-group"></i>
+                <input type="number" id="cantidad-pedido" class="form-control" min="1" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="precio-unitario">Precio Unitario *</label>
+              <div class="input-group">
+                <i class="fas fa-tag"></i>
+                <input type="number" id="precio-unitario" class="form-control" step="0.01" min="0" required>
+              </div>
+            </div>
+
+            <div class="form-group half">
+              <label for="fecha-entrega">Fecha de Entrega Esperada *</label>
+              <div class="input-group">
+                <i class="fas fa-calendar"></i>
+                <input type="date" id="fecha-entrega" class="form-control" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notas">Notas adicionales</label>
+            <div class="input-group">
+              <i class="fas fa-comment"></i>
+              <textarea id="notas" class="form-control" rows="3" placeholder="Especificaciones especiales, condiciones de entrega, etc."></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="secondary" id="btn-cancel-pedido">Cancelar</button>
+            <button type="submit" class="primary">Crear Pedido</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay para modales -->
+  <div class="modal-overlay"></div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div>
+          <div class="logo">
+            <i class="fas fa-store-alt"></i>
+            <span>LA UNIKA</span>
+          </div>
+          <p>Sistema de gestión de inventarios y ventas</p>
+        </div>
+        <div class="footer-links">
+          <a href="/help">Ayuda</a>
+          <a href="/about">Acerca de</a>
+          <a href="/contact">Contacto</a>
+          <a href="/privacy">Privacidad</a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 La UNIKA. Todos los derechos reservados.
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/dashboard.js"></script>
+  <script src="js/utils/stock-notifications.js"></script>
+</body>
+</html>

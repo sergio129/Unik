@@ -1,0 +1,14 @@
+2025/04/25-08:03:50.586 f54 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/04/25-08:03:50.587 f54 Recovering log #906
+2025/04/25-08:03:50.606 f54 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000906.log 
+2025/04/25-08:03:52.609 1ee0 Level-0 table #912: started
+2025/04/25-08:03:52.617 1ee0 Level-0 table #912: 162463 bytes OK
+2025/04/25-08:03:52.619 1ee0 Delete type=0 #906
+2025/04/25-08:03:52.620 1ee0 Manual compaction at level-0 from ' J\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' K\x01\x00\x00\x00' @ 0 : 0; will stop at ' J\x01\x00\x00\x05' @ 369041 : 1
+2025/04/25-08:03:52.620 1ee0 Compacting 1@0 + 2@1 files
+2025/04/25-08:03:52.806 1ee0 Generated table #913@0: 112519 keys, 2285536 bytes
+2025/04/25-08:03:52.832 1ee0 Generated table #914@0: 17720 keys, 317202 bytes
+2025/04/25-08:03:52.832 1ee0 Compacted 1@0 + 2@1 files => 2602738 bytes
+2025/04/25-08:03:52.833 1ee0 compacted to: files[ 0 2 1 0 0 0 0 ]
+2025/04/25-08:03:52.834 1ee0 Delete type=2 #912
+2025/04/25-08:03:52.834 1ee0 Manual compaction at level-0 from ' J\x01\x00\x00\x05' @ 369041 : 1 .. ' K\x01\x00\x00\x00' @ 0 : 0; will stop at (end)

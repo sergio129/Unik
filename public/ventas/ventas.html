@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo de Ventas | La UNIKA</title>
+  <!-- Fuentes -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.min.css">
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/components/notifications.css">
+  <style>
+    :root {
+      --primary-color: #4285f4;
+      --secondary-color: #34a853;
+      --accent-color: #ea4335;
+      --warning-color: #fbbc05;
+      --card-background: #ffffff;
+    }
+    
+    .wrapper {
+      display: flex;
+    }
+    
+    #sidebar-wrapper {
+      min-width: 250px;
+      background-color: var(--card-background);
+      box-shadow: 2px 0 10px var(--shadow-color);
+      z-index: 90;
+      transition: all 0.3s;
+    }
+    
+    #wrapper.toggled #sidebar-wrapper {
+      margin-left: -250px;
+    }
+    
+    .sidebar-heading {
+      padding: 1.2rem 1rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      background-color: #f8f9fa;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .sidebar-heading:before {
+      content: "\f54e"; /* Store icon */
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+    }
+    
+    .list-group-item {
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0 !important;
+      transition: all 0.3s;
+    }
+    
+    .list-group-item:hover:not(.bg-primary) {
+      background-color: rgba(66, 133, 244, 0.1) !important;
+      color: var(--primary-color) !important;
+    }
+    
+    .list-group-item.bg-primary {
+      background-color: var(--primary-color) !important;
+    }
+    
+    #page-content-wrapper {
+      width: 100%;
+      transition: all 0.3s;
+    }
+    
+    .navbar {
+      box-shadow: 0 2px 10px var(--shadow-color);
+    }
+    
+    #menu-toggle {
+      background-color: var(--primary-color);
+      border: none;
+    }
+    
+    #menu-toggle:hover {
+      opacity: 0.9;
+    }
+    
+    .card-productos {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .producto-item {
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .producto-item:hover {
+      background-color: rgba(66, 133, 244, 0.05);
+    }
+    
+    .carrito-item {
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 0;
+    }
+    
+    #seccion-pago {
+      display: none;
+    }
+    
+    .factura-preview {
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card {
+      border: none;
+      box-shadow: 0 2px 10px var(--shadow-color);
+      margin-bottom: 1.5rem;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .card-header {
+      padding: 1rem 1.5rem;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .card-header h5 {
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .card-header.bg-primary {
+      background-color: var(--primary-color) !important;
+    }
+    
+    .card-header.bg-success {
+      background-color: var(--secondary-color) !important;
+    }
+    
+    .card-header.bg-info {
+      background-color: var(--primary-color) !important;
+      opacity: 0.9;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .btn-danger {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+    
+    .btn-success {
+      background-color: var(--secondary-color);
+      border-color: var(--secondary-color);
+    }
+    
+    .btn-info {
+      background-color: var(--primary-color);
+      opacity: 0.9;
+      border: none;
+    }
+    
+    .btn-primary:hover, .btn-success:hover, .btn-danger:hover, .btn-info:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-content {
+      border: none;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .modal-header.bg-primary {
+      background-color: var(--primary-color) !important;
+    }
+    
+    /* Estilos para la búsqueda predictiva */
+    .sugerencias-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      max-height: 240px;
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 0.25rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      margin-top: 2px;
+    }
+    
+    .sugerencia-item, .sugerencia-cliente-item {
+      padding: 8px 15px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .sugerencia-item:last-child, .sugerencia-cliente-item:last-child {
+      border-bottom: none;
+    }
+    
+    .sugerencia-item:hover, .sugerencia-cliente-item:hover {
+      background-color: #f5f8ff;
+    }
+    
+    .sugerencia-item.active, .sugerencia-cliente-item.active {
+      background-color: #eef2ff;
+    }
+    
+    .sugerencia-nombre {
+      font-weight: 500;
+    }
+    
+    .sugerencia-codigo {
+      color: #666;
+      font-size: 0.85rem;
+    }
+    
+    .sugerencia-stock {
+      color: #333;
+      font-weight: 600;
+    }
+    
+    .sugerencia-precio {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    
+    .destacar {
+      font-weight: bold;
+      background-color: #ffff99;
+    }
+    
+    @media (max-width: 768px) {
+      #sidebar-wrapper {
+        margin-left: -250px;
+      }
+      #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex" id="wrapper">
+    <!-- Sidebar -->
+    <div class="bg-light" id="sidebar-wrapper">
+      <div class="sidebar-heading">La UNIKA</div>
+      <div class="list-group list-group-flush">
+        <a href="/dashboard" class="list-group-item list-group-item-action bg-light">
+          <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+        </a>
+        <a href="/inventario/productos" class="list-group-item list-group-item-action bg-light">
+          <i class="fas fa-box me-2"></i> Productos
+        </a>
+        <a href="/inventario/categorias" class="list-group-item list-group-item-action bg-light">
+          <i class="fas fa-folder me-2"></i> Categorías
+        </a>
+        <a href="/inventario/movimientos" class="list-group-item list-group-item-action bg-light">
+          <i class="fas fa-exchange-alt me-2"></i> Movimientos
+        </a>
+        <a href="#" class="list-group-item list-group-item-action bg-primary text-white">
+          <i class="fas fa-cash-register me-2"></i> Ventas
+        </a>
+        <a href="/ventas/clientes" class="list-group-item list-group-item-action bg-light">
+          <i class="fas fa-users me-2"></i> Clientes
+        </a>
+        <a href="/ventas/historial" class="list-group-item list-group-item-action bg-light">
+          <i class="fas fa-history me-2"></i> Historial de Ventas
+        </a>
+        <div id="adminSection" style="display:none;">
+          <a href="/admin/usuarios" class="list-group-item list-group-item-action bg-light">
+            <i class="fas fa-users-cog me-2"></i> Gestión de Usuarios
+          </a>
+        </div>
+        <a href="#" id="logout" class="list-group-item list-group-item-action bg-light text-danger">
+          <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+        </a>
+      </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <button class="btn btn-primary" id="menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav ms-auto mt-2 mt-lg-0">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user me-2"></i><span id="username">Usuario</span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end">
+                <a class="dropdown-item" href="#" id="profile">Perfil</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#" id="logout-dropdown">Cerrar sesión</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="container-fluid mt-4">
+        <h1 class="mt-2 mb-4">Módulo de Ventas</h1>
+
+        <div class="row">
+          <!-- Sección 1: Búsqueda de Productos -->
+          <div class="col-md-7 mb-4" id="seccion-productos">
+            <div class="card">
+              <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-search me-2"></i>Búsqueda de Productos</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                    <input type="text" id="busqueda-producto" class="form-control" placeholder="Buscar por código o nombre de producto...">
+                    <button class="btn btn-outline-primary" type="button" id="btn-buscar">
+                      <i class="fas fa-search"></i> Buscar
+                    </button>
+                  </div>
+                  <div id="sugerencias-container" class="position-relative">
+                    <div id="sugerencias-productos" class="sugerencias-dropdown d-none"></div>
+                  </div>
+                  <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="check-solo-stock">
+                    <label class="form-check-label" for="check-solo-stock">
+                      Mostrar solo productos con stock
+                    </label>
+                  </div>
+                </div>
+
+                <div class="card-productos">
+                  <table class="table table-hover" id="tabla-productos">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th class="text-end">Precio</th>
+                        <th class="text-end">Stock</th>
+                        <th class="text-center">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody id="lista-productos">
+                      <!-- Los productos se cargarán aquí -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Formulario de selección de cantidad -->
+            <div class="card mt-3 d-none" id="card-seleccion-cantidad">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Agregar producto</h5>
+              </div>
+              <div class="card-body">
+                <form id="form-agregar-producto">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="producto-seleccionado" class="form-label">Producto:</label>
+                        <input type="text" class="form-control" id="producto-seleccionado" readonly>
+                        <input type="hidden" id="producto-codigo">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="precio-unitario" class="form-label">Precio unitario:</label>
+                        <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="number" class="form-control" id="precio-unitario" step="0.01" min="0">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="mb-3">
+                        <label for="cantidad-agregar" class="form-label">Cantidad:</label>
+                        <input type="number" class="form-control" id="cantidad-agregar" min="1" value="1">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="mb-3">
+                        <label for="stock-disponible" class="form-label">Stock disponible:</label>
+                        <input type="number" class="form-control" id="stock-disponible" readonly>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="mb-3">
+                        <label for="descuento-producto" class="form-label">Descuento (%):</label>
+                        <input type="number" class="form-control" id="descuento-producto" min="0" max="100" value="0" step="1">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="mb-3">
+                        <label for="subtotal-producto" class="form-label">Subtotal:</label>
+                        <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="text" class="form-control" id="subtotal-producto" readonly>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary me-2" id="btn-cancelar-agregar">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-agregar-carrito">
+                      <i class="fas fa-cart-plus me-2"></i>Agregar al carrito
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección 2: Carrito y Totales -->
+          <div class="col-md-5">
+            <div class="card">
+              <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Carrito de Compra</h5>
+              </div>
+              <div class="card-body">
+                <!-- Sección del cliente con búsqueda predictiva -->
+                <div class="card mb-4">
+                  <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-user me-2"></i> Cliente</h5>
+                  </div>
+                  <div class="card-body">
+                    <!-- Campo de búsqueda predictiva -->
+                    <div class="mb-3 position-relative">
+                      <label for="busqueda-cliente" class="form-label">Buscar cliente por documento</label>
+                      <div class="input-group">
+                        <input type="text" class="form-control" id="busqueda-cliente" 
+                               placeholder="Ingrese número de documento para buscar..." autocomplete="off">
+                        <input type="hidden" id="cliente-id">
+                        <button class="btn btn-outline-secondary" type="button" id="btn-limpiar-cliente" title="Limpiar selección">
+                          <i class="fas fa-times"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" type="button" id="btn-nuevo-cliente" title="Crear nuevo cliente">
+                          <i class="fas fa-plus"></i>
+                        </button>
+                      </div>
+                      
+                      <!-- Contenedor de sugerencias de clientes -->
+                      <div id="sugerencias-container-clientes" class="position-relative">
+                        <div id="sugerencias-clientes" class="sugerencias-dropdown d-none"></div>
+                      </div>
+                    </div>
+
+                    <!-- Información del cliente seleccionado -->
+                    <div id="cliente-seleccionado-info" class="d-none">
+                      <div class="alert alert-success mb-0">
+                        <strong>Cliente seleccionado:</strong> 
+                        <span id="cliente-nombre-display"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Lista de productos en el carrito -->
+                <div class="carrito-contenedor mb-3" style="max-height: 300px; overflow-y: auto;">
+                  <div id="carrito-vacio" class="text-center py-4">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">El carrito está vacío</p>
+                  </div>
+                  <div id="carrito-items">
+                    <!-- Los items del carrito se cargarán aquí -->
+                  </div>
+                </div>
+
+                <!-- Totales y botones de acción -->
+                <div class="border-top pt-3">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Descuento:</span>
+                    <span id="descuento-total">$0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-2 fw-bold">
+                    <span>Total:</span>
+                    <span id="total" class="text-primary">$0.00</span>
+                  </div>
+                  <div class="d-grid gap-2 mt-3">
+                    <button class="btn btn-primary" id="btn-procesar-venta">
+                      <i class="fas fa-check-circle me-2"></i>Procesar venta
+                    </button>
+                    <button class="btn btn-danger" id="btn-cancelar-venta">
+                      <i class="fas fa-times-circle me-2"></i>Cancelar venta
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección 3: Confirmación y pago (se mostrará después de procesar la venta) -->
+        <div class="row mt-4" id="seccion-pago">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Confirmación y Pago</h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <h4 class="mb-3">Resumen de la venta</h4>
+                    <div class="factura-preview mb-3 p-3">
+                      <div class="d-flex justify-content-between mb-3">
+                        <div>
+                          <h5 class="mb-0">Factura</h5>
+                          <p class="text-muted mb-0">Fecha: <span id="factura-fecha"></span></p>
+                        </div>
+                        <div>
+                          <h5 class="mb-0" id="factura-cliente-nombre"></h5>
+                          <p class="text-muted mb-0" id="factura-cliente-documento"></p>
+                        </div>
+                      </div>
+                      
+                      <div class="table-responsive">
+                        <table class="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>Producto</th>
+                              <th class="text-end">Cant.</th>
+                              <th class="text-end">Precio</th>
+                              <th class="text-end">Subt.</th>
+                            </tr>
+                          </thead>
+                          <tbody id="factura-items">
+                            <!-- Aquí se mostrarán los items -->
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colspan="3" class="text-end">Subtotal:</td>
+                              <td class="text-end" id="factura-subtotal">$0.00</td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" class="text-end">Descuento:</td>
+                              <td class="text-end" id="factura-descuento">$0.00</td>
+                            </tr>
+                            <tr>
+                              <td colspan="3" class="text-end fw-bold">Total:</td>
+                              <td class="text-end fw-bold text-primary" id="factura-total">$0.00</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <h4 class="mb-3">Método de Pago</h4>
+                    <form id="form-pago">
+                      <div class="mb-3">
+                        <label class="form-label">Seleccione el método de pago:</label>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="metodo-pago" id="pago-efectivo" value="efectivo" checked>
+                          <label class="form-check-label" for="pago-efectivo">
+                            <i class="fas fa-money-bill-wave me-2"></i>Efectivo
+                          </label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="metodo-pago" id="pago-transferencia" value="transferencia">
+                          <label class="form-check-label" for="pago-transferencia">
+                            <i class="fas fa-university me-2"></i>Transferencia bancaria
+                          </label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="metodo-pago" id="pago-movil" value="pago_movil">
+                          <label class="form-check-label" for="pago-movil">
+                            <i class="fas fa-mobile-alt me-2"></i>Pago móvil
+                          </label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="metodo-pago" id="pago-tarjeta" value="tarjeta">
+                          <label class="form-check-label" for="pago-tarjeta">
+                            <i class="fas fa-credit-card me-2"></i>Tarjeta de crédito/débito
+                          </label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="metodo-pago" id="pago-mixto" value="mixto">
+                          <label class="form-check-label" for="pago-mixto">
+                            <i class="fas fa-money-check-alt me-2"></i>Pago mixto
+                          </label>
+                        </div>
+                      </div>
+
+                      <!-- Sección para el efectivo -->
+                      <div class="mb-3" id="seccion-efectivo">
+                        <label for="efectivo-recibido" class="form-label">Monto recibido:</label>
+                        <div class="input-group">
+                          <span class="input-group-text">$</span>
+                          <input type="number" class="form-control" id="efectivo-recibido" min="0" step="0.01">
+                        </div>
+                        <div class="mt-2">
+                          <label>Cambio a devolver:</label>
+                          <h4 id="cambio-devolver" class="text-success">$0.00</h4>
+                        </div>
+                      </div>
+
+                      <!-- Nueva sección para pagos mixtos -->
+                      <div class="mb-3 d-none" id="seccion-pagos-mixtos">
+                        <h5 class="mb-3">Distribución de pago</h5>
+                        <div class="alert alert-info">
+                          <small>Distribuya el monto total entre los diferentes métodos de pago.</small>
+                        </div>
+                        
+                        <div id="pagos-mixtos-container">
+                          <!-- Los métodos de pago mixtos se generarán aquí -->
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                          <span>Total a pagar:</span>
+                          <span id="total-mixto" class="fw-bold">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span>Total asignado:</span>
+                          <span id="total-asignado" class="fw-bold">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span>Falta por asignar:</span>
+                          <span id="falta-asignar" class="fw-bold text-danger">$0.00</span>
+                        </div>
+                      </div>
+
+                      <div class="mb-3">
+                        <label for="observaciones-pago" class="form-label">Observaciones:</label>
+                        <textarea class="form-control" id="observaciones-pago" rows="3"></textarea>
+                      </div>
+
+                      <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success" id="btn-finalizar-venta">
+                          <i class="fas fa-check-circle me-2"></i>Finalizar Venta
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-volver-venta">
+                          <i class="fas fa-arrow-left me-2"></i>Volver
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Nuevo Cliente -->
+  <div class="modal fade" id="modalNuevoCliente" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Nuevo Cliente</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-nuevo-cliente">
+            <div class="mb-3">
+              <label for="cliente-nombre" class="form-label">Nombre completo *</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" id="cliente-nombre" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="cliente-tipo-documento" class="form-label">Tipo de documento</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                <select class="form-select" id="cliente-tipo-documento">
+                  <option value="CC">CC - Cédula de Ciudadanía</option>
+                <option value="CE">CE - Cédula de Extranjería</option>
+                <option value="NIT">NIT - Número de Identificación Tributaria</option>
+                <option value="TI">TI - Tarjeta de Identidad</option>
+                <option value="PP">PP - Pasaporte</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="cliente-documento" class="form-label">Número de documento</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                <input type="text" class="form-control" id="cliente-documento">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="cliente-direccion" class="form-label">Dirección</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                <textarea class="form-control" id="cliente-direccion" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="cliente-telefono" class="form-label">Teléfono</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                    <input type="text" class="form-control" id="cliente-telefono">
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="cliente-email" class="form-label">Email</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input type="email" class="form-control" id="cliente-email">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btn-guardar-cliente">Guardar Cliente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container para notificaciones -->
+  <div class="toast-container"></div>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.all.min.js"></script>
+  <!-- DataTables -->
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+  <!-- Custom JS -->
+  <script src="/js/ventas/ventas.js"></script>
+  <script>
+    // Toggle sidebar
+    $("#menu-toggle").click(function(e) {
+      e.preventDefault();
+      $("#wrapper").toggleClass("toggled");
+    });
+
+    // Logout
+    $("#logout, #logout-dropdown").click(function() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    });
+
+    // Mostrar datos del usuario
+    document.addEventListener('DOMContentLoaded', function() {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      if (userData.username) {
+        document.getElementById('username').textContent = userData.nombre_completo || userData.username;
+        
+        // Mostrar sección de admin solo si el rol es admin
+        if (userData.rol === 'admin') {
+          document.getElementById('adminSection').style.display = 'block';
+        }
+      }
+      
+      // Crear el contenedor de toast si no existe
+      if (!document.querySelector('.toast-container')) {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+      }
+    });
+    
+    // Sistema de notificaciones Toast mejorado
+    function showToast(message, type = 'info') {
+      const toastContainer = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const iconMap = {
+        success: 'check-circle',
+        error: 'times-circle',
+        warning: 'exclamation-triangle',
+        info: 'info-circle'
+      };
+      
+      toast.innerHTML = `
+        <i class="fas fa-${iconMap[type]}"></i>
+        <div class="toast-message">${message}</div>
+        <button class="toast-close">&times;</button>
+      `;
+      
+      toastContainer.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 10);
+      
+      const closeBtn = toast.querySelector('.toast-close');
+      closeBtn.addEventListener('click', () => {
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      });
+      
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 6000);
+    }
+  </script>
+</body>
+</html>

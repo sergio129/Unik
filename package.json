@@ -1,0 +1,37 @@
+{
+  "name": "unika",
+  "version": "1.0.0",
+  "description": "Sistema web para gestión de negocio La UNIKa",
+  "main": "src/index.js",
+  "scripts": {
+    "preinstall": "node -e \"process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true; process.env.PUPPETEER_SKIP_DOWNLOAD=true\"",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "init-admin": "node src/utils/initAdmin.js",
+    "migrate": "node src/migrations-cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "fast-csv": "^5.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
+    "mysql2": "^3.14.0",
+    "pdfkit": "^0.17.0",
+    "qrcode-terminal": "^0.12.0",
+    "sequelize": "^6.37.7",
+    "socket.io": "^4.8.1",
+    "webhook-discord": "^3.7.8",
+    "whatsapp-web.js": "^1.27.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

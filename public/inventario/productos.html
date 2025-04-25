@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La UNIKA - Gestión de Productos</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/inventario/productos.css">
+  <link rel="stylesheet" href="../css/components/notifications.css">
+  <link rel="stylesheet" href="../css/components/sidebar.css">
+  <style>
+   
+    
+    /* Estilos para el contenedor de sugerencias de búsqueda */
+    .search-container {
+      position: relative;
+    }
+    
+    .search-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      max-height: 250px;
+      overflow-y: auto;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: none;
+    }
+    
+    .suggestion-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.2s;
+    }
+    
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    
+    .suggestion-item:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .scanner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 15px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .scanner-message {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    #scanner-preview {
+      width: 100%;
+      height: 300px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    #scanner-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    #scanner-preview canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Estilos para los logs de importación */
+    .import-logs-container {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+    }
+    
+    .import-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding: 12px;
+      background-color: #fff;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .stat-item {
+      padding: 10px 15px;
+      border-radius: 4px;
+      background-color: #f0f0f0;
+      min-width: 180px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .stat-item.clickable {
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+    
+    .stat-item.clickable:hover {
+      background-color: #e5e5e5;
+      transform: translateY(-1px);
+    }
+    
+    .stat-item.clickable:active {
+      transform: translateY(0);
+    }
+    
+    .stat-label {
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .stat-value {
+      font-weight: 600;
+      font-size: 1.1em;
+    }
+    
+    .stat-icon {
+      margin-left: 10px;
+      color: #888;
+    }
+    
+    .text-success {
+      color: #28a745;
+    }
+    
+    .text-warning {
+      color: #ffc107;
+    }
+    
+    .text-danger {
+      color: #dc3545;
+    }
+    
+    .log-container {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      border-bottom: 1px solid #ddd;
+      background-color: #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    
+    .log-header h4 {
+      margin: 0;
+      color: #333;
+      font-size: 16px;
+    }
+    
+    .import-logs {
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed #eee;
+    }
+    
+    .log-entry:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+    
+    .log-entry.info {
+      color: #0d6efd;
+    }
+    
+    .log-entry.success {
+      color: #28a745;
+    }
+    
+    .log-entry.warning {
+      color: #ffc107;
+    }
+    
+    .log-entry.error {
+      color: #dc3545;
+    }
+    
+    .log-timestamp {
+      opacity: 0.7;
+      font-size: 0.85em;
+      margin-right: 10px;
+    }
+    
+    .log-category {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .mt-4 {
+      margin-top: 20px;
+    }
+    
+    .mb-2 {
+      margin-bottom: 10px;
+    }
+    
+    /* Destacar errores específicos */
+    .highlight-categoria {
+      background-color: #fff3cd;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    
+    .import-details-container {
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .details-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      border-bottom: 1px solid #ddd;
+      background-color: #f0f0f0;
+    }
+    
+    .details-header h4 {
+      margin: 0;
+      color: #333;
+      font-size: 16px;
+    }
+    
+    .import-details {
+      padding: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .empty-details {
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .details-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .detail-item {
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background-color: #fcfcfc;
+    }
+    
+    .detail-item:hover {
+      background-color: #f8f8f8;
+    }
+    
+    .detail-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .detail-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #f0f0f0;
+      margin-right: 10px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .detail-header h4 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .detail-content {
+      padding-left: 34px;
+      font-size: 14px;
+    }
+    
+    .detail-content p {
+      margin: 5px 0;
+    }
+    
+    /* Estilos específicos por tipo de detalle */
+    .error-item {
+      border-left: 4px solid #dc3545;
+    }
+    
+    .error-item .detail-number {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .created-item {
+      border-left: 4px solid #28a745;
+    }
+    
+    .created-item .detail-number {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .updated-item {
+      border-left: 4px solid #ffc107;
+    }
+    
+    .updated-item .detail-number {
+      background-color: #ffc107;
+      color: #333;
+    }
+    
+    .processed-item {
+      border-left: 4px solid #0d6efd;
+    }
+    
+    .processed-item .detail-number {
+      background-color: #0d6efd;
+      color: white;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      font-weight: 500;
+    }
+    
+    .error-detail {
+      color: #555;
+      margin-top: 8px;
+    }
+    
+    .error-suggestion {
+      color: #0d6efd;
+      margin-top: 8px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar renovado -->
+  <div class="bg-light" id="sidebar-wrapper">
+    <div class="sidebar-heading">
+      La UNIKA
+      <button id="close-sidebar" class="btn-icon d-lg-none">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="list-group list-group-flush">
+      <a href="/dashboard" class="list-group-item list-group-item-action">
+        <span class="menu-text">Dashboard</span>
+        <i class="fas fa-tachometer-alt menu-icon"></i>
+      </a>
+      <a href="/inventario/productos" class="list-group-item list-group-item-action active">
+        <span class="menu-text">Productos</span>
+        <i class="fas fa-box menu-icon"></i>
+      </a>
+      <a href="/inventario/categorias" class="list-group-item list-group-item-action">
+        <span class="menu-text">Categorías</span>
+        <i class="fas fa-folder menu-icon"></i>
+      </a>
+      <a href="/inventario/movimientos" class="list-group-item list-group-item-action">
+        <span class="menu-text">Movimientos</span>
+        <i class="fas fa-exchange-alt menu-icon"></i>
+      </a>
+      <a href="/ventas" class="list-group-item list-group-item-action">
+        <span class="menu-text">Ventas</span>
+        <i class="fas fa-cash-register menu-icon"></i>
+      </a>
+      <a href="/ventas/clientes" class="list-group-item list-group-item-action">
+        <span class="menu-text">Clientes</span>
+        <i class="fas fa-users menu-icon"></i>
+      </a>
+      <a href="/ventas/historial" class="list-group-item list-group-item-action">
+        <span class="menu-text">Historial de Ventas</span>
+        <i class="fas fa-history menu-icon"></i>
+      </a>
+      <div id="adminSection" style="display: block;">
+        <a href="/admin/usuarios" class="list-group-item list-group-item-action">
+          <span class="menu-text">Gestión de Usuarios</span>
+          <i class="fas fa-users-cog menu-icon"></i>
+        </a>
+      </div>
+      <a href="#" id="logout" class="list-group-item list-group-item-action text-danger">
+        <span class="menu-text">Cerrar Sesión</span>
+        <i class="fas fa-sign-out-alt menu-icon"></i>
+      </a>
+    </div>
+  </div>
+
+  <div id="main-content">
+    <!-- Contenido principal -->
+    <header>
+      <div class="container">
+        <nav>
+          <div class="logo">
+            <button id="toggle-sidebar" class="btn-icon d-lg-none">
+              <i class="fas fa-bars"></i>
+            </button>
+            <i class="fas fa-store-alt"></i>
+            <span>LA UNIKA</span>
+          </div>
+          <ul>
+            <li><a href="/dashboard"><i class="fas fa-home"></i> Inicio</a></li>
+            <li class="admin-only"><a href="/admin/usuarios"><i class="fas fa-users-cog"></i> Administrar Usuarios</a></li>
+            <li>
+              <a href="/inventario" class="active"><i class="fas fa-boxes"></i> Inventario</a>
+              <ul class="submenu">
+                <li><a href="/inventario/categorias">Categorías</a></li>
+                <li><a href="/inventario/productos" class="active">Productos</a></li>
+                <li><a href="/inventario/movimientos">Movimientos</a></li>
+              </ul>
+            </li>
+            <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+            <li><a href="/pedidos"><i class="fas fa-truck"></i> Pedidos</a></li>
+          </ul>
+          <div class="user-menu">
+            <span id="user-display"></span>
+            <button id="btn-logout" class="secondary"><i class="fas fa-sign-out-alt"></i> Salir</button>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <section class="admin-header">
+          <h1><i class="fas fa-box"></i> Gestión de Productos</h1>
+          <p>Administre los productos de su inventario</p>
+        </section>
+
+        <section class="admin-actions">
+          <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-productos" placeholder="Buscar producto...">
+            <!-- Añadiendo contenedor para las sugerencias de búsqueda -->
+            <div id="search-suggestions" class="search-suggestions"></div>
+            <button id="btn-barcode-search" class="btn-icon" title="Buscar por código de barras">
+              <i class="fas fa-barcode"></i>
+            </button>
+          </div>
+
+          <div class="action-buttons">
+            <button id="btn-filter" class="secondary">
+              <i class="fas fa-filter"></i> Filtros
+              <span id="active-filters-badge" class="badge" style="display:none;">0</span>
+            </button>
+            <button id="btn-view-inactive" class="secondary">
+              <i class="fas fa-archive"></i> Ver Desactivados
+            </button>
+            <button id="btn-import-export" class="secondary">
+              <i class="fas fa-file-import"></i> Importar/Exportar
+            </button>
+            <button id="btn-new-product" class="primary"><i class="fas fa-plus"></i> Nuevo Producto</button>
+          </div>
+        </section>
+
+        <!-- Panel de filtros (oculto por defecto) -->
+        <section id="filter-panel" class="card filter-panel" style="display:none;">
+          <div class="filter-header">
+            <h3><i class="fas fa-filter"></i> Filtros de Búsqueda</h3>
+            <button id="btn-close-filters" class="btn-icon"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="filter-body">
+            <div class="filter-form">
+              <div class="filter-group">
+                <label>Categoría:</label>
+                <select id="filter-categoria" class="form-control">
+                  <option value="">Todas las categorías</option>
+                  <!-- Se llenará dinámicamente -->
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Stock:</label>
+                <div class="filter-range">
+                  <select id="filter-stock-condition" class="form-control">
+                    <option value="gt">Mayor que</option>
+                    <option value="lt">Menor que</option>
+                    <option value="eq">Igual a</option>
+                  </select>
+                  <input type="number" id="filter-stock-value" class="form-control" min="0" placeholder="Cantidad">
+                </div>
+              </div>
+              <div class="filter-group">
+                <label>Precio:</label>
+                <div class="filter-range">
+                  <div>
+                    <label>Desde:</label>
+                    <input type="number" id="filter-precio-min" class="form-control" min="0" step="0.01" placeholder="Mínimo">
+                  </div>
+                  <div>
+                    <label>Hasta:</label>
+                    <input type="number" id="filter-precio-max" class="form-control" min="0" step="0.01" placeholder="Máximo">
+                  </div>
+                </div>
+              </div>
+              <div class="filter-group">
+                <label>Estado:</label>
+                <select id="filter-estado" class="form-control">
+                  <option value="">Todos</option>
+                  <option value="true">Activo</option>
+                  <option value="false">Inactivo</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button id="btn-reset-filters" class="secondary">
+                <i class="fas fa-undo"></i> Restaurar
+              </button>
+              <button id="btn-aplicar-filtros" class="primary">
+                <i class="fas fa-check"></i> Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="table-container">
+            <table class="data-table" id="productos-table">
+              <thead>
+                <tr>
+                  <th>Imagen</th>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Stock</th>
+                  <th>Precio Compra</th>
+                  <th>Precio Venta</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productos-list">
+                <tr>
+                  <td colspan="9" class="text-center">Cargando productos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination">
+            <!-- Paginación se generará dinámicamente -->
+            <button class="page-btn" data-page="prev" disabled><i class="fas fa-angle-left"></i></button>
+            <div class="page-numbers">
+              <span>Página <span id="current-page">1</span> de <span id="total-pages">1</span></span>
+            </div>
+            <button class="page-btn" data-page="next" disabled><i class="fas fa-angle-right"></i></button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Modal para crear/editar producto -->
+    <div id="producto-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Nuevo Producto</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="producto-form">
+            <input type="hidden" id="producto-id" name="producto-id">
+            
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="codigo">Código del Producto *</label>
+                <div class="input-group">
+                  <i class="fas fa-hashtag"></i>
+                  <input type="text" id="codigo" name="codigo" class="form-control" required>
+                </div>
+                <small class="form-text">Código interno o SKU del producto</small>
+              </div>
+              
+              <div class="form-group half">
+                <label for="nombre">Nombre *</label>
+                <div class="input-group">
+                  <i class="fas fa-box"></i>
+                  <input type="text" id="nombre" name="nombre" class="form-control" required>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-section">
+              <h3><i class="fas fa-barcode"></i> Códigos de Barras</h3>
+              <div class="barcode-list">
+                <div id="existing-barcodes" class="mb-3">
+                  <!-- Aquí se mostrarán los códigos existentes -->
+                  <div class="empty-barcodes">
+                    <p>No hay códigos de barras registrados</p>
+                  </div>
+                </div>
+                
+                <div class="barcode-form">
+                  <div class="form-row">
+                    <div class="form-group two-thirds">
+                      <label for="new-barcode">Nuevo código de barras</label>
+                      <div class="input-group">
+                        <i class="fas fa-barcode"></i>
+                        <input type="text" id="new-barcode" class="form-control" placeholder="Escanee o escriba un código de barras">
+                        <button type="button" id="btn-form-scan-barcode" class="btn-addon">
+                          <i class="fas fa-camera"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="form-group third">
+                      <label for="barcode-type">Tipo</label>
+                      <div class="input-group">
+                        <i class="fas fa-tags"></i>
+                        <select id="barcode-type" class="form-control">
+                          <option value="EAN13">EAN-13</option>
+                          <option value="EAN8">EAN-8</option>
+                          <option value="CODE128">CODE-128</option>
+                          <option value="UPC">UPC</option>
+                          <option value="OTHER">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <div class="checkbox-group">
+                        <input type="checkbox" id="set-barcode-primary" class="form-control">
+                        <label for="set-barcode-primary">Establecer como código principal</label>
+                      </div>
+                    </div>
+                    
+                    <div class="form-actions compact">
+                      <button type="button" id="btn-add-barcode" class="secondary">
+                        <i class="fas fa-plus"></i> Agregar Código
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="separator"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="descripcion">Descripción</label>
+              <div class="input-group">
+                <i class="fas fa-align-left"></i>
+                <textarea id="descripcion" name="descripcion" class="form-control" rows="3"></textarea>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="categoria_id">Categoría *</label>
+                <div class="input-group">
+                  <i class="fas fa-tags"></i>
+                  <select id="categoria_id" name="categoria_id" class="form-control" required>
+                    <option value="">Seleccione una categoría</option>
+                    <!-- Se llenará dinámicamente -->
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group half">
+                <label for="stock_inicial">Stock Inicial *</label>
+                <div class="input-group">
+                  <i class="fas fa-layer-group"></i>
+                  <input type="number" id="stock_inicial" name="stock_inicial" class="form-control" min="0" required>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="precio_compra">Precio de Compra *</label>
+                <div class="input-group">
+                  <i class="fas fa-money-bill-alt"></i>
+                  <input type="number" id="precio_compra" name="precio_compra" class="form-control" step="0.01" min="0" required>
+                </div>
+              </div>
+              
+              <div class="form-group half">
+                <label for="precio_venta">Precio de Venta *</label>
+                <div class="input-group">
+                  <i class="fas fa-tag"></i>
+                  <input type="number" id="precio_venta" name="precio_venta" class="form-control" step="0.01" min="0" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Imagen del producto</label>
+                <div class="dropzone" id="image-dropzone">
+                  <div class="dropzone-content">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Arrastra y suelta una imagen aquí o</p>
+                    <button type="button" class="secondary" id="select-image">Seleccionar archivo</button>
+                    <input type="file" id="image-input" accept="image/*" style="display: none;">
+                  </div>
+                  <div class="preview-container" style="display: none;">
+                    <img id="image-preview" src="" alt="Vista previa">
+                    <button type="button" class="btn-icon remove-image" id="remove-image">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group" id="activo-group">
+              <label for="activo">Estado</label>
+              <div class="input-group">
+                <i class="fas fa-toggle-on"></i>
+                <select id="activo" name="activo" class="form-control">
+                  <option value="true">Activo</option>
+                  <option value="false">Inactivo</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" id="btn-cancel" class="secondary">Cancelar</button>
+              <button type="submit" class="primary">Guardar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmación para eliminar -->
+    <div id="confirm-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Confirmar Eliminación</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>¿Está seguro que desea eliminar el producto <strong id="delete-product-name"></strong>?</p>
+          <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> Esta acción no se puede deshacer.</p>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-cancel-delete" class="secondary">Cancelar</button>
+            <button type="button" id="btn-confirm-delete" class="danger">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para importar/exportar -->
+    <div id="import-export-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Importar/Exportar Productos</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="export">Exportar</button>
+            <button class="tab-btn" data-tab="import">Importar</button>
+          </div>
+
+          <div class="tab-content active" id="export-tab">
+            <p>Descargue un listado completo de sus productos en formato CSV o Excel.</p>
+            <div class="form-actions">
+              <button type="button" id="btn-export-csv" class="secondary">
+                <i class="fas fa-file-csv"></i> Exportar CSV
+              </button>
+              <button type="button" id="btn-export-excel" class="primary">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-content" id="import-tab">
+            <p>Importe productos desde un archivo CSV o Excel. Descargue primero una plantilla para asegurar el formato correcto.</p>
+            
+            <div class="form-group">
+              <label>1. Descargue una plantilla:</label>
+              <div class="form-actions">
+                <button type="button" id="btn-template-csv" class="secondary">
+                  <i class="fas fa-download"></i> Plantilla CSV
+                </button>
+                <button type="button" id="btn-template-excel" class="secondary">
+                  <i class="fas fa-download"></i> Plantilla Excel
+                </button>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>2. Seleccione un archivo para importar:</label>
+              <div class="file-upload">
+                <input type="file" id="import-file" accept=".csv,.xlsx">
+                <label for="import-file" class="file-label">
+                  <i class="fas fa-file-upload"></i> 
+                  <span>Seleccionar archivo</span>
+                </label>
+                <span id="selected-file">No se ha seleccionado ningún archivo</span>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" id="btn-import" class="primary" disabled>
+                <i class="fas fa-file-import"></i> Importar
+              </button>
+            </div>
+            
+            <!-- Nueva sección para mostrar logs de importación -->
+            <div id="import-logs-container" class="import-logs-container" style="display: none;">
+              <div class="separator mt-4 mb-2">
+                <span>Registro de Importación</span>
+              </div>
+              
+              <div class="import-stats">
+                <div class="stat-item clickable" data-type="procesados">
+                  <span class="stat-label">Productos procesados:</span>
+                  <span class="stat-value" id="productos-procesados">0</span>
+                  <i class="fas fa-chevron-right stat-icon"></i>
+                </div>
+                <div class="stat-item clickable" data-type="creados">
+                  <span class="stat-label">Productos creados:</span>
+                  <span class="stat-value text-success" id="productos-creados">0</span>
+                  <i class="fas fa-chevron-right stat-icon"></i>
+                </div>
+                <div class="stat-item clickable" data-type="actualizados">
+                  <span class="stat-label">Productos actualizados:</span>
+                  <span class="stat-value text-warning" id="productos-actualizados">0</span>
+                  <i class="fas fa-chevron-right stat-icon"></i>
+                </div>
+                <div class="stat-item clickable" data-type="errores">
+                  <span class="stat-label">Errores:</span>
+                  <span class="stat-value text-danger" id="productos-errores">0</span>
+                  <i class="fas fa-chevron-right stat-icon"></i>
+                </div>
+              </div>
+              
+              <!-- Nueva sección para detalles de productos -->
+              <div id="import-details-container" class="import-details-container" style="display: none;">
+                <div class="details-header">
+                  <h4><i class="fas fa-list-ul"></i> <span id="detail-title">Detalles</span></h4>
+                  <button id="btn-close-details" class="btn-icon" title="Cerrar detalles">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div id="import-details" class="import-details"></div>
+              </div>
+              
+              <div class="log-container">
+                <div class="log-header">
+                  <h4><i class="fas fa-clipboard-list"></i> Detalles del proceso</h4>
+                  <button id="btn-clear-logs" class="btn-icon" title="Limpiar logs">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+                <div id="import-logs" class="import-logs"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para productos desactivados -->
+    <div id="inactive-products-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-archive"></i> Productos Desactivados</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Imagen</th>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Precio Compra</th>
+                  <th>Precio Venta</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inactive-products-list">
+                <tr>
+                  <td colspan="7" class="text-center">Cargando productos desactivados...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-close-inactive" class="secondary">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para ver historial de movimientos -->
+    <div id="historial-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Historial de Movimientos: <span id="producto-nombre"></span></h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Cantidad</th>
+                  <th>Stock Final</th>
+                  <th>Motivo</th>
+                  <th>Usuario</th>
+                </tr>
+              </thead>
+              <tbody id="movimientos-list">
+                <tr>
+                  <td colspan="6" class="text-center">Cargando movimientos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-close-historial" class="secondary">Cerrar</button>
+            <a href="/inventario/movimientos" class="primary">Ver Todos los Movimientos</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para ver historial de precios -->
+    <div id="historial-precios-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Historial de Precios: <span id="producto-nombre-precios"></span></h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-container historial-precios">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Precio Anterior</th>
+                  <th>Precio Nuevo</th>
+                  <th>Cambio %</th>
+                  <th>Motivo</th>
+                  <th>Usuario</th>
+                </tr>
+              </thead>
+              <tbody id="precios-list">
+                <tr>
+                  <td colspan="7" class="text-center">Cargando historial de precios...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-close-historial-precios" class="secondary">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para gestión de códigos de barras -->
+    <div id="codigos-barras-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Códigos de Barras: <span id="producto-nombre-barcode"></span></h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="codigo-barras-container">
+            <form id="codigo-barras-form" class="mb-4">
+              <div class="form-row">
+                <div class="form-group half">
+                  <label for="barcode-input">Código de barras</label>
+                  <div class="input-group">
+                    <i class="fas fa-barcode"></i>
+                    <input type="text" id="barcode-input" class="form-control" placeholder="Escanee o ingrese el código" required>
+                  </div>
+                </div>
+                
+                <div class="form-group half">
+                  <label for="barcode-tipo">Tipo</label>
+                  <div class="input-group">
+                    <i class="fas fa-tags"></i>
+                    <select id="barcode-tipo" class="form-control">
+                      <option value="EAN13">EAN-13</option>
+                      <option value="EAN8">EAN-8</option>
+                      <option value="CODE128">CODE-128</option>
+                      <option value="UPC">UPC</option>
+                      <option value="QR">QR Code</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <div class="checkbox-group">
+                  <input type="checkbox" id="barcode-principal" class="form-control">
+                  <label for="barcode-principal">Establecer como código principal</label>
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button type="submit" class="primary">Agregar Código</button>
+                <button type="button" id="btn-scan-barcode" class="secondary">
+                  <i class="fas fa-camera"></i> Escanear con cámara
+                </button>
+              </div>
+            </form>
+            
+            <div class="separator"><span>Códigos Registrados</span></div>
+            
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Tipo</th>
+                    <th>Principal</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="barcode-list">
+                  <tr>
+                    <td colspan="4" class="text-center">Cargando códigos de barras...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="form-actions mt-3">
+            <button type="button" id="btn-close-codigos-barras" class="secondary">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para búsqueda de productos por código de barras -->
+    <div id="barcode-search-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-barcode"></i> Buscar por Código de Barras</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Escanee o ingrese un código de barras para buscar un producto.</p>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="search-barcode-input">Código de barras</label>
+              <div class="input-group">
+                <i class="fas fa-barcode"></i>
+                <input type="text" id="search-barcode-input" class="form-control" placeholder="Escanee o ingrese un código de barras">
+                <button id="search-barcode-btn" class="btn-addon"><i class="fas fa-search"></i></button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-search-scan" class="secondary">
+              <i class="fas fa-camera"></i> Escanear con cámara
+            </button>
+            <button type="button" id="btn-close-barcode-search" class="secondary">Cerrar</button>
+          </div>
+          
+          <!-- Contenedor para el escáner de cámara -->
+          <div id="scanner-container" style="display:none;">
+            <div class="scanner-header">
+              <span class="scanner-message">Escaneando...</span>
+              <button id="close-scanner" class="btn-icon"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="scanner-preview"></div>
+          </div>
+          
+          <div class="separator"><span>Resultado</span></div>
+          
+          <div id="barcode-search-results" class="search-results">
+            <div class="empty-result">
+              <i class="fas fa-search"></i>
+              <p>Los resultados de la búsqueda aparecerán aquí</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para detalle de producto (búsqueda predictiva) -->
+    <div id="producto-detalle-modal" class="modal modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-box"></i> Detalle del Producto</h2>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="producto-detalle-contenido">
+            <div class="loading-result text-center">
+              <i class="fas fa-spinner fa-spin fa-2x"></i>
+              <p>Cargando información del producto...</p>
+            </div>
+          </div>
+          
+          <div class="form-actions mt-3">
+            <button type="button" id="btn-edit-from-detail" class="secondary">
+              <i class="fas fa-edit"></i> Editar Producto
+            </button>
+            <button type="button" id="btn-close-detail" class="secondary">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay para modales -->
+    <div class="modal-overlay"></div>
+
+    <footer>
+      <div class="container">
+        <div class="footer-content">
+          <div>
+            <div class="logo">
+              <i class="fas fa-store-alt"></i>
+              <span>LA UNIKA</span>
+            </div>
+            <p>Sistema de gestión de inventarios y ventas</p>
+          </div>
+          <div class="footer-links">
+            <a href="/help">Ayuda</a>
+            <a href="/about">Acerca de</a>
+            <a href="/contact">Contacto</a>
+            <a href="/privacy">Privacidad</a>
+          </div>
+        </div>
+        <div class="copyright">
+          &copy; 2025 La UNIKA. Todos los derechos reservados.
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/inventario/productos.js"></script>
+    <script src="../js/utils/stock-notifications.js"></script>
+    
+    <!-- Script para el control del sidebar renovado -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Elementos del DOM
+        const toggleSidebar = document.getElementById('toggle-sidebar');
+        const closeSidebar = document.getElementById('close-sidebar');
+        const sidebar = document.getElementById('sidebar-wrapper');
+        const mainContent = document.getElementById('main-content');
+        
+        // Función para colapsar o expandir el sidebar
+        function toggleSidebarState() {
+          document.body.classList.toggle('sidebar-expanded');
+          document.body.classList.toggle('sidebar-collapsed');
+          
+          // Guardar preferencia del usuario
+          const sidebarState = document.body.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded';
+          localStorage.setItem('sidebarState', sidebarState);
+        }
+        
+        // Evento para el botón de toggle
+        if (toggleSidebar) {
+          toggleSidebar.addEventListener('click', function() {
+            toggleSidebarState();
+          });
+        }
+        
+        // Evento para cerrar el sidebar en dispositivos móviles
+        if (closeSidebar) {
+          closeSidebar.addEventListener('click', function() {
+            document.body.classList.remove('sidebar-expanded');
+            document.body.classList.add('sidebar-collapsed');
+            localStorage.setItem('sidebarState', 'collapsed');
+          });
+        }
+        
+        // Inicializar el estado del sidebar según la preferencia guardada o por defecto
+        function initSidebar() {
+          const savedState = localStorage.getItem('sidebarState');
+          
+          if (savedState === 'collapsed') {
+            document.body.classList.add('sidebar-collapsed');
+            document.body.classList.remove('sidebar-expanded');
+          } else {
+            // Por defecto en pantallas grandes se muestra el sidebar
+            if (window.innerWidth >= 992) {
+              document.body.classList.remove('sidebar-collapsed');
+            } else {
+              // En pantallas pequeñas se oculta por defecto
+              document.body.classList.add('sidebar-collapsed');
+            }
+          }
+        }
+        
+        // Cambiar el estado del sidebar cuando cambia el tamaño de la ventana
+        window.addEventListener('resize', function() {
+          if (window.innerWidth < 992) {
+            document.body.classList.add('sidebar-collapsed');
+            document.body.classList.remove('sidebar-expanded');
+          }
+        });
+        
+        // Inicializar el sidebar
+        initSidebar();
+        
+        // Implementar comportamiento del logout
+        const logoutBtn = document.getElementById('logout');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Está seguro que desea cerrar sesión?')) {
+              // Eliminar token de sesión
+              localStorage.removeItem('token');
+              localStorage.removeItem('usuario');
+              // Redirigir al login
+              window.location.href = '/login';
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

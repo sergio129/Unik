@@ -1,0 +1,219 @@
+// Controlador para la gestión de categorías
+const Categoria = require('../models/categoria.model');
+const Producto = require('../models/producto.model');
+
+// Obtener todas las categorías
+exports.getAllCategorias = async (req, res) => {
+  try {
+    const categorias = await Categoria.findAll({
+      order: [['nombre', 'ASC']]
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: categorias
+    });
+  } catch (error) {
+    console.error('Error al obtener categorías:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener la lista de categorías',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Obtener una categoría por ID
+exports.getCategoriaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const categoria = await Categoria.findByPk(id);
+    
+    if (!categoria) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: categoria
+    });
+  } catch (error) {
+    console.error('Error al obtener categoría:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener información de la categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Crear una nueva categoría
+exports.createCategoria = async (req, res) => {
+  try {
+    const { nombre, descripcion } = req.body;
+    
+    // Validación básica
+    if (!nombre) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre de la categoría es obligatorio'
+      });
+    }
+    
+    // Verificar si ya existe una categoría con el mismo nombre
+    const categoriaExistente = await Categoria.findOne({ where: { nombre } });
+    if (categoriaExistente) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ya existe una categoría con ese nombre'
+      });
+    }
+    
+    // Crear la categoría
+    const nuevaCategoria = await Categoria.create({
+      nombre,
+      descripcion,
+      activo: true
+    });
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Categoría creada exitosamente',
+      data: nuevaCategoria
+    });
+  } catch (error) {
+    console.error('Error al crear categoría:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al crear la categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Actualizar una categoría
+exports.updateCategoria = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion, activo } = req.body;
+    
+    // Verificar si la categoría existe
+    const categoria = await Categoria.findByPk(id);
+    if (!categoria) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+    
+    // Verificar si ya existe otra categoría con el mismo nombre
+    if (nombre && nombre !== categoria.nombre) {
+      const categoriaExistente = await Categoria.findOne({ where: { nombre } });
+      if (categoriaExistente) {
+        return res.status(400).json({
+          success: false,
+          message: 'Ya existe otra categoría con ese nombre'
+        });
+      }
+    }
+    
+    // Actualizar la categoría
+    const categoriaActualizada = await categoria.update({
+      nombre: nombre || categoria.nombre,
+      descripcion: descripcion !== undefined ? descripcion : categoria.descripcion,
+      activo: activo !== undefined ? activo : categoria.activo
+    });
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Categoría actualizada exitosamente',
+      data: categoriaActualizada
+    });
+  } catch (error) {
+    console.error('Error al actualizar categoría:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar la categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Eliminar una categoría
+exports.deleteCategoria = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verificar si la categoría existe
+    const categoria = await Categoria.findByPk(id);
+    if (!categoria) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+    
+    // Verificar si hay productos asociados a esta categoría
+    const productosAsociados = await Producto.count({ where: { categoria_id: id } });
+    if (productosAsociados > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede eliminar la categoría porque tiene ${productosAsociados} productos asociados. Considere desactivarla en su lugar.`
+      });
+    }
+    
+    // Eliminar la categoría
+    await categoria.destroy();
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Categoría eliminada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al eliminar categoría:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al eliminar la categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Obtener productos por categoría
+exports.getProductosByCategoria = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verificar si la categoría existe
+    const categoria = await Categoria.findByPk(id);
+    
+    if (!categoria) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada'
+      });
+    }
+    
+    // Obtener los productos de esta categoría
+    const productos = await Producto.findAll({
+      where: { categoria_id: id },
+      order: [['nombre', 'ASC']]
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: productos
+    });
+  } catch (error) {
+    console.error('Error al obtener productos por categoría:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener productos por categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La UNIKA - Inventario</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <!-- Agregamos Toastify para notificaciones toast -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Añadimos Chart.js para los gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Añadimos DateRangePicker para filtros de fecha -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <style>
+    .report-section {
+      margin-top: 2rem;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 2rem;
+    }
+    .dashboard-reports {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .report-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .report-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tab-navigation {
+      display: flex;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #eee;
+    }
+    .tab-button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 500;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-button:hover {
+      color: #333;
+    }
+    .tab-button.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .top-products-list {
+      margin-top: 1rem;
+    }
+    .product-rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .product-rank-position {
+      font-weight: bold;
+      margin-right: 1rem;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #f0f0f0;
+    }
+    .product-rank-name {
+      flex: 1;
+    }
+    .product-rank-value {
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .top-3 .product-rank-position {
+      color: white;
+    }
+    .rank-1 .product-rank-position {
+      background: gold;
+    }
+    .rank-2 .product-rank-position {
+      background: silver;
+    }
+    .rank-3 .product-rank-position {
+      background: #cd7f32; /* bronce */
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .kpi-card {
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
+      color: var(--primary);
+    }
+    .kpi-label {
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .rotation-high {
+      color: #28a745;
+    }
+    .rotation-medium {
+      color: #ffc107;
+    }
+    .rotation-low {
+      color: #dc3545;
+    }
+    /* Estilos para las notificaciones toast */
+    .toastify {
+      padding: 12px 20px;
+      color: #ffffff;
+      font-size: 14px;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    }
+    .toast-success {
+      background: linear-gradient(135deg, #28a745, #218838);
+    }
+    .toast-error {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+    .toast-warning {
+      background: linear-gradient(135deg, #ffc107, #e0a800);
+      color: #212529;
+    }
+    .toast-info {
+      background: linear-gradient(135deg, #17a2b8, #138496);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">
+          <i class="fas fa-store-alt"></i>
+          <span>LA UNIKA</span>
+        </div>
+        <ul>
+          <li><a href="/dashboard"><i class="fas fa-home"></i> Inicio</a></li>
+          <li class="admin-only"><a href="/admin/usuarios"><i class="fas fa-users-cog"></i> Administrar Usuarios</a></li>
+          <li><a href="/inventario" class="active"><i class="fas fa-boxes"></i> Inventario</a></li>
+          <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+          <li><a href="/pedidos"><i class="fas fa-truck"></i> Pedidos</a></li>
+        </ul>
+        <div class="user-menu">
+          <span id="user-display"></span>
+          <button class="secondary"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="slide-up">
+        <h1>Gestión de Inventario</h1>
+        <p class="mb-4">Administra productos, categorías y movimientos del inventario.</p>
+        
+        <div class="dashboard">
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Productos</span>
+              <i class="fas fa-box text-primary"></i>
+            </div>
+            <div class="dashboard-card-value" id="total-productos">...</div>
+            <div class="dashboard-card-description">Productos registrados</div>
+            <a href="/inventario/productos" class="button mt-3">
+              <i class="fas fa-list"></i> Ver productos
+            </a>
+          </div>
+          
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Categorías</span>
+              <i class="fas fa-tags text-success"></i>
+            </div>
+            <div class="dashboard-card-value" id="total-categorias">...</div>
+            <div class="dashboard-card-description">Categorías de productos</div>
+            <a href="/inventario/categorias" class="button mt-3">
+              <i class="fas fa-folder"></i> Ver categorías
+            </a>
+          </div>
+          
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Movimientos</span>
+              <i class="fas fa-exchange-alt text-warning"></i>
+            </div>
+            <div class="dashboard-card-value" id="total-movimientos">...</div>
+            <div class="dashboard-card-description">Movimientos recientes</div>
+            <a href="/inventario/movimientos" class="button mt-3">
+              <i class="fas fa-history"></i> Ver movimientos
+            </a>
+          </div>
+          
+          <div class="dashboard-card fade-in">
+            <div class="dashboard-card-header">
+              <span class="dashboard-card-title">Bajo Stock</span>
+              <i class="fas fa-exclamation-triangle text-danger"></i>
+            </div>
+            <div class="dashboard-card-value" id="bajo-stock">...</div>
+            <div class="dashboard-card-description">Productos a reordenar</div>
+            <a href="/inventario/productos#bajo-stock" class="button mt-3">
+              <i class="fas fa-shopping-basket"></i> Gestionar
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Nueva sección de reportes y análisis -->
+      <section class="mt-5 report-section slide-up">
+        <div class="card">
+          <div class="card-header">
+            <h2>Reportes y Análisis</h2>
+            <div class="filter-bar">
+              <div class="filter-group">
+                <label for="date-range">Periodo:</label>
+                <input type="text" id="date-range" class="form-control" style="width: 220px;">
+              </div>
+              <div class="filter-group">
+                <label for="category-filter">Categoría:</label>
+                <select id="category-filter" class="form-control">
+                  <option value="all">Todas</option>
+                  <!-- Se cargará dinámicamente -->
+                </select>
+              </div>
+              <button id="apply-filters" class="button primary">Aplicar</button>
+              <button id="reset-filters" class="button secondary">Restablecer</button>
+              <div class="export-options" style="margin-left: auto;">
+                <button id="export-pdf" class="button" title="Exportar a PDF">
+                  <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button id="export-excel" class="button" title="Exportar a Excel">
+                  <i class="fas fa-file-excel"></i> Excel
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="tab-navigation">
+              <button class="tab-button active" data-tab="tab-stock-trends">
+                <i class="fas fa-chart-line"></i> Tendencias de Stock
+              </button>
+              <button class="tab-button" data-tab="tab-top-products">
+                <i class="fas fa-trophy"></i> Productos Más Vendidos
+              </button>
+              <button class="tab-button" data-tab="tab-rotation">
+                <i class="fas fa-sync"></i> Rotación de Inventario
+              </button>
+              <button class="tab-button" data-tab="tab-projection">
+                <i class="fas fa-chart-area"></i> Proyecciones
+              </button>
+            </div>
+
+            <!-- Tab: Tendencias de Stock -->
+            <div class="tab-content active" id="tab-stock-trends">
+              <h3>Tendencias de Stock</h3>
+              <p>Visualiza la evolución del stock de los productos más relevantes.</p>
+              <div class="chart-container">
+                <canvas id="stock-trend-chart"></canvas>
+              </div>
+              <div class="kpi-grid">
+                <div class="kpi-card">
+                  <div class="kpi-label">Stock Promedio</div>
+                  <div class="kpi-value" id="kpi-avg-stock">...</div>
+                  <div class="kpi-description">Unidades</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Variación</div>
+                  <div class="kpi-value" id="kpi-stock-variation">...</div>
+                  <div class="kpi-description">vs. mes anterior</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Stock Total</div>
+                  <div class="kpi-value" id="kpi-total-stock">...</div>
+                  <div class="kpi-description">Unidades</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-label">Productos Críticos</div>
+                  <div class="kpi-value" id="kpi-critical-stock">...</div>
+                  <div class="kpi-description">Requieren atención</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Productos Más Vendidos -->
+            <div class="tab-content" id="tab-top-products">
+              <h3>Productos Más Vendidos</h3>
+              <div class="row">
+                <div class="col-md-6">
+                  <h4>Top 10 Productos Más Vendidos</h4>
+                  <div class="chart-container">
+                    <canvas id="top-products-chart"></canvas>
+                  </div>
+                  <div class="top-products-list" id="top-selling-products">
+                    <!-- Se cargará dinámicamente -->
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <h4>Productos Menos Vendidos</h4>
+                  <div class="chart-container">
+                    <canvas id="bottom-products-chart"></canvas>
+                  </div>
+                  <div class="top-products-list" id="bottom-selling-products">
+                    <!-- Se cargará dinámicamente -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Rotación de Inventario -->
+            <div class="tab-content" id="tab-rotation">
+              <h3>Análisis de Rotación de Inventario</h3>
+              <p>Examina cómo se mueve tu inventario y qué productos tienen mejor rotación.</p>
+              <div class="chart-container">
+                <canvas id="rotation-chart"></canvas>
+              </div>
+              <div class="dashboard-reports">
+                <div class="report-card">
+                  <h4>Productos de Alta Rotación</h4>
+                  <div class="product-list" id="high-rotation-products">
+                    <!-- Se cargará dinámicamente -->
+                  </div>
+                </div>
+                <div class="report-card">
+                  <h4>Productos de Baja Rotación</h4>
+                  <div class="product-list" id="low-rotation-products">
+                    <!-- Se cargará dinámicamente -->
+                  </div>
+                </div>
+                <div class="report-card">
+                  <h4>Índice de Rotación por Categoría</h4>
+                  <div class="chart-container">
+                    <canvas id="category-rotation-chart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab: Proyecciones -->
+            <div class="tab-content" id="tab-projection">
+              <h3>Proyecciones de Stock</h3>
+              <p>Previsiones de stock basadas en el historial de ventas y movimientos.</p>
+              <div class="chart-container">
+                <canvas id="projection-chart"></canvas>
+              </div>
+              <div class="dashboard-reports">
+                <div class="report-card">
+                  <h4>Productos con Riesgo de Desabastecimiento</h4>
+                  <div id="stockout-risk">
+                    <!-- Se cargará dinámicamente -->
+                  </div>
+                </div>
+                <div class="report-card">
+                  <h4>Pronóstico de Necesidad de Compra</h4>
+                  <div id="purchase-forecast">
+                    <!-- Se cargará dinámicamente -->
+                  </div>
+                </div>
+                <div class="report-card">
+                  <h4>Tendencias por Temporada</h4>
+                  <div class="chart-container">
+                    <canvas id="seasonal-chart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-5">
+        <div class="card slide-up">
+          <div class="card-header">
+            <h2>Últimos Movimientos de Inventario</h2>
+            <a href="/inventario/movimientos" class="secondary">Ver todos</a>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Producto</th>
+                  <th>Cantidad</th>
+                  <th>Usuario</th>
+                </tr>
+              </thead>
+              <tbody id="recent-movements">
+                <!-- Aquí se cargarán los movimientos desde la API -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div>
+          <div class="logo">
+            <i class="fas fa-store-alt"></i>
+            <span>LA UNIKA</span>
+          </div>
+          <p>Sistema de gestión de inventarios y ventas</p>
+        </div>
+        <div class="footer-links">
+          <a href="/help">Ayuda</a>
+          <a href="/about">Acerca de</a>
+          <a href="/contact">Contacto</a>
+          <a href="/privacy">Privacidad</a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 La UNIKA. Todos los derechos reservados.
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/inventario/inventario.js"></script>
+  <script src="../js/inventario/reportes.js"></script>
+</body>
+</html>

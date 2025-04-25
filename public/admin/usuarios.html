@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La UNIKA - Administración de Usuarios</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">
+          <i class="fas fa-store-alt"></i>
+          <span>LA UNIKA</span>
+        </div>
+        <ul>
+          <li><a href="/dashboard"><i class="fas fa-home"></i> Inicio</a></li>
+          <li><a href="/admin/usuarios" class="active"><i class="fas fa-users-cog"></i> Usuarios</a></li>
+          <li><a href="/inventario"><i class="fas fa-boxes"></i> Inventario</a></li>
+          <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+          <li><a href="/pedidos"><i class="fas fa-truck"></i> Pedidos</a></li>
+        </ul>
+        <div class="user-menu">
+          <span id="user-display"></span>
+          <button class="secondary" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="admin-header slide-up">
+        <h1>
+          <i class="fas fa-users-cog"></i> Administración de Usuarios
+        </h1>
+        <p class="mb-4">Gestione los usuarios del sistema, crear nuevos usuarios y asignar roles.</p>
+        
+        <div class="admin-actions">
+          <button class="primary" id="btn-new-user">
+            <i class="fas fa-user-plus"></i> Nuevo Usuario
+          </button>
+          <div class="search-container">
+            <input type="text" id="search-users" placeholder="Buscar usuarios..." class="form-control">
+            <i class="fas fa-search"></i>
+          </div>
+          <div class="filter-container">
+            <select id="filter-role" class="form-control">
+              <option value="all">Todos los roles</option>
+              <option value="admin">Administradores</option>
+              <option value="vendedor">Vendedores</option>
+              <option value="inventario">Inventario</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-4">
+        <div class="card slide-up">
+          <div class="table-container">
+            <table id="users-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuario</th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Último Acceso</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="users-list">
+                <!-- Los usuarios se cargarán aquí desde la API -->
+                <tr>
+                  <td colspan="7" class="text-center">Cargando usuarios...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal para crear/editar usuario -->
+  <div class="modal" id="user-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Nuevo Usuario</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="user-form">
+          <input type="hidden" id="user-id">
+          
+          <div class="form-group">
+            <label for="username">Usuario:</label>
+            <div class="input-group">
+              <input type="text" id="username" name="username" class="form-control" required>
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
+          
+          <div class="form-group password-group">
+            <label for="password">Contraseña:</label>
+            <div class="input-group">
+              <input type="password" id="password" name="password" class="form-control">
+              <i class="fas fa-lock"></i>
+              <button type="button" class="toggle-password" title="Mostrar/ocultar contraseña">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+            <small class="edit-mode-text">Dejar en blanco para mantener la contraseña actual</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="nombre_completo">Nombre Completo:</label>
+            <div class="input-group">
+              <input type="text" id="nombre_completo" name="nombre_completo" class="form-control">
+              <i class="fas fa-id-card"></i>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <div class="input-group">
+              <input type="email" id="email" name="email" class="form-control">
+              <i class="fas fa-envelope"></i>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="rol">Rol:</label>
+            <div class="input-group">
+              <select id="rol" name="rol" class="form-control" required>
+                <option value="vendedor">Vendedor</option>
+                <option value="admin">Administrador</option>
+                <option value="inventario">Inventario</option>
+              </select>
+              <i class="fas fa-user-tag"></i>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="secondary" id="btn-cancel">Cancelar</button>
+            <button type="submit" class="primary" id="btn-save">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para eliminar usuario -->
+  <div class="modal" id="confirm-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Confirmar Eliminación</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>¿Está seguro que desea eliminar al usuario <strong id="delete-user-name"></strong>?</p>
+        <p class="warning-text">Esta acción no se puede deshacer.</p>
+        
+        <div class="form-actions">
+          <button type="button" class="secondary" id="btn-cancel-delete">Cancelar</button>
+          <button type="button" class="danger" id="btn-confirm-delete">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay para los modales -->
+  <div class="modal-overlay"></div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div>
+          <div class="logo">
+            <i class="fas fa-store-alt"></i>
+            <span>LA UNIKA</span>
+          </div>
+          <p>Sistema de gestión de inventarios y ventas</p>
+        </div>
+        <div class="footer-links">
+          <a href="/help">Ayuda</a>
+          <a href="/about">Acerca de</a>
+          <a href="/contact">Contacto</a>
+          <a href="/privacy">Privacidad</a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 La UNIKA. Todos los derechos reservados.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../js/dashboard.js"></script>
+  <script src="../js/admin/usuarios.js"></script>
+</body>
+</html>

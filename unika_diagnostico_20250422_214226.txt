@@ -1,0 +1,245 @@
+Fecha y Hora: 22/04/2025 21:42:26,67 
+ 
+=== Versiones de Docker === 
+failed to get console mode for stdout: The handle is invalid.
+Docker version 25.0.2, build 29cf629
+failed to get console mode for stdout: The handle is invalid.
+Docker Compose version v2.24.3-desktop.1
+ 
+=== Estado de Contenedores === 
+failed to get console mode for stdout: The handle is invalid.
+CONTAINER ID   IMAGE       COMMAND                  CREATED              STATUS                        PORTS                               NAMES
+1a92456d5108   unika-app   "/docker-entrypoint.…"   About a minute ago   Up About a minute             0.0.0.0:3000->3000/tcp              unika-app
+5998d5220898   mysql:8.0   "docker-entrypoint.s…"   About a minute ago   Up About a minute (healthy)   33060/tcp, 0.0.0.0:3307->3306/tcp   unika-db
+ 
+=== Información de Red === 
+failed to get console mode for stdout: The handle is invalid.
+NETWORK ID     NAME                        DRIVER    SCOPE
+96bc4448ca7c   bridge                      bridge    local
+4ff46162408a   diseoweb_default            bridge    local
+d8051261c2d2   host                        host      local
+c5959bd94703   modeloweb_gescoop_network   bridge    local
+c76d3bca4b25   none                        null      local
+660d62f509cd   unika-network               bridge    local
+db657faf0431   unika_unika-network         bridge    local
+[
+    {
+        "Name": "unika-network",
+        "Id": "660d62f509cddc44885b71554e128f80323f30e281bee804a4998f7f38b073de",
+        "Created": "2025-04-22T23:45:22.682618891Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.23.0.0/16",
+                    "Gateway": "172.23.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {},
+        "Options": {},
+        "Labels": {}
+    }
+]
+ 
+=== Puertos en uso === 
+ 
+=== Últimas entradas del log de la aplicación === 
+ 
+=== Logs de contenedor DB === 
+2025-04-23 02:41:11+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.42-1.el9 started.
+2025-04-23 02:41:11+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2025-04-23 02:41:11+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.42-1.el9 started.
+'/var/lib/mysql/mysql.sock' -> '/var/run/mysqld/mysqld.sock'
+ 
+=== Logs de contenedor APP === 
+⏳ Intentando conexión a MySQL... intento 16 de 30
+⏳ Intentando conexión a MySQL... intento 17 de 30
+⏳ Intentando conexión a MySQL... intento 18 de 30
+⏳ Intentando conexión a MySQL... intento 19 de 30
+⏳ Intentando conexión a MySQL... intento 20 de 30
+⏳ Intentando conexión a MySQL... intento 21 de 30
+⏳ Intentando conexión a MySQL... intento 22 de 30
+⏳ Intentando conexión a MySQL... intento 23 de 30
+⏳ Intentando conexión a MySQL... intento 24 de 30
+⏳ Intentando conexión a MySQL... intento 25 de 30
+⏳ Intentando conexión a MySQL... intento 26 de 30
+⏳ Intentando conexión a MySQL... intento 27 de 30
+⏳ Intentando conexión a MySQL... intento 28 de 30
+⏳ Intentando conexión a MySQL... intento 29 de 30
+⚠️ No se pudo verificar la conexión MySQL después de 30 intentos
+⚠️ Continuando de todos modos ya que docker-wait verificó que el servicio está activo
+🔍 Verificando si la base de datos 'unika_db' existe...
+⚠️ No se pudo verificar la base de datos. Continuando de todos modos.
+🔄 Ejecutando migraciones de la base de datos...
+
+> unika@1.0.0 migrate
+> node src/migrations-cli.js
+
+⚠️ Error al ejecutar migraciones automáticamente
+⚠️ Continuando con el inicio de la aplicación de todos modos
+🚀 Iniciando la aplicación Unika...
+
+> unika@1.0.0 start
+> node src/index.js
+
+Modo de sincronización desactivado, solo comprobando conexión...
+Conexión a la base de datos establecida correctamente.
+Ya existe al menos un usuario administrador en el sistema
+Servidor ejecutándose en el puerto 3000
+Accede a la aplicación en: http://localhost:3000
+ 
+=== Información adicional === 
+Docker-compose.yml: 
+version: '3.8'
+
+services:
+  # Servicio de base de datos MySQL
+  db:
+    container_name: unika-db
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=unika_db
+      - MYSQL_USER=unika_user
+      - MYSQL_PASSWORD=unika_password
+      - MYSQL_ROOT_HOST=%
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=caching_sha2_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb_buffer_pool_size=32M --max_allowed_packet=16M
+    restart: unless-stopped
+    networks:
+      - unika-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    cap_add:
+      - SYS_NICE  # Mejorar rendimiento de MySQL
+
+  # Servicio de la aplicación Node.js
+  app:
+    container_name: unika-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=unika_user
+      - DB_PASSWORD=unika_password
+      - DB_NAME=unika_db
+      - DB_PORT=3306
+      - PORT=3000
+      - JWT_SECRET=unika_secret_key_for_docker_environment
+      - JWT_EXPIRES_IN=24h
+      - WAIT_HOSTS=db:3306
+      - WAIT_HOSTS_TIMEOUT=300
+      - WAIT_SLEEP_INTERVAL=5
+      - WAIT_HOST_CONNECT_TIMEOUT=30
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - unika-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  unika-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+volumes:
+  mysql_data:
+    driver: local 
+Docker-entrypoint.sh: 
+#!/bin/bash
+
+echo "🔄 Verificando variables de entorno esenciales..."
+if [ -z "$DB_HOST" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_NAME" ]; then
+  echo "❌ ERROR: Variables de entorno necesarias no configuradas"
+  echo "DB_HOST=${DB_HOST:-no configurado}"
+  echo "DB_USER=${DB_USER:-no configurado}"
+  echo "DB_NAME=${DB_NAME:-no configurado}"
+  echo "DB_PASSWORD=[OCULTO]"
+  exit 1
+fi
+echo "✅ Variables de entorno verificadas correctamente"
+
+# Usar docker-wait para esperar a que MySQL esté disponible
+echo "🔄 Esperando a que los servicios dependientes estén disponibles..."
+/wait
+echo "✅ Servicios dependientes disponibles"
+
+# Función para verificar conexión a MySQL usando herramientas específicas
+check_mysql_connection() {
+  # Intentar la conexión con diferentes métodos
+  mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" "$DB_NAME" >/dev/null 2>&1
+}
+
+# Verificar si podemos conectarnos a la base de datos
+echo "🔄 Verificando conectividad con MySQL..."
+MAX_TRIES=30
+CURRENT_TRY=0
+
+while ! check_mysql_connection; do
+  CURRENT_TRY=$((CURRENT_TRY+1))
+  if [ $CURRENT_TRY -ge $MAX_TRIES ]; then
+    echo "⚠️ No se pudo verificar la conexión MySQL después de $MAX_TRIES intentos"
+    echo "⚠️ Continuando de todos modos ya que docker-wait verificó que el servicio está activo"
+    break
+  fi
+  
+  echo "⏳ Intentando conexión a MySQL... intento $CURRENT_TRY de $MAX_TRIES"
+  sleep 2
+done
+
+if [ $CURRENT_TRY -lt $MAX_TRIES ]; then
+  echo "✅ Conexión a MySQL verificada correctamente"
+fi
+
+# Verificar si la base de datos existe
+echo "🔍 Verificando si la base de datos '$DB_NAME' existe..."
+if mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" -e "USE $DB_NAME" >/dev/null 2>&1; then
+  echo "✅ Base de datos '$DB_NAME' verificada"
+else
+  echo "⚠️ No se pudo verificar la base de datos. Continuando de todos modos."
+fi
+
+# Aplicar migraciones con manejo de errores
+echo "🔄 Ejecutando migraciones de la base de datos..."
+NODE_ENV=production npm run migrate || {
+  echo "⚠️ Error al ejecutar migraciones automáticamente"
+  echo "⚠️ Continuando con el inicio de la aplicación de todos modos"
+}
+
+# Iniciar la aplicación
+echo "🚀 Iniciando la aplicación Unika..."
+npm start

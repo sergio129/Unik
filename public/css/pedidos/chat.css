@@ -1,0 +1,234 @@
+/**
+ * Estilos para el componente de chat en la sección de pedidos
+ */
+
+/* Contenedor principal del chat */
+.chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+/* Chat oculto */
+.chat-container.hidden {
+    transform: translateY(120%);
+    opacity: 0;
+}
+
+/* Encabezado del chat */
+.chat-header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 10px 15px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chat-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+    font-size: 13px;
+}
+
+.chat-info p {
+    margin: 0;
+}
+
+/* Contenedor de mensajes */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mensaje individual */
+.chat-message {
+    margin-bottom: 15px;
+    max-width: 80%;
+    display: flex;
+}
+
+/* Mensaje del proveedor */
+.chat-message.proveedor {
+    align-self: flex-start;
+}
+
+/* Mensaje del sistema/usuario */
+.chat-message.sistema {
+    align-self: flex-end;
+}
+
+/* Contenido del mensaje */
+.message-content {
+    padding: 10px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.chat-message.proveedor .message-content {
+    background-color: #e9e9eb;
+    color: #333;
+}
+
+.chat-message.sistema .message-content {
+    background-color: #0b93f6;
+    color: white;
+}
+
+/* Mensaje en texto */
+.message-content p {
+    margin: 0 0 5px 0;
+    word-wrap: break-word;
+}
+
+/* Hora del mensaje */
+.message-time {
+    display: block;
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+.chat-message.proveedor .message-time {
+    text-align: left;
+}
+
+.chat-message.sistema .message-time {
+    text-align: right;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Usuario que envió el mensaje */
+.message-user {
+    display: block;
+    font-size: 10px;
+    font-style: italic;
+    margin-top: 3px;
+}
+
+/* Formulario de envío de mensajes */
+.chat-form {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    background-color: white;
+}
+
+.chat-form input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    outline: none;
+}
+
+.chat-form button {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.chat-form button:hover {
+    background-color: #1a2530;
+}
+
+.chat-form button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+/* Botón para mostrar/ocultar chat */
+.chat-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    font-size: 24px;
+    transition: all 0.3s ease;
+}
+
+.chat-toggle-btn:hover {
+    background-color: #1a2530;
+    transform: scale(1.05);
+}
+
+/* Indicador de notificación */
+.chat-toggle-btn.has-notification::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    background-color: #e74c3c;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+/* Estado de carga y errores */
+.loading-messages, .error-message, .no-messages {
+    padding: 20px;
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.error-message {
+    color: #e74c3c;
+}
+
+/* Ajustes responsive */
+@media (max-width: 576px) {
+    .chat-container {
+        width: calc(100% - 20px);
+        right: 10px;
+        bottom: 10px;
+        height: 60vh;
+    }
+    
+    .chat-toggle-btn {
+        right: 10px;
+        bottom: 10px;
+    }
+}

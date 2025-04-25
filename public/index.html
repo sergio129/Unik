@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La UNIKA - Sistema de Gestión</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+        }
+        .redirect-container {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4285f4;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-container">
+        <div class="spinner"></div>
+        <p>Redireccionando al inicio de sesión...</p>
+    </div>
+    
+    <script>
+        // Verificar si hay un token de sesión activo
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        
+        setTimeout(() => {
+            if (token && user) {
+                // Si hay sesión, redirigir al dashboard
+                try {
+                    const userData = JSON.parse(user);
+                    // Redireccionar al dashboard sin extensión .html
+                    window.location.href = '/dashboard';
+                } catch(e) {
+                    window.location.href = '/login';
+                }
+            } else {
+                // Sin sesión, redirigir al login sin extensión .html
+                window.location.href = '/login';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

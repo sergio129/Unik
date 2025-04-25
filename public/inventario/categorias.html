@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La UNIKA - Gestión de Categorías</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo">
+          <i class="fas fa-store-alt"></i>
+          <span>LA UNIKA</span>
+        </div>
+        <ul>
+          <li><a href="/dashboard"><i class="fas fa-home"></i> Inicio</a></li>
+          <li class="admin-only"><a href="/admin/usuarios"><i class="fas fa-users-cog"></i> Administrar Usuarios</a></li>
+          <li>
+            <a href="/inventario" class="active"><i class="fas fa-boxes"></i> Inventario</a>
+            <ul class="submenu">
+              <li><a href="/inventario/categorias" class="active">Categorías</a></li>
+              <li><a href="/inventario/productos">Productos</a></li>
+              <li><a href="/inventario/movimientos">Movimientos</a></li>
+            </ul>
+          </li>
+          <li><a href="/ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+          <li><a href="/pedidos"><i class="fas fa-truck"></i> Pedidos</a></li>
+        </ul>
+        <div class="user-menu">
+          <span id="user-display"></span>
+          <button id="btn-logout" class="secondary"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="admin-header">
+        <h1><i class="fas fa-tags"></i> Gestión de Categorías</h1>
+        <p>Administre las categorías de productos de su inventario</p>
+      </section>
+
+      <section class="admin-actions">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-categorias" placeholder="Buscar categoría...">
+        </div>
+        <div>
+          <button id="btn-new-category" class="primary"><i class="fas fa-plus"></i> Nueva Categoría</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="table-container">
+          <table class="data-table" id="categorias-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Productos</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="categorias-list">
+              <tr>
+                <td colspan="6" class="text-center">Cargando categorías...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal para crear/editar categoría -->
+  <div id="categoria-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Nueva Categoría</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="categoria-form">
+          <input type="hidden" id="categoria-id">
+          
+          <div class="form-group">
+            <label for="nombre">Nombre *</label>
+            <div class="input-group">
+              <i class="fas fa-tag"></i>
+              <input type="text" id="nombre" class="form-control" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="descripcion">Descripción</label>
+            <div class="input-group">
+              <i class="fas fa-align-left"></i>
+              <textarea id="descripcion" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+          
+          <div class="form-group" id="activo-group">
+            <label for="activo">Estado</label>
+            <div class="input-group">
+              <i class="fas fa-toggle-on"></i>
+              <select id="activo" class="form-control">
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="btn-cancel" class="secondary">Cancelar</button>
+            <button type="submit" class="primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para eliminar -->
+  <div id="confirm-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Confirmar Eliminación</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>¿Está seguro que desea eliminar la categoría <strong id="delete-category-name"></strong>?</p>
+        <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> Esta acción no se puede deshacer.</p>
+        
+        <div class="form-actions">
+          <button type="button" id="btn-cancel-delete" class="secondary">Cancelar</button>
+          <button type="button" id="btn-confirm-delete" class="danger">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para vista de productos -->
+  <div id="productos-categoria-modal" class="modal">
+    <div class="modal-content" style="width: 150%; max-width: 700px;">
+      <div class="modal-header">
+        <h2>Productos en categoría: <span id="categoria-nombre"></span></h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">Código</th>
+                <th style="width: 45%;">Nombre</th>
+                <th style="width: 15%; text-align: center;">Stock</th>
+                <th style="width: 25%; text-align: right;">Precio</th>
+              </tr>
+            </thead>
+            <tbody id="productos-categoria-list">
+              <tr>
+                <td colspan="4" class="text-center">Cargando productos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" id="btn-close-productos" class="secondary">Cerrar</button>
+          <a href="/inventario/productos" class="primary">Ir a Productos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay para modales -->
+  <div class="modal-overlay"></div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div>
+          <div class="logo">
+            <i class="fas fa-store-alt"></i>
+            <span>LA UNIKA</span>
+          </div>
+          <p>Sistema de gestión de inventarios y ventas</p>
+        </div>
+        <div class="footer-links">
+          <a href="/help">Ayuda</a>
+          <a href="/about">Acerca de</a>
+          <a href="/contact">Contacto</a>
+          <a href="/privacy">Privacidad</a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 La UNIKA. Todos los derechos reservados.
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/inventario/categorias.js"></script>
+</body>
+</html>
