@@ -230,3 +230,57 @@ exports.activeSessions = async (req, res) => {
     });
   }
 };
+
+// Solicitar restablecimiento de contraseña
+exports.resetPasswordRequest = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Por favor, proporcione un correo electrónico'
+      });
+    }
+
+    // Buscar usuario por email
+    const usuario = await Usuario.findByEmail(email);
+    
+    // Por seguridad, siempre responder éxito aunque el usuario no exista
+    if (!usuario) {
+      return res.status(200).json({
+        success: true,
+        message: 'Si el correo existe en nuestra base de datos, recibirás un enlace para restablecer tu contraseña'
+      });
+    }
+
+    // Generar token de restablecimiento de contraseña (válido por 1 hora)
+    const resetToken = jwt.sign(
+      { id: usuario.id, action: 'password_reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // Guardar token en la base de datos asociado al usuario
+    await Usuario.saveResetToken(usuario.id, resetToken);
+
+    // Aquí normalmente enviarías un correo electrónico con el enlace de restablecimiento
+    // Por ahora, solo registramos en la consola
+    console.log(`Link de restablecimiento para ${email}: ${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Si el correo existe en nuestra base de datos, recibirás un enlace para restablecer tu contraseña',
+      // Solo en desarrollo, enviar el token en la respuesta
+      ...(process.env.NODE_ENV === 'development' && { resetToken })
+    });
+
+  } catch (error) {
+    console.error('Error en solicitud de restablecimiento:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error en el servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};

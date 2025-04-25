@@ -12,6 +12,9 @@ router.post('/login', authController.login);
 // Ruta para logout
 router.post('/logout', authMiddleware.verificarToken, authController.logout);
 
+// Ruta para solicitar restablecimiento de contraseña
+router.post('/reset-password-request', authController.resetPasswordRequest);
+
 // Ruta para verificar token
 router.get('/verificar-token', authMiddleware.verificarToken, (req, res) => {
     res.status(200).json({ 
