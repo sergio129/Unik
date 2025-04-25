@@ -12,6 +12,7 @@ const Usuario = require('../models/usuario.model');
 const MovimientoInventario = require('../models/movimiento.model');
 const Proveedor = require('../models/proveedor.model');
 const whatsappService = require('../services/whatsappService');
+const notificacionesService = require('../services/notificacionesService'); // Importamos el servicio de notificaciones
 
 /**
  * Obtiene todos los pedidos a proveedores con filtros opcionales
@@ -392,6 +393,34 @@ const crearPedido = async (req, res) => {
                 } : null
             };
         });
+
+        // Crear notificación para la creación del pedido (sistema de notificaciones avanzado)
+        try {
+            const proveedor = await Proveedor.findByPk(proveedor_id);
+            const nombreProveedor = proveedor ? proveedor.nombre : `Proveedor #${proveedor_id}`;
+
+            // Crear notificaciones para el nuevo pedido (todos los roles relevantes)
+            await notificacionesService.notificarCambioPedido(
+                {
+                    id: pedido.id,
+                    codigo: pedido.codigo,
+                    estado: pedido.estado,
+                    prioridad: pedido.prioridad,
+                    proveedor: { id: proveedor_id, nombre: nombreProveedor }
+                },
+                'creacion',
+                {
+                    mensaje: `Se ha creado un nuevo pedido a proveedor: ${nombreProveedor} (${codigoPedido})`,
+                    datos: {
+                        productos: productosParaNotificacion.slice(0, 3).map(p => p.nombre).join(', ') + 
+                                  (productosParaNotificacion.length > 3 ? ` y ${productosParaNotificacion.length - 3} más` : '')
+                    }
+                }
+            );
+        } catch (notifError) {
+            console.error('Error al crear notificaciones para el pedido:', notifError);
+            // No bloqueamos la respuesta por un error en las notificaciones
+        }
         
         return res.status(201).json({
             success: true,
@@ -730,6 +759,65 @@ const cambiarEstadoPedido = async (req, res) => {
                 } : null
             };
         });
+        
+        // Enviar notificaciones del cambio de estado del pedido (sistema de notificaciones avanzado)
+        try {
+            // Obtener proveedor
+            const proveedor = await Proveedor.findByPk(pedido.proveedor_id);
+            const nombreProveedor = proveedor ? proveedor.nombre : `Proveedor #${pedido.proveedor_id}`;
+            
+            // Obtener nombres de productos para la notificación
+            const nombresProductos = productos.slice(0, 3).map(p => p.nombre).join(', ');
+            const tieneProductosAdicionales = productos.length > 3;
+            const textoProductos = tieneProductosAdicionales ? 
+                `${nombresProductos} y ${productos.length - 3} productos más` : nombresProductos;
+            
+            // Mensajes específicos según el estado
+            let mensajeNotificacion = '';
+            switch (estado) {
+                case 'en_proceso':
+                    mensajeNotificacion = `El pedido #${pedido.codigo} a ${nombreProveedor} ha iniciado su procesamiento`;
+                    break;
+                case 'enviado':
+                    mensajeNotificacion = `El pedido #${pedido.codigo} a ${nombreProveedor} ha sido enviado`;
+                    break;
+                case 'completado':
+                    mensajeNotificacion = `El pedido #${pedido.codigo} a ${nombreProveedor} ha sido recibido completamente`;
+                    break;
+                case 'cancelado':
+                    mensajeNotificacion = `El pedido #${pedido.codigo} a ${nombreProveedor} ha sido cancelado`;
+                    break;
+                default:
+                    mensajeNotificacion = `El pedido #${pedido.codigo} a ${nombreProveedor} ha cambiado a estado: ${estado}`;
+            }
+            
+            // Añadir comentario si existe
+            if (comentario) {
+                mensajeNotificacion += `. Comentario: ${comentario}`;
+            }
+            
+            // Crear notificaciones para el cambio de estado
+            await notificacionesService.notificarCambioPedido(
+                {
+                    id: pedido.id,
+                    codigo: pedido.codigo,
+                    estado: estado,
+                    prioridad: pedido.prioridad,
+                    proveedor: { id: pedido.proveedor_id, nombre: nombreProveedor }
+                },
+                'estado',
+                {
+                    mensaje: mensajeNotificacion,
+                    datos: {
+                        productos: textoProductos,
+                        comentario: comentario || null
+                    }
+                }
+            );
+        } catch (notifError) {
+            console.error('Error al crear notificaciones para el cambio de estado:', notifError);
+            // No bloqueamos la respuesta por un error en las notificaciones
+        }
         
         // Si se marca como completado/recibido, enviar notificación por WhatsApp
         if (estado === 'completado') {

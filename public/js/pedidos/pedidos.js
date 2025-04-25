@@ -1552,6 +1552,46 @@ function cambiarEstadoPedido() {
     $('#nuevoEstadoTexto').text(formatEstado(nuevoEstado));
     $('#comentario-cambio-estado').val(''); // Limpiar el comentario anterior
     
+    // Establecer colores e iconos según el estado
+    const estadoModalHeader = $('#estado-modal-header');
+    const estadoIconContainer = $('#estado-icon-container');
+    const estadoDescripcion = $('#estado-descripcion');
+    let icono = '';
+    
+    // Resetear clases
+    estadoModalHeader.removeClass('pendiente en_proceso completado cancelado');
+    estadoIconContainer.removeClass('pendiente en_proceso completado cancelado');
+    
+    // Aplicar clases según el nuevo estado
+    estadoModalHeader.addClass(nuevoEstado);
+    estadoIconContainer.addClass(nuevoEstado);
+    
+    // Configurar icono y descripción según estado
+    switch (nuevoEstado) {
+        case 'pendiente':
+            icono = '<i class="fas fa-clock fa-2x"></i>';
+            estadoDescripcion.text('El pedido quedará marcado como pendiente de procesar.');
+            break;
+        case 'en_proceso':
+            icono = '<i class="fas fa-spinner fa-2x"></i>';
+            estadoDescripcion.text('El pedido quedará marcado como en proceso. El proveedor está trabajando en él.');
+            break;
+        case 'completado':
+            icono = '<i class="fas fa-check-circle fa-2x"></i>';
+            estadoDescripcion.text('El pedido se marcará como completado y los productos se añadirán al inventario.');
+            break;
+        case 'cancelado':
+            icono = '<i class="fas fa-times-circle fa-2x"></i>';
+            estadoDescripcion.text('El pedido quedará cancelado y no se procesará más.');
+            break;
+        default:
+            icono = '<i class="fas fa-info-circle fa-2x"></i>';
+            estadoDescripcion.text('Este cambio quedará registrado en el historial del pedido.');
+    }
+    
+    // Actualizar el icono
+    estadoIconContainer.html(icono);
+    
     // Configurar el botón de confirmar
     $('#btn-confirmar-cambio-estado').off('click').on('click', function() {
         const comentario = $('#comentario-cambio-estado').val() || `Cambio de estado: ${formatEstado(pedidoActual.estado)} a ${formatEstado(nuevoEstado)}`;
@@ -1594,6 +1634,9 @@ function cambiarEstadoPedido() {
                     showNotification('Estado del pedido actualizado exitosamente', 'success');
                 }
                 
+                // Notificar por sistema de notificaciones
+                notificarCambioEstado(pedidoActual, nuevoEstado);
+                
                 // Recargar la interfaz
                 verDetallePedido(pedidoActual.id);
                 
@@ -1616,6 +1659,25 @@ function cambiarEstadoPedido() {
     
     // Mostrar el modal
     $('#cambioEstadoModal').modal('show');
+}
+
+/**
+ * Notifica el cambio de estado usando el sistema de notificaciones
+ */
+function notificarCambioEstado(pedido, nuevoEstado) {
+    // Esta función se integrará con el sistema de notificaciones
+    // No hace nada si el sistema de notificaciones no está disponible
+    if (window.socket && pedido) {
+        console.log('Enviando notificación de cambio de estado al servidor');
+        // El servidor procesará esto y enviará la notificación a los usuarios interesados
+        window.socket.emit('cambio-estado-pedido', {
+            pedidoId: pedido.id,
+            codigo: pedido.codigo,
+            proveedorId: pedido.proveedor_id,
+            estadoAnterior: pedido.estado,
+            nuevoEstado: nuevoEstado
+        });
+    }
 }
 
 /**

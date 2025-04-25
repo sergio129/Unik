@@ -399,3 +399,64 @@ table tbody tr.prioridad-alta {
     border-radius: 4px;
     font-size: 90%;
 }
+
+/* Estilos para el modal de cambio de estado */
+.estado-icon-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background-color: #6c757d;
+}
+
+.estado-icon-container.pendiente {
+    background-color: #ffc107; /* color para estado pendiente */
+}
+
+.estado-icon-container.en_proceso {
+    background-color: #0d6efd; /* color para estado en proceso */
+}
+
+.estado-icon-container.enviado {
+    background-color: #17a2b8; /* color para estado enviado */
+}
+
+.estado-icon-container.completado {
+    background-color: #198754; /* color para estado completado */
+}
+
+.estado-icon-container.cancelado {
+    background-color: #dc3545; /* color para estado cancelado */
+}
+
+#estado-modal-header.pendiente {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+#estado-modal-header.en_proceso {
+    background-color: #0d6efd;
+    color: white;
+}
+
+#estado-modal-header.enviado {
+    background-color: #17a2b8;
+    color: white;
+}
+
+#estado-modal-header.completado {
+    background-color: #198754;
+    color: white;
+}
+
+#estado-modal-header.cancelado {
+    background-color: #dc3545;
+    color: white;
+}
+
+.estado-description {
+    margin-left: 1rem;
+}

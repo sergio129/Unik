@@ -822,21 +822,45 @@
     <!-- Modal para cambio de estado -->
     <div class="modal fade" id="cambioEstadoModal" tabindex="-1" aria-labelledby="cambioEstadoModalLabel" aria-hidden="true">
       <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="cambioEstadoModalLabel">Cambiar estado del pedido</h5>
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header" id="estado-modal-header">
+            <h5 class="modal-title" id="cambioEstadoModalLabel">
+              <i class="fas fa-exchange-alt me-2"></i>Cambiar estado del pedido
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <p>Está a punto de cambiar el estado del pedido a <strong id="nuevoEstadoTexto">Estado</strong>.</p>
+            <div class="d-flex align-items-center mb-4">
+              <div class="estado-icon-container me-3" id="estado-icon-container">
+                <i class="fas fa-spinner fa-2x"></i>
+              </div>
+              <div>
+                <h6 class="mb-1">Nuevo estado</h6>
+                <p class="mb-0 fw-bold" id="nuevoEstadoTexto">Estado</p>
+              </div>
+            </div>
+            
+            <div class="alert alert-light border mb-4" id="estado-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <span id="estado-descripcion">Este cambio quedará registrado en el historial del pedido.</span>
+            </div>
+            
             <div class="form-group">
-              <label for="comentario-cambio-estado">Comentario (opcional):</label>
-              <textarea class="form-control" id="comentario-cambio-estado" rows="3" placeholder="Ingrese un comentario para este cambio de estado (opcional)"></textarea>
+              <label for="comentario-cambio-estado" class="form-label">
+                <i class="fas fa-comment-alt me-2"></i>Comentario (opcional):
+              </label>
+              <textarea class="form-control" id="comentario-cambio-estado" rows="3" 
+                placeholder="Agregue información relevante sobre este cambio de estado..."></textarea>
+              <small class="text-muted">Este comentario aparecerá en el historial de seguimiento del pedido.</small>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-primary" id="btn-confirmar-cambio-estado">Confirmar cambio</button>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>Cancelar
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-confirmar-cambio-estado">
+              <i class="fas fa-check me-2"></i>Confirmar cambio
+            </button>
           </div>
         </div>
       </div>
@@ -861,6 +885,7 @@
     
     <!-- Socket.IO para notificaciones en tiempo real -->
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/common/notificaciones.js"></script>
     
     <!-- Toastify para notificaciones elegantes -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -882,5 +907,3 @@
     <script src="../js/common/global-whatsapp-init.js"></script>
 </body>
 </html>
-```
-</copilot-edited-file>

@@ -1,0 +1,342 @@
+/**
+ * Estilos para el sistema de notificaciones avanzado
+ */
+
+/* Contenedor principal del centro de notificaciones */
+.notificaciones-centro {
+    position: relative;
+    display: inline-block;
+}
+
+/* Indicador de notificaciones nuevas */
+.notificaciones-indicador {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ff3860;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid white;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.notificaciones-indicador.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Botón para abrir/cerrar el centro de notificaciones */
+.notificaciones-toggle {
+    background: transparent;
+    border: none;
+    color: #6c757d;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.notificaciones-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.notificaciones-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+/* Dropdown del centro de notificaciones */
+.notificaciones-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    width: 350px;
+    max-width: 100vw;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    visibility: hidden;
+    transition: opacity 0.3s, transform 0.3s, visibility 0s linear 0.3s;
+}
+
+.notificaciones-dropdown.show {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    transition: opacity 0.3s, transform 0.3s, visibility 0s linear 0s;
+}
+
+/* Encabezado del centro de notificaciones */
+.notificaciones-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.notificaciones-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+}
+
+.notificaciones-acciones {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.notificaciones-accion {
+    background: transparent;
+    border: none;
+    color: #6c757d;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.notificaciones-accion:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #212529;
+}
+
+.notificaciones-accion:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+/* Cuerpo del centro de notificaciones */
+.notificaciones-body {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Lista de notificaciones */
+.notificaciones-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Mensaje cuando no hay notificaciones */
+.notificaciones-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+.notificaciones-vacio i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.notificaciones-vacio span {
+    font-size: 0.9rem;
+}
+
+/* Estilos para una notificación individual */
+.notificacion-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s;
+    display: flex;
+    gap: 0.75rem;
+    position: relative;
+    cursor: pointer;
+}
+
+.notificacion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notificacion-item:last-child {
+    border-bottom: none;
+}
+
+.notificacion-item.no-leida {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.notificacion-item.no-leida::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background-color: #0d6efd;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Icono de la notificación */
+.notificacion-icono {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 0.25rem;
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Colores de icono por tipo de notificación */
+.notificacion-icono.pedido-nuevo { color: #0d6efd; }
+.notificacion-icono.pedido-actualizado { color: #6f42c1; }
+.notificacion-icono.pedido-completado { color: #198754; }
+.notificacion-icono.pedido-cancelado { color: #dc3545; }
+.notificacion-icono.pedido-retrasado { color: #fd7e14; }
+.notificacion-icono.producto-stock-bajo { color: #ffc107; }
+.notificacion-icono.producto-sin-stock { color: #dc3545; }
+
+/* Contenido de la notificación */
+.notificacion-contenido {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Título de la notificación */
+.notificacion-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+    color: #212529;
+}
+
+/* Mensaje de la notificación */
+.notificacion-mensaje {
+    font-size: 0.85rem;
+    margin: 0 0 0.5rem;
+    color: #6c757d;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Tiempo de la notificación */
+.notificacion-tiempo {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    margin: 0;
+}
+
+/* Acciones de la notificación */
+.notificacion-acciones {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.notificacion-boton {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #212529;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.notificacion-boton:hover {
+    background-color: #e9ecef;
+}
+
+.notificacion-boton.primario {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.notificacion-boton.primario:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Pie del centro de notificaciones */
+.notificaciones-footer {
+    padding: 0.5rem;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.notificaciones-ver-todas {
+    font-size: 0.85rem;
+    color: #0d6efd;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.notificaciones-ver-todas:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+/* Animación para nuevas notificaciones */
+@keyframes notificacionNueva {
+    0% { transform: translateY(-10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.notificacion-nueva {
+    animation: notificacionNueva 0.3s ease-out forwards;
+}
+
+/* Notificación con prioridad alta */
+.notificacion-item.prioridad-alta {
+    border-left: 4px solid #dc3545;
+}
+
+/* Notificación con prioridad normal */
+.notificacion-item.prioridad-normal {
+    border-left: 4px solid #0d6efd;
+}
+
+/* Notificación con prioridad baja */
+.notificacion-item.prioridad-baja {
+    border-left: 4px solid #6c757d;
+}
+
+/* Responsividad para dispositivos móviles */
+@media (max-width: 576px) {
+    .notificaciones-dropdown {
+        width: 300px;
+        right: -75px;
+    }
+    
+    .notificaciones-dropdown::before {
+        right: 85px;
+    }
+    
+    .notificacion-acciones {
+        flex-wrap: wrap;
+    }
+}
