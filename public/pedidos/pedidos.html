@@ -167,6 +167,121 @@
                     </div>
                 </div>
 
+                <!-- Dashboard Gráfico - NUEVA SECCIÓN -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-chart-bar text-primary"></i> Dashboard de Pedidos</h5>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary" id="toggle-dashboard" title="Minimizar dashboard">
+                                        <i class="fas fa-compress-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body" id="dashboard-content">
+                                <div class="row">
+                                    <!-- Gráfico de Tendencia de Pedidos -->
+                                    <div class="col-md-6">
+                                        <div class="chart-container" style="position: relative; height:300px;">
+                                            <h6 class="text-muted text-center mb-3">Tendencia de Pedidos (Últimos 30 días)</h6>
+                                            <canvas id="pedidos-tendencia-chart"></canvas>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Gráfico de Distribución por Estado -->
+                                    <div class="col-md-3">
+                                        <div class="chart-container" style="position: relative; height:300px;">
+                                            <h6 class="text-muted text-center mb-3">Distribución por Estado</h6>
+                                            <canvas id="pedidos-estado-chart"></canvas>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Gráfico de Proveedores Principales -->
+                                    <div class="col-md-3">
+                                        <div class="chart-container" style="position: relative; height:300px;">
+                                            <h6 class="text-muted text-center mb-3">Principales Proveedores</h6>
+                                            <canvas id="pedidos-proveedor-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-4">
+                                    <!-- KPIs Adicionales -->
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-3 col-sm-6 mb-2">
+                                                <div class="card h-100 border-left-primary">
+                                                    <div class="card-body py-2">
+                                                        <div class="row no-gutters align-items-center">
+                                                            <div class="col mr-2">
+                                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tiempo Promedio</div>
+                                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpi-tiempo-promedio">0 días</div>
+                                                                <small class="text-muted">De solicitud a entrega</small>
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-2">
+                                                <div class="card h-100 border-left-info">
+                                                    <div class="card-body py-2">
+                                                        <div class="row no-gutters align-items-center">
+                                                            <div class="col mr-2">
+                                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Cumplimiento</div>
+                                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpi-tasa-cumplimiento">0%</div>
+                                                                <small class="text-muted">Entregados a tiempo</small>
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-2">
+                                                <div class="card h-100 border-left-warning">
+                                                    <div class="card-body py-2">
+                                                        <div class="row no-gutters align-items-center">
+                                                            <div class="col mr-2">
+                                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Próximas Entregas</div>
+                                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpi-proximas-entregas">0</div>
+                                                                <small class="text-muted">Próximos 7 días</small>
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <i class="fas fa-truck-loading fa-2x text-gray-300"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-2">
+                                                <div class="card h-100 border-left-danger">
+                                                    <div class="card-body py-2">
+                                                        <div class="row no-gutters align-items-center">
+                                                            <div class="col mr-2">
+                                                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Retrasos</div>
+                                                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpi-pedidos-retrasados">0</div>
+                                                                <small class="text-muted">Pedidos retrasados</small>
+                                                            </div>
+                                                            <div class="col-auto">
+                                                                <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Pedidos Table -->
                 <div class="card mb-4">
                     <div class="card-header bg-white">
@@ -770,6 +885,7 @@
     <script src="/js/utils/notifications.js"></script>
     <script src="/js/pedidos/whatsapp-status.js"></script>
     <script src="/js/pedidos/whatsapp-chat.js"></script>
+    <script src="/js/pedidos/dashboard-charts.js"></script>
     <script src="/js/pedidos/pedidos.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
     <script src="../js/common/global-whatsapp-init.js"></script>

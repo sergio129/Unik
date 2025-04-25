@@ -18,6 +18,12 @@ router.get('/estadisticas', pedidosController.obtenerEstadisticas);
 // Añadir ruta para el resumen de estadísticas
 router.get('/estadisticas/resumen', pedidosController.obtenerEstadisticas);
 
+// Nuevas rutas para el dashboard gráfico
+router.get('/estadisticas/tendencia', pedidosController.obtenerTendencia);
+router.get('/estadisticas/por-estado', pedidosController.obtenerPorEstado);
+router.get('/estadisticas/por-proveedor', pedidosController.obtenerPorProveedor);
+router.get('/estadisticas/kpis', pedidosController.obtenerKPIs);
+
 // Registrar nuevo seguimiento para un pedido
 router.post('/:id/seguimiento', pedidosController.registrarSeguimiento);
 

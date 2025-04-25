@@ -393,41 +393,6 @@ const crearPedido = async (req, res) => {
             };
         });
         
-        // COMENTADO: Ya no enviamos automáticamente notificación desde el backend
-        // para evitar duplicación con el envío desde el frontend
-        /*
-        // Buscar información del proveedor para enviar notificación por WhatsApp
-        try {
-            const proveedor = await Proveedor.findByPk(proveedor_id);
-            if (proveedor && proveedor.telefono) {
-                // Inicializar WhatsApp (solo si aún no se ha hecho)
-                if (!global.whatsappInitialized) {
-                    global.whatsappInitialized = true;
-                    whatsappService.initializeWhatsApp();
-                    console.log('Servicio de WhatsApp inicializado');
-                }
-
-                // Enviar notificación al proveedor (de forma asíncrona para no bloquear la respuesta)
-                whatsappService.notificarNuevoPedido(pedidoCompleto, proveedor, productosParaNotificacion)
-                    .then(enviado => {
-                        if (enviado) {
-                            console.log(`Notificación de WhatsApp enviada al proveedor ${proveedor.nombre} (${proveedor.telefono})`);
-                        } else {
-                            console.log(`No se pudo enviar notificación de WhatsApp al proveedor ${proveedor.nombre}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error al enviar notificación de WhatsApp:', error);
-                    });
-            } else {
-                console.log(`El proveedor con ID ${proveedor_id} no tiene número de teléfono registrado para WhatsApp`);
-            }
-        } catch (error) {
-            console.error('Error al intentar enviar notificación de WhatsApp:', error);
-            // No bloqueamos la respuesta por un error en la notificación
-        }
-        */
-        
         return res.status(201).json({
             success: true,
             message: 'Pedido a proveedor creado exitosamente',
@@ -854,9 +819,6 @@ const obtenerEstadisticas = async (req, res) => {
             attributes: ['id', 'codigo', 'proveedor_id', 'fecha_pedido', 'fecha_entrega_estimada', 'estado', 'prioridad']
         });
         
-        // Ya no tratamos de contar productos por pedidos usando la asociación DetallePedido
-        // porque podemos tener un problema con la asociación hasta que reiniciemos la aplicación
-        
         return res.status(200).json({
             success: true,
             message: 'Estadísticas obtenidas exitosamente',
@@ -938,6 +900,234 @@ const registrarSeguimiento = async (req, res) => {
     }
 };
 
+/**
+ * Obtiene la tendencia de pedidos para un rango de fechas (últimos 30 días por defecto)
+ */
+const obtenerTendencia = async (req, res) => {
+    try {
+        // Extraer parámetros para filtrar por fecha
+        const { fecha_inicio, fecha_fin } = req.query;
+        
+        // Establecer fechas por defecto si no se proporcionan (últimos 30 días)
+        const fechaFin = fecha_fin ? new Date(fecha_fin) : new Date();
+        const fechaInicio = fecha_inicio ? new Date(fecha_inicio) : new Date(fechaFin);
+        fechaInicio.setDate(fechaInicio.getDate() - 30); // 30 días atrás por defecto
+        
+        // Asegurar que la fecha final incluya todo el día
+        fechaFin.setHours(23, 59, 59, 999);
+        
+        // Realizar consulta para obtener el conteo de pedidos por día
+        const tendencia = await Pedido.findAll({
+            attributes: [
+                [sequelize.fn('DATE', sequelize.col('fecha_pedido')), 'fecha'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'total']
+            ],
+            where: {
+                fecha_pedido: {
+                    [Op.between]: [fechaInicio, fechaFin]
+                }
+            },
+            group: [sequelize.fn('DATE', sequelize.col('fecha_pedido'))],
+            order: [[sequelize.fn('DATE', sequelize.col('fecha_pedido')), 'ASC']]
+        });
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Tendencia de pedidos obtenida exitosamente',
+            data: {
+                tendencia: tendencia.map(item => ({
+                    fecha: item.getDataValue('fecha'),
+                    total: parseInt(item.getDataValue('total'))
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener tendencia de pedidos:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener tendencia de pedidos',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Obtiene la distribución de pedidos por estado
+ */
+const obtenerPorEstado = async (req, res) => {
+    try {
+        // Contar pedidos por estado
+        const porEstado = await Pedido.findAll({
+            attributes: [
+                'estado',
+                [sequelize.fn('COUNT', sequelize.col('id')), 'total']
+            ],
+            group: ['estado'],
+            order: [[sequelize.literal('total'), 'DESC']]
+        });
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Distribución por estado obtenida exitosamente',
+            data: {
+                porEstado: porEstado.map(item => ({
+                    estado: item.estado,
+                    total: parseInt(item.getDataValue('total'))
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener distribución por estado:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener distribución por estado',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Obtiene la distribución de pedidos por proveedor
+ */
+const obtenerPorProveedor = async (req, res) => {
+    try {
+        // Extraer límite opcional
+        const { limit = 10 } = req.query;
+        const limitNum = parseInt(limit);
+        
+        // Obtener pedidos por proveedor
+        const resultados = await Pedido.findAll({
+            attributes: [
+                'proveedor_id',
+                [sequelize.fn('COUNT', sequelize.col('id')), 'total']
+            ],
+            group: ['proveedor_id'],
+            order: [[sequelize.literal('total'), 'DESC']],
+            limit: limitNum
+        });
+        
+        // Obtener nombres de proveedores en una sola consulta adicional
+        const proveedorIds = resultados.map(item => item.proveedor_id);
+        const proveedores = await Proveedor.findAll({
+            where: {
+                id: {
+                    [Op.in]: proveedorIds
+                }
+            },
+            attributes: ['id', 'nombre']
+        });
+        
+        // Combinar los datos
+        const porProveedor = resultados.map(item => {
+            const proveedor = proveedores.find(p => p.id === item.proveedor_id);
+            return {
+                proveedor_id: item.proveedor_id,
+                nombre_proveedor: proveedor ? proveedor.nombre : `Proveedor ID: ${item.proveedor_id}`,
+                total: parseInt(item.getDataValue('total'))
+            };
+        });
+        
+        return res.status(200).json({
+            success: true,
+            message: 'Distribución por proveedor obtenida exitosamente',
+            data: {
+                porProveedor
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener distribución por proveedor:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener distribución por proveedor',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Obtiene KPIs (indicadores clave de rendimiento) para el dashboard
+ */
+const obtenerKPIs = async (req, res) => {
+    try {
+        const hoy = new Date();
+        
+        // KPI 1: Tiempo promedio de entrega (días entre fecha_pedido y fecha de recepción real)
+        const tiempoPromedioQuery = await sequelize.query(`
+            SELECT AVG(DATEDIFF(sp.fecha, p.fecha_pedido)) as promedio
+            FROM pedidos p
+            INNER JOIN SeguimientoPedidos sp ON p.id = sp.pedido_id
+            WHERE sp.estado_nuevo = 'completado'
+            AND p.estado = 'completado'
+            AND DATEDIFF(CURDATE(), p.fecha_pedido) <= 90
+        `, { type: sequelize.QueryTypes.SELECT });
+        
+        // KPI 2: Tasa de cumplimiento (pedidos entregados a tiempo / total completados)
+        const totalCompletados = await Pedido.count({
+            where: { estado: 'completado' }
+        });
+        
+        const entregadosATiempo = await sequelize.query(`
+            SELECT COUNT(*) as total
+            FROM pedidos p
+            INNER JOIN SeguimientoPedidos sp ON p.id = sp.pedido_id
+            WHERE sp.estado_nuevo = 'completado'
+            AND p.estado = 'completado'
+            AND sp.fecha <= p.fecha_entrega_estimada
+        `, { type: sequelize.QueryTypes.SELECT });
+        
+        // KPI 3: Próximas entregas (pedidos con fecha_entrega_estimada en los próximos 7 días)
+        const proximaSemana = new Date(hoy);
+        proximaSemana.setDate(proximaSemana.getDate() + 7);
+        
+        const proximasEntregas = await Pedido.count({
+            where: {
+                fecha_entrega_estimada: {
+                    [Op.between]: [hoy, proximaSemana]
+                },
+                estado: {
+                    [Op.notIn]: ['completado', 'cancelado']
+                }
+            }
+        });
+        
+        // KPI 4: Pedidos retrasados (fecha_entrega_estimada < hoy y no completados)
+        const pedidosRetrasados = await Pedido.count({
+            where: {
+                fecha_entrega_estimada: {
+                    [Op.lt]: hoy
+                },
+                estado: {
+                    [Op.notIn]: ['completado', 'cancelado']
+                }
+            }
+        });
+        
+        // Calcular tasa de cumplimiento
+        let tasaCumplimiento = 0;
+        if (totalCompletados > 0) {
+            tasaCumplimiento = Math.round((entregadosATiempo[0]?.total || 0) / totalCompletados * 100);
+        }
+        
+        return res.status(200).json({
+            success: true,
+            message: 'KPIs obtenidos exitosamente',
+            data: {
+                tiempoPromedio: Math.round(tiempoPromedioQuery[0]?.promedio || 0),
+                tasaCumplimiento,
+                proximasEntregas,
+                pedidosRetrasados
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener KPIs:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener KPIs',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     obtenerPedidos,
     obtenerPedidoPorId,
@@ -945,5 +1135,9 @@ module.exports = {
     actualizarPedido,
     cambiarEstadoPedido,
     obtenerEstadisticas,
-    registrarSeguimiento  // Añadir la nueva función al módulo
+    registrarSeguimiento,
+    obtenerTendencia,
+    obtenerPorEstado,
+    obtenerPorProveedor,
+    obtenerKPIs
 };
