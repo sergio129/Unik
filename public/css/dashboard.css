@@ -474,6 +474,53 @@ footer {
   cursor: not-allowed;
 }
 
+/* Estilos para tabs en modales */
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.modal-tab {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-bottom: 2px solid transparent;
+  color: var(--text-light);
+  background: none;
+  border: none;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.modal-tab:hover {
+  color: var(--primary-color);
+}
+
+.modal-tab.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  background-color: rgba(66, 133, 244, 0.05);
+}
+
+.modal-tab-content {
+  display: none;
+  padding: 10px 0;
+  animation: fadeIn 0.3s;
+}
+
+.modal-tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Estilos específicos para la modal de pedidos */
 #pedido-modal.modal {
   display: none;  /* Ocultar por defecto */
@@ -606,5 +653,10 @@ footer {
 
   #pedido-modal .form-control {
     font-size: 16px; /* Prevenir zoom en iOS */
+  }
+  
+  .modal-tab {
+    padding: 8px 10px;
+    font-size: 0.9rem;
   }
 }

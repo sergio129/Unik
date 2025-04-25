@@ -1,0 +1,99 @@
+/* Estilos para el sistema de pestañas en el modal de pedidos */
+.modal-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0;
+    margin-bottom: 1rem;
+    list-style: none;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-radius: 4px 4px 0 0;
+}
+
+.modal-tab {
+    margin-bottom: -1px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    color: #6c757d;
+}
+
+.modal-tab:hover {
+    color: #007bff;
+    border-bottom-color: #afd5ff;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.modal-tab.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    background-color: #fff;
+}
+
+.modal-tab i {
+    margin-right: 6px;
+}
+
+.modal-tab-content {
+    display: none;
+    padding: 0.5rem 0;
+}
+
+.modal-tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Mejoras responsivas para el modal */
+@media (max-width: 768px) {
+    .modal-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-tab {
+        white-space: nowrap;
+        flex: 0 0 auto;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Estilo para formularios dentro de las pestañas */
+.tab-form-row {
+    margin-bottom: 1rem;
+}
+
+.tab-form-row label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.product-section {
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    background-color: #f8f9fa;
+}
+
+.product-section h5 {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
+
+/* Mejorar la apariencia de la tabla de productos */
+#tabla-productos-pedido {
+    margin-top: 1rem;
+}
+
+#tabla-productos-pedido th {
+    background-color: #f4f6f9;
+}

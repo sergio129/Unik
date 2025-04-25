@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/css/components/notifications.css">
     <link rel="stylesheet" href="/css/pedidos/pedidos.css">
     <link rel="stylesheet" href="/css/pedidos/whatsapp.css"><!-- Nuevo CSS para WhatsApp -->
+    <link rel="stylesheet" href="/css/components/pedidos/pedidos-modal.css"><!-- CSS para modal responsive con tabs -->
 </head>
 <body>
     <div class="container-fluid">
@@ -375,7 +376,7 @@
     <!-- Modals -->
     <!-- Modal para Nuevo/Editar Pedido -->
     <div class="modal fade" id="pedidoModal" tabindex="-1" role="dialog" aria-labelledby="pedidoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="pedidoModalLabel">
@@ -386,214 +387,218 @@
                 <div class="modal-body">
                     <form id="pedido-form">
                         <input type="hidden" id="pedido-id">
-                        <div class="row">
-                            <!-- Información general del pedido -->
-                            <div class="col-md-6">
-                                <div class="card mb-3">
-                                    <div class="card-header bg-light">
-                                        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <!-- Proveedor con búsqueda -->
-                                        <div class="form-group">
-                                            <label for="proveedor-select">
-                                                <i class="fas fa-industry"></i> Proveedor <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="input-group">
-                                                <select id="proveedor-select" class="form-control" required>
-                                                    <option value="">Seleccionar proveedor...</option>
-                                                    <!-- Se cargará dinámicamente -->
-                                                </select>
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" id="btn-nuevo-proveedor-rapido">
-                                                        <i class="fas fa-plus"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <small id="info-proveedor" class="form-text text-muted"></small>
-                                        </div>
-                                        
-                                        <div class="form-row">
-                                            <div class="form-group col-md-6">
-                                                <label for="fecha-pedido-display">
-                                                    <i class="fas fa-calendar"></i> Fecha de Solicitud
-                                                </label>
-                                                <input type="text" id="fecha-pedido-display" class="form-control" disabled 
-                                                    value="<?php echo date('d/m/Y'); ?>">
-                                            </div>
-                                            <div class="form-group col-md-6">
-                                                <label for="fecha-entrega">
-                                                    <i class="fas fa-calendar-alt"></i> Fecha Entrega Esperada <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="date" id="fecha-entrega" class="form-control" required>
-                                                <small class="form-text text-muted">Fecha en la que se espera recibir los productos</small>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="form-row">
-                                            <div class="form-group col-md-6">
-                                                <label for="prioridad-select">
-                                                    <i class="fas fa-flag"></i> Prioridad
-                                                </label>
-                                                <select id="prioridad-select" class="form-control">
-                                                    <option value="baja">Baja</option>
-                                                    <option value="media" selected>Media</option>
-                                                    <option value="alta">Alta</option>
-                                                    <option value="urgente">Urgente</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-6">
-                                                <label for="origen-select">
-                                                    <i class="fas fa-tags"></i> Categoría <span class="text-danger">*</span>
-                                                </label>
-                                                <select id="origen-select" class="form-control" required>
-                                                    <option value="reposicion" selected>Reposición de Stock</option>
-                                                    <option value="nuevo_producto">Nuevos Productos</option>
-                                                    <option value="urgencia">Por Agotamiento</option>
-                                                    <option value="promocion">Promoción</option>
-                                                    <option value="otro">Otro</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="direccion-entrega">
-                                                <i class="fas fa-map-marker-alt"></i> Dirección de Entrega
-                                            </label>
-                                            <textarea id="direccion-entrega" class="form-control" rows="2" placeholder="Dirección donde recibirá el pedido"></textarea>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="persona-contacto">
-                                                <i class="fas fa-user"></i> Persona de Contacto
-                                            </label>
-                                            <input type="text" id="persona-contacto" class="form-control" placeholder="Nombre de quien recibirá el pedido">
-                                        </div>
+                        
+                        <!-- Sistema de pestañas -->
+                        <div class="modal-tabs">
+                            <button type="button" class="modal-tab active" data-tab="general">
+                                <i class="fas fa-info-circle"></i> Información General
+                            </button>
+                            <button type="button" class="modal-tab" data-tab="productos">
+                                <i class="fas fa-boxes"></i> Productos
+                            </button>
+                            <button type="button" class="modal-tab" data-tab="condiciones">
+                                <i class="fas fa-clipboard-list"></i> Condiciones
+                            </button>
+                            <button type="button" class="modal-tab" data-tab="historial">
+                                <i class="fas fa-history"></i> Historial
+                            </button>
+                        </div>
+                        
+                        <!-- Contenido de las pestañas -->
+                        <!-- Tab: Información General -->
+                        <div class="modal-tab-content active" id="tab-general">
+                            <!-- Proveedor con búsqueda -->
+                            <div class="form-group">
+                                <label for="proveedor-select">
+                                    <i class="fas fa-industry"></i> Proveedor <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <select id="proveedor-select" class="form-control" required>
+                                        <option value="">Seleccionar proveedor...</option>
+                                        <!-- Se cargará dinámicamente -->
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-nuevo-proveedor-rapido">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <!-- Sección de Notas y Condiciones -->
-                                <div class="card mb-3">
-                                    <div class="card-header bg-light">
-                                        <h6 class="mb-0"><i class="fas fa-clipboard-list"></i> Notas y Condiciones</h6>
+                                <small id="info-proveedor" class="form-text text-muted"></small>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="fecha-pedido-display">
+                                            <i class="fas fa-calendar"></i> Fecha de Solicitud
+                                        </label>
+                                        <input type="text" id="fecha-pedido-display" class="form-control" disabled 
+                                            value="<?php echo date('d/m/Y'); ?>">
                                     </div>
-                                    <div class="card-body">
-                                        <div class="form-group">
-                                            <label for="condiciones-pago">
-                                                <i class="fas fa-money-check-alt"></i> Condiciones de Pago
-                                            </label>
-                                            <select id="condiciones-pago" class="form-control">
-                                                <option value="contado">Pago al Contado</option>
-                                                <option value="credito_30" selected>Crédito 30 días</option>
-                                                <option value="credito_60">Crédito 60 días</option>
-                                                <option value="credito_90">Crédito 90 días</option>
-                                                <option value="otro">Otro</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="metodo-envio">
-                                                <i class="fas fa-shipping-fast"></i> Método de Envío
-                                            </label>
-                                            <select id="metodo-envio" class="form-control">
-                                                <option value="proveedor" selected>Transporte del Proveedor</option>
-                                                <option value="propio">Transporte Propio</option>
-                                                <option value="mensajeria">Mensajería</option>
-                                                <option value="otro">Otro</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="notas-adicionales">
-                                                <i class="fas fa-sticky-note"></i> Notas Adicionales
-                                            </label>
-                                            <textarea id="notas-adicionales" class="form-control" rows="3" placeholder="Instrucciones especiales para el pedido, requisitos de embalaje, etc."></textarea>
-                                        </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="fecha-entrega">
+                                            <i class="fas fa-calendar-alt"></i> Fecha Entrega Esperada <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="date" id="fecha-entrega" class="form-control" required>
+                                        <small class="form-text text-muted">Fecha en la que se espera recibir los productos</small>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Productos del pedido -->
-                            <div class="col-md-6">
-                                <div class="card mb-3">
-                                    <div class="card-header bg-light">
-                                        <h6 class="mb-0"><i class="fas fa-boxes"></i> Productos <span class="text-danger">*</span></h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="form-row">
-                                            <div class="form-group col-md-7">
-                                                <label for="producto-select">Producto</label>
-                                                <select id="producto-select" class="form-control">
-                                                    <option value="">Seleccionar producto...</option>
-                                                    <!-- Se cargará dinámicamente -->
-                                                </select>
-                                                <small class="form-text text-muted" id="stock-actual"></small>
-                                            </div>
-                                            <div class="form-group col-md-3">
-                                                <label for="cantidad-producto">Cantidad</label>
-                                                <input type="number" id="cantidad-producto" class="form-control" value="1" min="1">
-                                            </div>
-                                            <div class="form-group col-md-2 d-flex align-items-end">
-                                                <button type="button" id="btn-agregar-producto" class="btn btn-sm btn-primary btn-block">
-                                                    <i class="fas fa-plus"></i> Agregar
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Campo de búsqueda rápida de productos -->
-                                        <div class="form-group">
-                                            <div class="input-group mb-3">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                                </div>
-                                                <input type="text" class="form-control" id="buscar-producto" placeholder="Buscar producto...">
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" id="btn-escanear-codigo">
-                                                        <i class="fas fa-barcode"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
-                                            <table class="table table-sm table-bordered table-hover" id="tabla-productos-pedido">
-                                                <thead class="thead-light sticky-top">
-                                                    <tr>
-                                                        <th>Producto</th>
-                                                        <th width="80px">Cant.</th>
-                                                        <th width="80px">Acciones</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <!-- Se cargará dinámicamente -->
-                                                    <tr>
-                                                        <td colspan="3" class="text-center">No hay productos agregados</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        
-                                        <div class="d-flex justify-content-between mt-3">
-                                            <span class="text-muted"><span id="contador-productos">0</span> productos en el pedido</span>
-                                            <button type="button" id="btn-limpiar-productos" class="btn btn-sm btn-outline-danger">
-                                                <i class="fas fa-trash-alt"></i> Limpiar lista
-                                            </button>
-                                        </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="prioridad-select">
+                                            <i class="fas fa-flag"></i> Prioridad
+                                        </label>
+                                        <select id="prioridad-select" class="form-control">
+                                            <option value="baja">Baja</option>
+                                            <option value="media" selected>Media</option>
+                                            <option value="alta">Alta</option>
+                                            <option value="urgente">Urgente</option>
+                                        </select>
                                     </div>
                                 </div>
-                                
-                                <!-- Historial de pedidos con este proveedor -->
-                                <div class="card mb-3">
-                                    <div class="card-header bg-light">
-                                        <h6 class="mb-0"><i class="fas fa-history"></i> Pedidos Anteriores</h6>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="origen-select">
+                                            <i class="fas fa-tags"></i> Categoría <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="origen-select" class="form-control" required>
+                                            <option value="reposicion" selected>Reposición de Stock</option>
+                                            <option value="nuevo_producto">Nuevos Productos</option>
+                                            <option value="urgencia">Por Agotamiento</option>
+                                            <option value="promocion">Promoción</option>
+                                            <option value="otro">Otro</option>
+                                        </select>
                                     </div>
-                                    <div class="card-body p-0">
-                                        <div id="historial-pedidos-proveedor" style="max-height: 200px; overflow-y: auto;">
-                                            <div class="text-center py-3 text-muted">
-                                                <i class="fas fa-info-circle"></i> Seleccione un proveedor para ver su historial
-                                            </div>
-                                        </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="direccion-entrega">
+                                    <i class="fas fa-map-marker-alt"></i> Dirección de Entrega
+                                </label>
+                                <textarea id="direccion-entrega" class="form-control" rows="2" placeholder="Dirección donde recibirá el pedido"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="persona-contacto">
+                                    <i class="fas fa-user"></i> Persona de Contacto
+                                </label>
+                                <input type="text" id="persona-contacto" class="form-control" placeholder="Nombre de quien recibirá el pedido">
+                            </div>
+                        </div>
+                        
+                        <!-- Tab: Productos -->
+                        <div class="modal-tab-content" id="tab-productos">
+                            <div class="row">
+                                <div class="col-md-7">
+                                    <div class="form-group">
+                                        <label for="producto-select">Producto</label>
+                                        <select id="producto-select" class="form-control">
+                                            <option value="">Seleccionar producto...</option>
+                                            <!-- Se cargará dinámicamente -->
+                                        </select>
+                                        <small class="form-text text-muted" id="stock-actual"></small>
                                     </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="cantidad-producto">Cantidad</label>
+                                        <input type="number" id="cantidad-producto" class="form-control" value="1" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" id="btn-agregar-producto" class="btn btn-sm btn-primary w-100">
+                                        <i class="fas fa-plus"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Campo de búsqueda rápida de productos -->
+                            <div class="form-group">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" id="buscar-producto" placeholder="Buscar producto...">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-escanear-codigo">
+                                            <i class="fas fa-barcode"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered table-hover" id="tabla-productos-pedido">
+                                    <thead class="thead-light sticky-top">
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th width="80px">Cant.</th>
+                                            <th width="80px">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Se cargará dinámicamente -->
+                                        <tr>
+                                            <td colspan="3" class="text-center">No hay productos agregados</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <span class="text-muted"><span id="contador-productos">0</span> productos en el pedido</span>
+                                <button type="button" id="btn-limpiar-productos" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt"></i> Limpiar lista
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab: Condiciones -->
+                        <div class="modal-tab-content" id="tab-condiciones">
+                            <div class="form-group">
+                                <label for="condiciones-pago">
+                                    <i class="fas fa-money-check-alt"></i> Condiciones de Pago
+                                </label>
+                                <select id="condiciones-pago" class="form-control">
+                                    <option value="contado">Pago al Contado</option>
+                                    <option value="credito_30" selected>Crédito 30 días</option>
+                                    <option value="credito_60">Crédito 60 días</option>
+                                    <option value="credito_90">Crédito 90 días</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="metodo-envio">
+                                    <i class="fas fa-shipping-fast"></i> Método de Envío
+                                </label>
+                                <select id="metodo-envio" class="form-control">
+                                    <option value="proveedor" selected>Transporte del Proveedor</option>
+                                    <option value="propio">Transporte Propio</option>
+                                    <option value="mensajeria">Mensajería</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notas-adicionales">
+                                    <i class="fas fa-sticky-note"></i> Notas Adicionales
+                                </label>
+                                <textarea id="notas-adicionales" class="form-control" rows="3" placeholder="Instrucciones especiales para el pedido, requisitos de embalaje, etc."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab: Historial -->
+                        <div class="modal-tab-content" id="tab-historial">
+                            <div id="historial-pedidos-proveedor" style="max-height: 300px; overflow-y: auto;">
+                                <div class="text-center py-3 text-muted">
+                                    <i class="fas fa-info-circle"></i> Seleccione un proveedor para ver su historial
                                 </div>
                             </div>
                         </div>

@@ -52,13 +52,34 @@ $(document).ready(function() {
 
     // Configurar eventos para botones principales
     configurarEventos();
-	  // Inicializar la fecha actual en el modal de pedidos
+    
+    // Inicializar el sistema de pestañas
+    configurarSistemaTabs();
+    
+    // Inicializar la fecha actual en el modal de pedidos
     $('#fecha-pedido-display').val(moment().format('DD/MM/YYYY'));
     
     // Configurar valor predeterminado para la fecha de entrega estimada (7 días después)
     $('#fecha-entrega').val(moment().add(7, 'days').format('YYYY-MM-DD'));
 });
-	
+
+/**
+ * Configura el sistema de pestañas dentro del modal del pedido
+ */
+function configurarSistemaTabs() {
+    // Manejar clics en las pestañas
+    $('.modal-tab').on('click', function() {
+        const tabId = $(this).data('tab');
+        
+        // Activar esta pestaña y desactivar las demás
+        $('.modal-tab').removeClass('active');
+        $(this).addClass('active');
+        
+        // Mostrar el contenido correspondiente y ocultar los demás
+        $('.modal-tab-content').removeClass('active');
+        $('#tab-' + tabId).addClass('active');
+    });
+}
 
 /**
  * Configura todos los eventos de la interfaz de usuario
