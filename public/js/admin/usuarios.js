@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeModals();
   setupEventListeners();
   
-  // Cargar lista de usuarios
-  loadUsers();
+  // Cargar lista de usuarios con la nueva función paginada
+  loadUsersWithPagination();
 });
 
 // Verificar que el usuario sea administrador
@@ -18,6 +18,9 @@ function checkAdminPermissions() {
     if (!user || user.rol !== 'admin') {
       // Redirigir si no es administrador
       window.location.href = '/dashboard';
+    } else {
+      // Mostrar nombre de usuario
+      document.getElementById('user-display').textContent = user.username;
     }
   } catch (error) {
     console.error('Error al verificar permisos:', error);
@@ -85,12 +88,51 @@ function setupEventListeners() {
   const searchInput = document.getElementById('search-users');
   const roleFilter = document.getElementById('filter-role');
   
-  searchInput.addEventListener('input', filterUsers);
-  roleFilter.addEventListener('change', filterUsers);
+  searchInput.addEventListener('input', () => {
+    currentPage = 1;
+    loadUsersWithPagination();
+  });
+  
+  roleFilter.addEventListener('change', () => {
+    currentPage = 1;
+    loadUsersWithPagination();
+  });
+  
+  // Botones de paginación
+  document.getElementById('prev-page').addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      loadUsersWithPagination();
+    }
+  });
+  
+  document.getElementById('next-page').addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadUsersWithPagination();
+    }
+  });
+  
+  // Selector de tamaño de página
+  document.getElementById('page-size-selector').addEventListener('change', function() {
+    pageSize = parseInt(this.value);
+    currentPage = 1;
+    loadUsersWithPagination();
+    
+    // Guardar preferencia en localStorage
+    localStorage.setItem('userTablePageSize', pageSize);
+  });
 }
 
-// Cargar lista de usuarios desde el servidor
-async function loadUsers() {
+// Variables para paginación
+let currentPage = 1;
+let pageSize = 25;
+let totalItems = 0;
+let totalPages = 0;
+let cachedUsers = []; // Caché de usuarios
+
+// Cargar lista de usuarios desde el servidor con paginación
+async function loadUsersWithPagination() {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -98,29 +140,189 @@ async function loadUsers() {
       return;
     }
     
-    const response = await fetch('/api/usuarios', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Error al cargar usuarios');
+    // Recuperar tamaño de página guardado
+    const savedPageSize = localStorage.getItem('userTablePageSize');
+    if (savedPageSize) {
+      pageSize = parseInt(savedPageSize);
+      document.getElementById('page-size-selector').value = pageSize;
     }
     
-    const result = await response.json();
+    // Mostrar indicador de carga
+    const tbody = document.getElementById('users-list');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center">
+          <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
+        </td>
+      </tr>
+    `;
     
-    if (result.success) {
-      renderUsers(result.data);
+    // Obtener filtros actuales
+    const searchTerm = document.getElementById('search-users').value.toLowerCase();
+    const roleFilter = document.getElementById('filter-role').value;
+    
+    // Si no hay filtros y tenemos caché, usar caché
+    let users;
+    if (!searchTerm && roleFilter === 'all' && cachedUsers.length > 0) {
+      users = cachedUsers;
     } else {
-      showMessage('Error al cargar usuarios: ' + result.message, 'error');
+      // Obtener usuarios del servidor
+      const response = await fetch('/api/usuarios', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar usuarios');
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        showMessage('Error al cargar usuarios: ' + result.message, 'error');
+        return;
+      }
+      
+      users = result.data;
+      
+      // Guardar en caché si no hay filtros
+      if (!searchTerm && roleFilter === 'all') {
+        cachedUsers = users;
+      }
     }
+    
+    // Aplicar filtros localmente
+    let filteredUsers = users;
+    
+    if (searchTerm) {
+      filteredUsers = filteredUsers.filter(user => 
+        (user.username && user.username.toLowerCase().includes(searchTerm)) ||
+        (user.nombre_completo && user.nombre_completo.toLowerCase().includes(searchTerm)) ||
+        (user.email && user.email.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    if (roleFilter !== 'all') {
+      filteredUsers = filteredUsers.filter(user => user.rol === roleFilter);
+    }
+    
+    // Calcular paginación
+    totalItems = filteredUsers.length;
+    totalPages = Math.ceil(totalItems / pageSize);
+    
+    // Ajustar página actual si es necesario
+    if (currentPage > totalPages) {
+      currentPage = totalPages || 1;
+    }
+    
+    // Obtener usuarios para la página actual
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+    
+    // Renderizar usuarios
+    renderUsers(paginatedUsers);
+    
+    // Actualizar información de paginación
+    updatePaginationInfo(startIndex, endIndex, totalItems);
+    
+    // Actualizar botones de paginación
+    updatePaginationButtons();
+    
+    // Generar números de página
+    generatePaginationNumbers();
+    
   } catch (error) {
     console.error('Error al cargar usuarios:', error);
     showMessage('Error al cargar la lista de usuarios', 'error');
+    
+    const tbody = document.getElementById('users-list');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-danger">
+          <i class="fas fa-exclamation-circle"></i> Error al cargar usuarios
+        </td>
+      </tr>
+    `;
   }
+}
+
+// Actualizar información de paginación
+function updatePaginationInfo(start, end, total) {
+  document.getElementById('showing-from').textContent = total > 0 ? start + 1 : 0;
+  document.getElementById('showing-to').textContent = end;
+  document.getElementById('total-items').textContent = total;
+}
+
+// Actualizar estado de los botones de paginación
+function updatePaginationButtons() {
+  const prevButton = document.getElementById('prev-page');
+  const nextButton = document.getElementById('next-page');
+  
+  prevButton.disabled = currentPage <= 1;
+  nextButton.disabled = currentPage >= totalPages;
+}
+
+// Generar números de paginación
+function generatePaginationNumbers() {
+  const paginationNumbers = document.getElementById('pagination-numbers');
+  paginationNumbers.innerHTML = '';
+  
+  // Limitar número de botones visibles
+  const maxVisibleButtons = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+  
+  // Ajustar si estamos cerca del final
+  if (endPage - startPage + 1 < maxVisibleButtons && startPage > 1) {
+    startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+  }
+  
+  // Añadir botón para primera página si no es visible
+  if (startPage > 1) {
+    addPageNumberButton(paginationNumbers, 1);
+    if (startPage > 2) {
+      addEllipsis(paginationNumbers);
+    }
+  }
+  
+  // Añadir botones de número de página
+  for (let i = startPage; i <= endPage; i++) {
+    addPageNumberButton(paginationNumbers, i);
+  }
+  
+  // Añadir botón para última página si no es visible
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      addEllipsis(paginationNumbers);
+    }
+    addPageNumberButton(paginationNumbers, totalPages);
+  }
+}
+
+// Añadir botón de número de página
+function addPageNumberButton(container, pageNum) {
+  const button = document.createElement('button');
+  button.textContent = pageNum;
+  button.className = currentPage === pageNum ? 'active' : '';
+  button.addEventListener('click', () => {
+    if (currentPage !== pageNum) {
+      currentPage = pageNum;
+      loadUsersWithPagination();
+    }
+  });
+  container.appendChild(button);
+}
+
+// Añadir elipsis para páginas ocultas
+function addEllipsis(container) {
+  const ellipsis = document.createElement('span');
+  ellipsis.textContent = '...';
+  ellipsis.className = 'pagination-ellipsis';
+  container.appendChild(ellipsis);
 }
 
 // Renderizar la lista de usuarios
@@ -131,7 +333,7 @@ function renderUsers(users) {
   if (!users || users.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center">No hay usuarios registrados</td>
+        <td colspan="7" class="text-center">No hay usuarios que coincidan con los criterios de búsqueda</td>
       </tr>
     `;
     return;
@@ -162,33 +364,10 @@ function renderUsers(users) {
       </td>
     </tr>
   `).join('');
-}
-
-// Filtrar usuarios según búsqueda y rol
-function filterUsers() {
-  const searchTerm = document.getElementById('search-users').value.toLowerCase();
-  const roleFilter = document.getElementById('filter-role').value;
   
-  const rows = document.querySelectorAll('#users-list tr');
-  
-  rows.forEach(row => {
-    const username = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-    const name = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-    const email = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-    const role = row.querySelector('.role-badge').className;
-    
-    const matchesSearch = username.includes(searchTerm) || 
-                          name.includes(searchTerm) || 
-                          email.includes(searchTerm);
-    
-    const matchesRole = roleFilter === 'all' || role.includes(roleFilter);
-    
-    if (matchesSearch && matchesRole) {
-      row.style.display = '';
-    } else {
-      row.style.display = 'none';
-    }
-  });
+  // Si hay pocos usuarios, no mostrar paginación
+  const paginationControls = document.querySelector('.pagination-controls');
+  paginationControls.style.display = totalItems <= pageSize ? 'none' : 'flex';
 }
 
 // Abrir el modal para crear un nuevo usuario
@@ -223,6 +402,11 @@ function openUserModal(userId = null) {
   // Mostrar modal
   modal.style.display = 'block';
   modalOverlay.style.display = 'block';
+  
+  // Enfocar primer campo
+  setTimeout(() => {
+    document.getElementById('username').focus();
+  }, 100);
 }
 
 // Cargar datos de un usuario para edición
@@ -307,15 +491,70 @@ async function handleUserFormSubmit(event) {
       const message = isEditing ? 'Usuario actualizado exitosamente' : 'Usuario creado exitosamente';
       showMessage(message, 'success');
       
+      // Crear notificación para otros administradores
+      createUserNotification(isEditing ? 'user_updated' : 'user_created', userData.username);
+      
       // Cerrar modal y recargar lista
       closeAllModals();
-      loadUsers();
+      
+      // Limpiar caché y recargar
+      cachedUsers = [];
+      loadUsersWithPagination();
+      
+      // Si tenemos estadísticas, actualizarlas
+      if (typeof loadUserStatistics === 'function') {
+        loadUserStatistics();
+        loadUserCharts();
+      }
     } else {
       showMessage(result.message || 'Error al guardar usuario', 'error');
     }
   } catch (error) {
     console.error('Error al guardar usuario:', error);
     showMessage('Error al guardar usuario', 'error');
+  }
+}
+
+// Crear notificación sobre cambios de usuarios
+function createUserNotification(type, username) {
+  try {
+    // Si no existe el WebSocket o no está conectado, salir
+    if (!window.notificationsSocket || window.notificationsSocket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    
+    // Obtener usuario actual
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    if (!currentUser) return;
+    
+    // Enviar notificación
+    window.notificationsSocket.send(JSON.stringify({
+      type: 'notification',
+      data: {
+        type: type,
+        module: 'users',
+        message: getNotificationMessage(type, username, currentUser.username),
+        important: type === 'user_deleted',
+        requiresRefresh: true
+      }
+    }));
+  } catch (error) {
+    console.error('Error al crear notificación:', error);
+    // No mostrar error al usuario
+  }
+}
+
+// Obtener mensaje para notificación según el tipo
+function getNotificationMessage(type, username, actorUsername) {
+  switch (type) {
+    case 'user_created':
+      return `El administrador ${actorUsername} ha creado el usuario ${username}`;
+    case 'user_updated':
+      return `El administrador ${actorUsername} ha actualizado el usuario ${username}`;
+    case 'user_deleted':
+      return `El administrador ${actorUsername} ha eliminado el usuario ${username}`;
+    default:
+      return `Cambio en el usuario ${username} por ${actorUsername}`;
   }
 }
 
@@ -349,6 +588,10 @@ async function deleteUser() {
   try {
     const token = localStorage.getItem('token');
     
+    // Obtener nombre de usuario antes de eliminar
+    const userRow = document.querySelector(`tr[data-id="${userId}"]`);
+    const username = userRow ? userRow.dataset.username : 'desconocido';
+    
     const response = await fetch(`/api/usuarios/${userId}`, {
       method: 'DELETE',
       headers: {
@@ -361,8 +604,21 @@ async function deleteUser() {
     
     if (result.success) {
       showMessage('Usuario eliminado exitosamente', 'success');
+      
+      // Crear notificación para otros administradores
+      createUserNotification('user_deleted', username);
+      
       closeAllModals();
-      loadUsers();
+      
+      // Limpiar caché y recargar
+      cachedUsers = [];
+      loadUsersWithPagination();
+      
+      // Si tenemos estadísticas, actualizarlas
+      if (typeof loadUserStatistics === 'function') {
+        loadUserStatistics();
+        loadUserCharts();
+      }
     } else {
       showMessage(result.message || 'Error al eliminar usuario', 'error');
     }
@@ -437,3 +693,7 @@ function mapRoleName(role) {
   
   return roles[role] || role;
 }
+
+// Exponer funciones necesarias globalmente para eventos onclick
+window.editUser = editUser;
+window.confirmDeleteUser = confirmDeleteUser;

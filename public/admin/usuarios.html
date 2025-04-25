@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.min.css">
 </head>
 <body>
   <header>
@@ -38,23 +39,38 @@
         <h1>
           <i class="fas fa-users-cog"></i> Administración de Usuarios
         </h1>
-        <p class="mb-4">Gestione los usuarios del sistema, crear nuevos usuarios y asignar roles.</p>
-        
-        <div class="admin-actions">
-          <button class="primary" id="btn-new-user">
-            <i class="fas fa-user-plus"></i> Nuevo Usuario
-          </button>
-          <div class="search-container">
-            <input type="text" id="search-users" placeholder="Buscar usuarios..." class="form-control">
-            <i class="fas fa-search"></i>
-          </div>
-          <div class="filter-container">
-            <select id="filter-role" class="form-control">
-              <option value="all">Todos los roles</option>
-              <option value="admin">Administradores</option>
-              <option value="vendedor">Vendedores</option>
-              <option value="inventario">Inventario</option>
-            </select>
+        <p>Gestione los usuarios del sistema, crear nuevos usuarios y asignar roles.</p>
+      </section>
+      
+      <div style="height: 40px;"></div>
+      
+      <div class="admin-actions">
+        <button class="primary" id="btn-new-user">
+          <i class="fas fa-user-plus"></i> Nuevo Usuario
+        </button>
+        <div class="search-container">
+          <input type="text" id="search-users" placeholder="Buscar usuarios..." class="form-control">
+          <i class="fas fa-search"></i>
+        </div>
+        <div class="filter-container">
+          <select id="filter-role" class="form-control">
+            <option value="all">Todos los roles</option>
+            <option value="admin">Administradores</option>
+            <option value="vendedor">Vendedores</option>
+            <option value="inventario">Inventario</option>
+          </select>
+        </div>
+      </div>
+
+      <section class="notifications-center">
+        <div class="notifications-header">
+          <h3><i class="fas fa-bell"></i> Notificaciones recientes</h3>
+          <button id="clear-notifications" class="small">Limpiar todo</button>
+        </div>
+        <div id="notifications-container">
+          <div class="empty-notifications">
+            <i class="fas fa-bell-slash"></i>
+            <p>No se pudieron cargar las notificaciones</p>
           </div>
         </div>
       </section>
@@ -62,32 +78,68 @@
       <section class="mt-4">
         <div class="card slide-up">
           <div class="table-container">
-            <table id="users-table">
+            <div class="table-options">
+              <div class="column-selector">
+                <button class="small" id="column-settings"><i class="fas fa-cog"></i> Columnas</button>
+                <div class="column-menu" id="column-menu">
+                  <div class="column-toggle">
+                    <label><input type="checkbox" data-column="id" checked> ID</label>
+                    <label><input type="checkbox" data-column="username" checked> Usuario</label>
+                    <label><input type="checkbox" data-column="nombre" checked> Nombre</label>
+                    <label><input type="checkbox" data-column="email" checked> Email</label>
+                    <label><input type="checkbox" data-column="rol" checked> Rol</label>
+                    <label><input type="checkbox" data-column="lastAccess" checked> Último Acceso</label>
+                  </div>
+                </div>
+              </div>
+              <div class="page-size">
+                <label>Mostrar: 
+                  <select id="page-size-selector">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            
+            <table id="users-table" class="sortable-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Usuario</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Último Acceso</th>
+                  <th data-column="id" data-sort="asc"><span>ID</span> <i class="fas fa-sort"></i></th>
+                  <th data-column="username"><span>Usuario</span> <i class="fas fa-sort"></i></th>
+                  <th data-column="nombre"><span>Nombre</span> <i class="fas fa-sort"></i></th>
+                  <th data-column="email"><span>Email</span> <i class="fas fa-sort"></i></th>
+                  <th data-column="rol"><span>Rol</span> <i class="fas fa-sort"></i></th>
+                  <th data-column="lastAccess"><span>Último Acceso</span> <i class="fas fa-sort"></i></th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="users-list">
-                <!-- Los usuarios se cargarán aquí desde la API -->
                 <tr>
                   <td colspan="7" class="text-center">Cargando usuarios...</td>
                 </tr>
               </tbody>
             </table>
+            
+            <div class="pagination-controls">
+              <div class="pagination-info">
+                Mostrando <span id="showing-from">0</span> a <span id="showing-to">0</span> de <span id="total-items">0</span> usuarios
+              </div>
+              <div class="pagination-buttons">
+                <button id="prev-page" disabled><i class="fas fa-chevron-left"></i></button>
+                <div id="pagination-numbers">
+                </div>
+                <button id="next-page"><i class="fas fa-chevron-right"></i></button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </div>
   </main>
 
-  <!-- Modal para crear/editar usuario -->
   <div class="modal" id="user-modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -155,7 +207,6 @@
     </div>
   </div>
 
-  <!-- Modal de confirmación para eliminar usuario -->
   <div class="modal" id="confirm-modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -174,7 +225,6 @@
     </div>
   </div>
 
-  <!-- Overlay para los modales -->
   <div class="modal-overlay"></div>
 
   <footer>
@@ -200,8 +250,10 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="../js/dashboard.js"></script>
   <script src="../js/admin/usuarios.js"></script>
+  <script src="../js/admin/usuarios-dashboard.js"></script>
+  <script src="../js/admin/usuarios-notificaciones.js"></script>
 </body>
 </html>
