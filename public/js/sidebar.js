@@ -87,6 +87,38 @@ function cargarMenuSidebar() {
         menuContainer.appendChild(listItem);
     });
     
+    // Añadir botón de Chat con Proveedores (visible para todos los usuarios)
+    const chatItem = document.createElement('li');
+    chatItem.className = 'nav-item mt-3';
+    
+    const chatButton = document.createElement('button');
+    chatButton.id = 'sidebar-whatsapp-chat';
+    chatButton.className = 'nav-link btn btn-success text-white w-100 d-flex align-items-center';
+    chatButton.innerHTML = `
+        <i class="fab fa-whatsapp mr-2"></i>
+        <span>Chat con Proveedores</span>
+        <span id="whatsapp-chat-global-badge" class="ml-auto badge badge-light badge-pill" style="display: none;">0</span>
+    `;
+    
+    // Evento click para mostrar el chat
+    chatButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (window.WhatsAppChat) {
+            window.WhatsAppChat.showChat();
+            window.WhatsAppChat.maximizeChat();
+            
+            // Actualizar contador de notificaciones
+            document.getElementById('whatsapp-chat-global-badge').style.display = 'none';
+            document.getElementById('whatsapp-chat-global-badge').textContent = '0';
+        } else {
+            console.error('El módulo WhatsAppChat no está disponible');
+            alert('Error: El módulo de chat no está cargado correctamente.');
+        }
+    });
+    
+    chatItem.appendChild(chatButton);
+    menuContainer.appendChild(chatItem);
+    
     // Agregar ítem de cerrar sesión al final
     const logoutItem = document.createElement('li');
     logoutItem.className = 'nav-item mt-4';
@@ -110,6 +142,29 @@ function cargarMenuSidebar() {
     menuContainer.appendChild(logoutItem);
 }
 
+/**
+ * Actualiza el contador de notificaciones del chat en el sidebar
+ * @param {number} count - Número de mensajes sin leer
+ */
+function updateWhatsAppChatBadge(count) {
+    const badge = document.getElementById('whatsapp-chat-global-badge');
+    if (badge) {
+        if (count > 0) {
+            badge.style.display = 'inline-block';
+            badge.textContent = count > 99 ? '99+' : count;
+            
+            // Hacer que destelle
+            badge.classList.add('badge-pulse');
+            setTimeout(() => {
+                badge.classList.remove('badge-pulse');
+            }, 2000);
+        } else {
+            badge.style.display = 'none';
+            badge.textContent = '0';
+        }
+    }
+}
+
 // Cuando el documento está listo, inicializar eventos para el sidebar en móvil
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle del sidebar en dispositivos móviles
@@ -119,4 +174,18 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('body').classList.toggle('sidebar-open');
         });
     }
+    
+    // Añadir estilos para la animación del badge
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes badgePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .badge-pulse {
+            animation: badgePulse 0.5s 2;
+        }
+    `;
+    document.head.appendChild(style);
 });

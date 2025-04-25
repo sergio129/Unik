@@ -26,6 +26,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Inicializar la búsqueda predictiva mejorada
   setTimeout(initPredictiveSearch, 100);
+
+  // Botón de Chat con Proveedores
+  const chatButton = document.getElementById('whatsapp-chat-btn');
+  if (chatButton) {
+    chatButton.addEventListener('click', function() {
+      if (window.WhatsAppChat) {
+        window.WhatsAppChat.showChat();
+        window.WhatsAppChat.maximizeChat();
+        
+        // Actualizar contador de notificaciones
+        const badge = document.getElementById('whatsapp-chat-global-badge');
+        if (badge) {
+          badge.style.display = 'none';
+          badge.textContent = '0';
+        }
+      } else {
+        console.error('El módulo WhatsAppChat no está disponible');
+        showToast('Error', 'No se pudo cargar el módulo de chat', 'error');
+      }
+    });
+  }
 });
 
 // Variables globales
