@@ -627,9 +627,9 @@
 
     <!-- Modal para Ver Detalle de Pedido -->
     <div class="modal fade" id="detallePedidoModal" tabindex="-1" role="dialog" aria-labelledby="detallePedidoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header">
                     <h5 class="modal-title" id="detallePedidoModalLabel">
                         <i class="fas fa-clipboard-list"></i> Detalle del Pedido
                     </h5>
@@ -637,59 +637,53 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <!-- Información general del pedido -->
+                        <!-- Columna izquierda - Información general -->
                         <div class="col-md-6">
-                            <div class="card mb-3 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h6>
-                                </div>
-                                <div class="card-body">
-                                    <dl class="row mb-0">
-                                        <dt class="col-sm-4">Código:</dt>
-                                        <dd class="col-sm-8" id="detalle-codigo"></dd>
-                                        
-                                        <dt class="col-sm-4">Proveedor:</dt>
-                                        <dd class="col-sm-8" id="detalle-proveedor"></dd>
-                                        
-                                        <dt class="col-sm-4">Fecha:</dt>
-                                        <dd class="col-sm-8" id="detalle-fecha"></dd>
-                                        
-                                        <dt class="col-sm-4">Entrega Est.:</dt>
-                                        <dd class="col-sm-8" id="detalle-fecha-entrega"></dd>
-                                        
-                                        <dt class="col-sm-4">Estado:</dt>
-                                        <dd class="col-sm-8">
-                                            <span id="detalle-estado" class="badge badge-pill"></span>
-                                        </dd>
-                                        
-                                        <dt class="col-sm-4">Prioridad:</dt>
-                                        <dd class="col-sm-8">
-                                            <span id="detalle-prioridad" class="badge badge-pill"></span>
-                                        </dd>
-                                        
-                                        <dt class="col-sm-4">Origen:</dt>
-                                        <dd class="col-sm-8" id="detalle-origen"></dd>
-                                        
-                                        <dt class="col-sm-4">Dir. Entrega:</dt>
-                                        <dd class="col-sm-8" id="detalle-direccion"></dd>
-                                        
-                                        <dt class="col-sm-4">Notas:</dt>
-                                        <dd class="col-sm-8" id="detalle-notas"><em class="text-muted">Sin notas</em></dd>
-                                    </dl>
-                                </div>
+                            <div class="seccion-modal">
+                                <h6><i class="fas fa-info-circle"></i> Información General</h6>
+                                <dl class="row">
+                                    <dt class="col-sm-4">Código:</dt>
+                                    <dd class="col-sm-8" id="detalle-codigo"></dd>
+                                    
+                                    <dt class="col-sm-4">Proveedor:</dt>
+                                    <dd class="col-sm-8" id="detalle-proveedor"></dd>
+                                    
+                                    <dt class="col-sm-4">Fecha:</dt>
+                                    <dd class="col-sm-8" id="detalle-fecha"></dd>
+                                    
+                                    <dt class="col-sm-4">Entrega Est.:</dt>
+                                    <dd class="col-sm-8" id="detalle-fecha-entrega"></dd>
+                                    
+                                    <dt class="col-sm-4">Estado:</dt>
+                                    <dd class="col-sm-8">
+                                        <span id="detalle-estado" class="badge"></span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Prioridad:</dt>
+                                    <dd class="col-sm-8">
+                                        <span id="detalle-prioridad" class="badge"></span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Origen:</dt>
+                                    <dd class="col-sm-8" id="detalle-origen"></dd>
+                                    
+                                    <dt class="col-sm-4">Dir. Entrega:</dt>
+                                    <dd class="col-sm-8" id="detalle-direccion"></dd>
+                                    
+                                    <dt class="col-sm-4">Notas:</dt>
+                                    <dd class="col-sm-8" id="detalle-notas"><em class="text-muted">Sin notas</em></dd>
+                                </dl>
                             </div>
                         </div>
                         
-                        <!-- Información adicional -->
+                        <!-- Columna derecha - Cambio de estado e información adicional -->
                         <div class="col-md-6">
-                            <!-- Cambio de estado -->
-                            <div class="card mb-3 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-exchange-alt"></i> Cambiar Estado</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form id="form-cambiar-estado" class="form-row align-items-center">
-                                        <div class="col-sm-8 my-1">
+                            <!-- Cambiar estado -->
+                            <div class="seccion-modal">
+                                <h6><i class="fas fa-exchange-alt"></i> Cambiar Estado</h6>
+                                <div class="cambiar-estado">
+                                    <div class="row g-2">
+                                        <div class="col-8">
                                             <select id="estado-select" class="form-control">
                                                 <option value="pendiente">Pendiente</option>
                                                 <option value="en_proceso">En Proceso</option>
@@ -697,74 +691,64 @@
                                                 <option value="cancelado">Cancelado</option>
                                             </select>
                                         </div>
-                                        <div class="col-sm-4 my-1">
-                                            <button type="button" id="btn-cambiar-estado" class="btn btn-primary btn-block">Actualizar</button>
+                                        <div class="col-4">
+                                            <button type="button" id="btn-cambiar-estado" class="btn btn-actualizar w-100">Actualizar</button>
                                         </div>
-                                    </form>
-                                    <div class="alert alert-info mt-3 mb-0 py-2">
-                                        <small><i class="fas fa-info-circle"></i> Al marcar como completado, los productos se añadirán automáticamente al inventario.</small>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> Al marcar como completado, los productos se añadirán automáticamente al inventario.
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- Información adicional -->
-                            <div class="card mb-3 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-user-clock"></i> Información adicional</h6>
-                                </div>
-                                <div class="card-body">
-                                    <dl class="row mb-0">
-                                        <dt class="col-sm-5">Creado por:</dt>
-                                        <dd class="col-sm-7" id="detalle-creado-por">-</dd>
-                                        
-                                        <dt class="col-sm-5">Creado el:</dt>
-                                        <dd class="col-sm-7" id="detalle-fecha-creacion">-</dd>
-                                        
-                                        <dt class="col-sm-5">Última actualización:</dt>
-                                        <dd class="col-sm-7" id="detalle-ultima-actualizacion">-</dd>
-                                    </dl>
-                                </div>
+                            <div class="seccion-modal">
+                                <h6><i class="fas fa-user-clock"></i> Información adicional</h6>
+                                <dl class="row">
+                                    <dt class="col-sm-5">Creado por:</dt>
+                                    <dd class="col-sm-7" id="detalle-creado-por">-</dd>
+                                    
+                                    <dt class="col-sm-5">Creado el:</dt>
+                                    <dd class="col-sm-7" id="detalle-fecha-creacion">-</dd>
+                                    
+                                    <dt class="col-sm-5">Última actual.:</dt>
+                                    <dd class="col-sm-7" id="detalle-ultima-actualizacion">-</dd>
+                                </dl>
                             </div>
                         </div>
                         
-                        <!-- Productos del pedido -->
-                        <div class="col-md-12">
-                            <div class="card mb-3 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-boxes"></i> Productos</h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-bordered table-striped mb-0" id="tabla-detalle-productos">
-                                            <thead class="thead-light">
-                                                <tr>
-                                                    <th>Código</th>
-                                                    <th>Producto</th>
-                                                    <th class="text-center" width="100px">Cant.</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <!-- Se cargará dinámicamente -->
-                                                <tr>
-                                                    <td colspan="3" class="text-center text-muted py-3">
-                                                        <i class="fas fa-spinner fa-spin"></i> Cargando productos...
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                        <!-- Productos -->
+                        <div class="col-12 mt-3">
+                            <div class="seccion-modal">
+                                <h6><i class="fas fa-boxes"></i> Productos</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered table-striped mb-0" id="tabla-detalle-productos">
+                                        <thead>
+                                            <tr>
+                                                <th>Código</th>
+                                                <th>Producto</th>
+                                                <th class="text-center" width="100px">Cant.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se cargará dinámicamente -->
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted py-3">
+                                                    <i class="fas fa-spinner fa-spin"></i> Cargando productos...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Historial de seguimiento -->
-                        <div class="col-md-12">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="fas fa-history"></i> Historial de Cambios</h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="timeline p-3" id="historial-seguimiento">
+                        <div class="col-12 mt-3">
+                            <div class="seccion-modal">
+                                <h6><i class="fas fa-history"></i> Historial de Cambios</h6>
+                                <div id="historial-seguimiento">
+                                    <div class="timeline">
                                         <!-- Se cargará dinámicamente -->
                                         <div class="text-center py-3 text-muted">
                                             <i class="fas fa-spinner fa-spin"></i> Cargando historial...
@@ -775,11 +759,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cerrar" data-bs-dismiss="modal">
                         <i class="fas fa-times"></i> Cerrar
                     </button>
-                    <button type="button" id="btn-editar-pedido" class="btn btn-primary">
+                    <button type="button" id="btn-editar-pedido" class="btn btn-editar">
                         <i class="fas fa-edit"></i> Editar Pedido
                     </button>
                 </div>

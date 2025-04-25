@@ -552,3 +552,178 @@ table tbody tr.prioridad-alta {
 .fc-day-has-urgente {
     background-color: rgba(220,53,69,0.05) !important;
 }
+
+/* Mejoras responsivas para formularios en dispositivos móviles */
+@media (max-width: 576px) {
+    /* Ajustes para la estructura principal */
+    main {
+        padding: 0.5rem !important;
+    }
+    
+    /* Ajustes a las tarjetas de estadísticas */
+    .card {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Mejorar experiencia de formularios en filtros */
+    .filter-form .form-group {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Mejorar visualización del dashboard */
+    .chart-container {
+        height: auto !important;
+        min-height: 200px;
+        margin-bottom: 1rem;
+    }
+    
+    /* Mejorar visualización de tablas */
+    .table th, 
+    .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Botones y controles táctiles */
+    .btn {
+        min-height: 38px; /* Mínimo recomendado para elementos táctiles */
+    }
+    
+    .form-control {
+        min-height: 38px;
+        font-size: 16px; /* Evitar zoom automático en iOS */
+    }
+    
+    /* Mejorar la visualización de las cards */
+    .border-left-primary,
+    .border-left-success,
+    .border-left-info,
+    .border-left-warning,
+    .border-left-danger {
+        padding: 0.5rem;
+    }
+    
+    /* Mejorar formularios en dispositivos móviles */
+    .card-header {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    /* Ajustes para el formulario de filtros */
+    #filter-form [class*="col-"] {
+        margin-bottom: 0.5rem;
+    }
+    
+    #filter-form .form-group {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Optimizar los botones de acción en tablas */
+    .action-buttons .btn-sm {
+        padding: 0.25rem 0.5rem;
+        min-width: 30px;
+        min-height: 30px;
+    }
+}
+
+/* Mejoras específicas para formularios en tablets */
+@media (min-width: 577px) and (max-width: 991px) {
+    /* Ajustes para la sección de filtros */
+    #filter-form .row {
+        margin-bottom: 0;
+    }
+    
+    #filter-form [class*="col-"] {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Mejorar experiencia en dashboard */
+    .chart-container {
+        height: 250px !important;
+    }
+}
+
+/* Optimizaciones específicas para el modal de cambio de estado */
+@media (max-width: 576px) {
+    #cambioEstadoModal .modal-body {
+        padding: 1rem;
+    }
+    
+    #comentario-cambio-estado {
+        font-size: 16px; /* Prevenir zoom en iOS */
+    }
+    
+    .estado-icon-container {
+        width: 50px;
+        height: 50px;
+    }
+    
+    /* Mejorar disposición de botones en el modal footer */
+    #cambioEstadoModal .modal-footer {
+        flex-wrap: nowrap;
+    }
+    
+    #cambioEstadoModal .modal-footer .btn {
+        flex: 1;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Optimizaciones para modales de detalle y edición */
+@media (max-width: 576px) {
+    #detallePedidoModal .card {
+        margin-bottom: 0.75rem;
+    }
+    
+    #detallePedidoModal .card-body {
+        padding: 0.75rem;
+    }
+    
+    /* Optimizar listas de definición */
+    #detallePedidoModal dl.row {
+        display: block;
+        margin: 0;
+    }
+    
+    #detallePedidoModal dt, 
+    #detallePedidoModal dd {
+        display: block;
+        width: 100%;
+        padding: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    #detallePedidoModal dt {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Mejorar visualización del historial */
+    .timeline {
+        padding: 0.5rem;
+    }
+    
+    .timeline-item {
+        padding-left: 1rem;
+    }
+}
+
+/* Optimizaciones específicas para modal de proveedores */
+@media (max-width: 576px) {
+    #proveedorModal .table th,
+    #proveedorModal .table td,
+    #editProveedorModal .form-control {
+        font-size: 0.9rem;
+    }
+    
+    #proveedor-form .form-group {
+        margin-bottom: 0.75rem;
+    }
+}
