@@ -107,13 +107,18 @@ async function loadNotifications() {
       throw new Error('Error al cargar notificaciones');
     }
     
-    const result = await response.json();
+    const usuarios = await response.json();
     
-    if (result.success && result.data) {
-      // Renderizar notificaciones
-      renderNotifications(result.data);
+    // Verificar si la respuesta es un array (formato correcto)
+    if (Array.isArray(usuarios) && usuarios.length > 0) {
+      // Renderizar las notificaciones de usuarios
+      renderUserNotifications(usuarios);
+    } else if (usuarios.success && usuarios.data) {
+      // Formato antiguo por compatibilidad
+      renderUserNotifications(usuarios.data);
     } else {
-      console.error('Error al cargar notificaciones:', result.message);
+      // No hay datos o formato incorrecto
+      showEmptyNotifications('No hay notificaciones disponibles');
     }
   } catch (error) {
     console.error('Error al cargar notificaciones:', error);
@@ -156,6 +161,299 @@ function renderNotifications(notifications) {
       </div>
     </div>
   `).join('');
+}
+
+/**
+ * Renderiza las notificaciones de usuarios con estadísticas
+ */
+function renderUserNotifications(usuarios) {
+  const container = document.getElementById('notifications-container');
+  
+  // Si no hay usuarios, mostrar mensaje
+  if (!usuarios || usuarios.length === 0) {
+    showEmptyNotifications('No hay usuarios con notificaciones');
+    return;
+  }
+  
+  // Ordenar usuarios por número de notificaciones no leídas (descendente)
+  usuarios.sort((a, b) => b.notificaciones_no_leidas - a.notificaciones_no_leidas);
+  
+  // Crear HTML para cada usuario con sus notificaciones
+  container.innerHTML = usuarios.map(usuario => {
+    // Determinar clase según número de notificaciones no leídas
+    let statusClass = 'info';
+    if (usuario.notificaciones_no_leidas > 5) {
+      statusClass = 'danger';
+    } else if (usuario.notificaciones_no_leidas > 0) {
+      statusClass = 'warning';
+    }
+    
+    return `
+      <div class="notification-user-item" data-id="${usuario.id}" onclick="viewUserNotifications(${usuario.id}, '${usuario.nombre_completo || usuario.username}')">
+        <div class="notification-icon ${statusClass}">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-title">${usuario.nombre_completo || usuario.username}</div>
+          <div class="notification-stats">
+            <span class="badge ${usuario.notificaciones_no_leidas > 0 ? 'badge-danger' : 'badge-secondary'}">
+              ${usuario.notificaciones_no_leidas} pendientes
+            </span>
+            <span class="badge badge-light">
+              ${usuario.total_notificaciones} total
+            </span>
+          </div>
+        </div>
+        <div class="notification-role ${getRoleClass(usuario.rol)}">
+          ${getRoleName(usuario.rol)}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Ver todas las notificaciones de un usuario específico
+ */
+async function viewUserNotifications(usuarioId, nombreUsuario) {
+  try {
+    // Actualizar título del modal
+    document.getElementById('notifications-modal-title').textContent = `Notificaciones de ${nombreUsuario}`;
+    
+    // Mostrar modal con estado de carga
+    document.getElementById('user-notifications-container').innerHTML = `
+      <div class="loading-notifications">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Cargando notificaciones...</p>
+      </div>
+    `;
+    
+    openModal('notifications-modal');
+    
+    // Cargar notificaciones del usuario
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No se ha iniciado sesión');
+    }
+    
+    const response = await fetch(`/api/notificaciones/usuarios/${usuarioId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al cargar notificaciones del usuario');
+    }
+    
+    const data = await response.json();
+    
+    // Actualizar contador de estadísticas
+    document.getElementById('notifications-total').textContent = data.notificaciones.length;
+    document.getElementById('notifications-unread').textContent = 
+      data.notificaciones.filter(n => !n.leida).length;
+    
+    // Configurar botón de marcar todas como leídas
+    const btnMarkAllRead = document.getElementById('btn-mark-all-read');
+    btnMarkAllRead.onclick = () => markAllUserNotificationsAsRead(usuarioId);
+    
+    // Renderizar notificaciones
+    renderUserNotificationsList(data.notificaciones);
+    
+  } catch (error) {
+    console.error('Error al cargar notificaciones del usuario:', error);
+    document.getElementById('user-notifications-container').innerHTML = `
+      <div class="empty-notifications">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>Error al cargar notificaciones: ${error.message}</p>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Renderiza la lista de notificaciones de un usuario
+ */
+function renderUserNotificationsList(notificaciones) {
+  const container = document.getElementById('user-notifications-container');
+  
+  // Si no hay notificaciones, mostrar mensaje vacío
+  if (!notificaciones || notificaciones.length === 0) {
+    container.innerHTML = `
+      <div class="empty-notifications">
+        <i class="fas fa-bell-slash"></i>
+        <p>Este usuario no tiene notificaciones</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Ordenar notificaciones por fecha (más recientes primero)
+  notificaciones.sort((a, b) => 
+    new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  
+  // Crear HTML para cada notificación
+  container.innerHTML = notificaciones.map(notificacion => {
+    const isUnread = !notificacion.leida;
+    const notifDate = new Date(notificacion.created_at || notificacion.createdAt);
+    
+    return `
+      <div class="user-notification-item ${isUnread ? 'unread' : ''}">
+        ${isUnread ? '<span class="notification-unread-badge"></span>' : ''}
+        <div class="notification-header">
+          <span class="notification-title">${notificacion.titulo}</span>
+          <span class="notification-time">${formatTimeAgo(notifDate)}</span>
+        </div>
+        <div class="notification-content">
+          ${notificacion.mensaje}
+        </div>
+        <div class="notification-footer">
+          <span class="notification-metadata">
+            <i class="fas fa-tag"></i> ${notificacion.tipo || 'info'}
+            ${notificacion.entidad_tipo ? 
+              `<span class="notification-entity"><i class="fas fa-link"></i> ${notificacion.entidad_tipo} #${notificacion.entidad_id}</span>` : 
+              ''}
+          </span>
+          <div class="notification-buttons">
+            ${isUnread ? 
+              `<button class="small" onclick="markNotificationAsRead(${notificacion.id})">
+                <i class="fas fa-check"></i> Marcar como leída
+              </button>` : 
+              ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Marca una notificación individual como leída
+ */
+async function markNotificationAsRead(notificationId) {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    const response = await fetch(`/api/notificaciones/${notificationId}/marcar-leida`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al marcar notificación como leída');
+    }
+    
+    // Actualizar UI
+    const notificationElement = document.querySelector(`.user-notification-item:has(button[onclick*="${notificationId}"])`);
+    if (notificationElement) {
+      notificationElement.classList.remove('unread');
+      const badge = notificationElement.querySelector('.notification-unread-badge');
+      if (badge) badge.remove();
+      
+      const button = notificationElement.querySelector('.notification-buttons');
+      if (button) button.innerHTML = '';
+      
+      // Actualizar contador
+      const unreadCount = document.getElementById('notifications-unread');
+      const currentCount = parseInt(unreadCount.textContent);
+      if (currentCount > 0) {
+        unreadCount.textContent = currentCount - 1;
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error al marcar notificación como leída:', error);
+  }
+}
+
+/**
+ * Marca todas las notificaciones de un usuario como leídas
+ */
+async function markAllUserNotificationsAsRead(usuarioId) {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    // Por ahora usamos la ruta general, pero idealmente necesitaríamos una específica para un usuario
+    const response = await fetch(`/api/notificaciones/marcar-todas-leidas`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ usuario_id: usuarioId })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al marcar notificaciones como leídas');
+    }
+    
+    // Actualizar UI: todas las notificaciones ya no están sin leer
+    const notificationItems = document.querySelectorAll('.user-notification-item.unread');
+    notificationItems.forEach(item => {
+      item.classList.remove('unread');
+      const badge = item.querySelector('.notification-unread-badge');
+      if (badge) badge.remove();
+      
+      const button = item.querySelector('.notification-buttons');
+      if (button) button.innerHTML = '';
+    });
+    
+    // Actualizar contador
+    document.getElementById('notifications-unread').textContent = '0';
+    
+    // Mostrar mensaje de éxito
+    showToastNotification({
+      message: 'Todas las notificaciones han sido marcadas como leídas',
+      type: 'success',
+      important: true
+    });
+    
+    // Recargar datos después de un breve retraso
+    setTimeout(() => {
+      loadNotifications();
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Error al marcar todas las notificaciones como leídas:', error);
+    showToastNotification({
+      message: 'Error al marcar notificaciones como leídas',
+      type: 'error',
+      important: true
+    });
+  }
+}
+
+/**
+ * Obtiene el nombre legible de un rol
+ */
+function getRoleName(rol) {
+  const roles = {
+    'admin': 'Administrador',
+    'vendedor': 'Vendedor',
+    'inventario': 'Inventario'
+  };
+  
+  return roles[rol] || rol;
+}
+
+/**
+ * Obtiene la clase CSS para un rol
+ */
+function getRoleClass(rol) {
+  const classes = {
+    'admin': 'role-admin',
+    'vendedor': 'role-vendedor',
+    'inventario': 'role-inventario'
+  };
+  
+  return classes[rol] || '';
 }
 
 /**
@@ -451,7 +749,7 @@ async function clearNotifications() {
     if (!token) return;
     
     const response = await fetch('/api/notificaciones/usuarios/clear', {
-      method: 'DELETE',
+      method: 'DELETE', // Cambio de método a DELETE para coincidir con la ruta
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -462,14 +760,77 @@ async function clearNotifications() {
       throw new Error('Error al limpiar notificaciones');
     }
     
-    // Mostrar mensaje de "no hay notificaciones"
-    showEmptyNotifications();
+    // Mostrar mensaje de éxito
+    showToastNotification({
+      message: 'Todas las notificaciones han sido limpiadas',
+      type: 'success',
+      important: true
+    });
     
+    // Mostrar mensaje de "no hay notificaciones"
+    showEmptyNotifications('No hay notificaciones pendientes');
+    
+    // Recargar las notificaciones después de un breve retraso
+    setTimeout(() => {
+      loadNotifications();
+    }, 1500);
   } catch (error) {
     console.error('Error al limpiar notificaciones:', error);
-    showMessage('Error al limpiar notificaciones', 'error');
+    showToastNotification({
+      message: 'Error al limpiar notificaciones',
+      type: 'error',
+      important: true
+    });
   }
+}
+
+/**
+ * Función para abrir un modal
+ */
+function openModal(modalId) {
+  // Cerrar cualquier modal abierto
+  const modals = document.querySelectorAll('.modal.active');
+  modals.forEach(modal => {
+    modal.classList.remove('active');
+  });
+  
+  // Abrir modal específico
+  const modal = document.getElementById(modalId);
+  const overlay = document.querySelector('.modal-overlay');
+  
+  if (modal && overlay) {
+    modal.classList.add('active');
+    overlay.classList.add('active');
+    
+    // Configurar eventos para cerrar
+    setupModalClose(modal, overlay);
+  }
+}
+
+/**
+ * Función para configurar eventos de cierre de modal
+ */
+function setupModalClose(modal, overlay) {
+  // Cerrar al hacer clic en botón de cerrar
+  const closeButtons = modal.querySelectorAll('.close-modal');
+  closeButtons.forEach(button => {
+    button.onclick = () => {
+      modal.classList.remove('active');
+      overlay.classList.remove('active');
+    };
+  });
+  
+  // Cerrar al hacer clic en overlay
+  overlay.onclick = () => {
+    modal.classList.remove('active');
+    overlay.classList.remove('active');
+  };
 }
 
 // Hacer global la función markAsRead para poder usarla desde eventos onclick
 window.markAsRead = markAsRead;
+
+// Hacer globales las funciones necesarias
+window.viewUserNotifications = viewUserNotifications;
+window.markNotificationAsRead = markNotificationAsRead;
+window.markAllUserNotificationsAsRead = markAllUserNotificationsAsRead;

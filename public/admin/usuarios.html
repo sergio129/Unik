@@ -225,6 +225,44 @@
     </div>
   </div>
 
+  <!-- Modal para ver notificaciones de usuario -->
+  <div class="modal" id="notifications-modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2><i class="fas fa-bell"></i> <span id="notifications-modal-title">Notificaciones de Usuario</span></h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="notifications-stats">
+          <div class="notification-stat">
+            <span class="stat-label">Total:</span>
+            <span class="stat-value" id="notifications-total">0</span>
+          </div>
+          <div class="notification-stat">
+            <span class="stat-label">No leídas:</span>
+            <span class="stat-value" id="notifications-unread">0</span>
+          </div>
+          <div class="notification-actions">
+            <button class="secondary small" id="btn-mark-all-read">
+              <i class="fas fa-check-double"></i> Marcar todas como leídas
+            </button>
+          </div>
+        </div>
+        
+        <div id="user-notifications-container" class="user-notifications-list">
+          <div class="loading-notifications">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando notificaciones...</p>
+          </div>
+        </div>
+        
+        <div class="notifications-pagination">
+          <span class="pagination-info">Mostrando las notificaciones más recientes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay"></div>
 
   <footer>

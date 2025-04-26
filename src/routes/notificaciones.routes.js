@@ -12,6 +12,15 @@ router.use(authMiddleware.authenticate);
 // Obtener todas las notificaciones del usuario actual
 router.get('/', notificacionesController.obtenerNotificaciones);
 
+// Obtener usuarios con estadísticas de notificaciones
+router.get('/usuarios', notificacionesController.obtenerUsuariosConNotificaciones);
+
+// Obtener notificaciones de un usuario específico
+router.get('/usuarios/:usuarioId', notificacionesController.obtenerNotificacionesPorUsuario);
+
+// Limpiar todas las notificaciones de los usuarios (solo admin)
+router.delete('/usuarios/clear', notificacionesController.limpiarNotificacionesUsuarios);
+
 // Obtener notificaciones no leídas del usuario actual
 router.get('/no-leidas', notificacionesController.obtenerNotificacionesNoLeidas);
 

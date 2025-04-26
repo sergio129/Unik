@@ -330,3 +330,153 @@ exports.obtenerPreferencias = async (req, res) => {
         });
     }
 };
+
+// Obtener usuarios con estadísticas de notificaciones
+exports.obtenerUsuariosConNotificaciones = async (req, res) => {
+    try {
+        const Usuario = require('../models/usuario.model');
+        
+        // Consulta más simple y directa para evitar problemas con los alias
+        const usuarios = await Usuario.findAll({
+            attributes: [
+                'id', 
+                'username', 
+                'nombre_completo', 
+                'email', 
+                'rol'
+            ],
+            order: [['nombre_completo', 'ASC']],
+        });
+        
+        // Si no hay usuarios, devolver array vacío
+        if (!usuarios.length) {
+            return res.status(200).json([]);
+        }
+
+        // Obtener las estadísticas de notificaciones por separado
+        const estadisticasPromises = usuarios.map(async (usuario) => {
+            // Contar total de notificaciones
+            const totalNotificaciones = await Notificacion.count({
+                where: { usuario_id: usuario.id }
+            });
+            
+            // Contar notificaciones no leídas
+            const notificacionesNoLeidas = await Notificacion.count({
+                where: { 
+                    usuario_id: usuario.id,
+                    leida: false
+                }
+            });
+            
+            // Devolver objeto combinado
+            return {
+                id: usuario.id,
+                username: usuario.username,
+                nombre_completo: usuario.nombre_completo,
+                email: usuario.email,
+                rol: usuario.rol,
+                total_notificaciones: totalNotificaciones,
+                notificaciones_no_leidas: notificacionesNoLeidas
+            };
+        });
+        
+        // Resolver todas las promesas
+        const resultados = await Promise.all(estadisticasPromises);
+        
+        res.status(200).json(resultados);
+    } catch (error) {
+        console.error('Error al obtener usuarios con estadísticas de notificaciones:', error);
+        res.status(500).json({
+            mensaje: 'Error al obtener datos de notificaciones por usuario',
+            error: error.message
+        });
+    }
+};
+
+// Limpiar todas las notificaciones de usuarios
+exports.limpiarNotificacionesUsuarios = async (req, res) => {
+    try {
+        // Esta acción normalmente solo la puede realizar un administrador
+        const usuarioId = req.user.id;
+        const Usuario = require('../models/usuario.model');
+        
+        // Verificar si es administrador
+        const usuario = await Usuario.findByPk(usuarioId);
+        if (!usuario || usuario.rol !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                mensaje: 'No tiene permisos para realizar esta acción'
+            });
+        }
+        
+        // Marcar como leídas todas las notificaciones de todos los usuarios
+        await Notificacion.update(
+            { leida: true, vista: true },
+            { where: {} } // Sin condición WHERE para actualizar todas
+        );
+        
+        res.status(200).json({
+            success: true,
+            mensaje: 'Todas las notificaciones han sido limpiadas'
+        });
+    } catch (error) {
+        console.error('Error al limpiar notificaciones de usuarios:', error);
+        res.status(500).json({
+            success: false,
+            mensaje: 'Error al limpiar notificaciones',
+            error: error.message
+        });
+    }
+};
+
+// Obtener notificaciones de un usuario específico
+exports.obtenerNotificacionesPorUsuario = async (req, res) => {
+    try {
+        const usuarioId = req.params.usuarioId;
+        const Usuario = require('../models/usuario.model');
+        
+        // Verificar si el usuario solicitante es admin (solo admins pueden ver notificaciones de otros)
+        const solicitante = req.user;
+        if (solicitante.rol !== 'admin' && solicitante.id != usuarioId) {
+            return res.status(403).json({
+                success: false,
+                mensaje: 'No tiene permisos para ver las notificaciones de este usuario'
+            });
+        }
+        
+        // Verificar si el usuario existe
+        const usuario = await Usuario.findByPk(usuarioId);
+        if (!usuario) {
+            return res.status(404).json({
+                success: false,
+                mensaje: 'Usuario no encontrado'
+            });
+        }
+        
+        // Obtener notificaciones del usuario
+        const notificaciones = await Notificacion.findAll({
+            where: { usuario_id: usuarioId },
+            order: [['created_at', 'DESC']],
+            limit: 100 // Limitar a 100 notificaciones más recientes
+        });
+        
+        res.status(200).json({
+            success: true,
+            usuario: {
+                id: usuario.id,
+                username: usuario.username,
+                nombre_completo: usuario.nombre_completo,
+                email: usuario.email,
+                rol: usuario.rol
+            },
+            notificaciones: notificaciones
+        });
+    } catch (error) {
+        console.error('Error al obtener notificaciones del usuario:', error);
+        res.status(500).json({
+            success: false,
+            mensaje: 'Error al obtener notificaciones del usuario',
+            error: error.message
+        });
+    }
+};
