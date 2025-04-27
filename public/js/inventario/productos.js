@@ -1113,53 +1113,100 @@ function toggleProductoStatus(productoId, newStatus) {
     showToast('Producto no encontrado', 'error');
     return;
   }
-  
-  showConfirm(
-    `${newStatus ? 'Activar' : 'Desactivar'} Producto`,
-    `¿Está seguro que desea ${statusText} el producto "${producto.nombre}"?`,
-    newStatus ? 'fa-toggle-on' : 'fa-toggle-off',
-    () => {
-      showLoading();
-      
-      fetch(`/api/productos/${productoId}/estado`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+
+  // Si estamos activando, simplemente activar sin preguntar por el stock
+  if (newStatus) {
+    showConfirm(
+      'Activar Producto',
+      `¿Está seguro que desea activar el producto "${producto.nombre}"?`,
+      'fa-toggle-on',
+      () => {
+        actualizarEstadoProducto(productoId, true);
+      }
+    );
+  } else {
+    // Si estamos desactivando, verificar si tiene stock
+    const stockActual = producto.stock || producto.cantidad || 0;
+    
+    // Solo preguntar si tiene stock mayor que 0
+    if (stockActual > 0) {
+      // Usamos el diálogo de confirmación estándar que ya sabemos que funciona
+      showConfirm(
+        'Desactivar Producto',
+        `¿Está seguro que desea desactivar el producto "${producto.nombre}"?<br><br>El producto tiene ${stockActual} unidades en stock.<br><br>¿Qué desea hacer con el stock?`,
+        'fa-toggle-off',
+        () => {
+          // Resetear stock a cero (comportamiento original)
+          actualizarEstadoProducto(productoId, false, true);
         },
-        body: JSON.stringify({ activo: newStatus })
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => {
-            throw new Error(err.message || `Error al ${statusText} el producto`);
-          });
+        () => {
+          // No hacer nada si cancela
+        },
+        // Opciones adicionales
+        {
+          okButtonText: 'Resetear stock a cero',
+          additionalButton: {
+            text: 'Mantener stock actual',
+            onClick: () => actualizarEstadoProducto(productoId, false, false),
+            className: 'secondary highlight'
+          }
         }
-        return response.json();
-      })
-      .then(data => {
-        showToast(`Producto ${newStatus ? 'activado' : 'desactivado'} correctamente`, 'success');
-        
-        // Si el producto es desactivado, asegurar que su stock sea 0
-        if (!newStatus) {
-          resetearStockProductoDesactivado(productoId);
+      );
+    } else {
+      // Si no tiene stock, simplemente desactivar
+      showConfirm(
+        'Desactivar Producto',
+        `¿Está seguro que desea desactivar el producto "${producto.nombre}"?`,
+        'fa-toggle-off',
+        () => {
+          actualizarEstadoProducto(productoId, false);
         }
-        
-        // Recargar ambas listas según sea necesario
-        if (newStatus) {
-          loadInactiveProducts(); // Actualizar lista de inactivos si se activó un producto
-        }
-        loadProductos(); // Siempre actualizar la lista principal
-      })
-      .catch(error => {
-        console.error('Error al cambiar estado:', error);
-        showToast(error.message, 'error');
-      })
-      .finally(() => {
-        hideLoading();
+      );
+    }
+  }
+}
+
+// Función para actualizar el estado del producto
+function actualizarEstadoProducto(productoId, activo, resetearStock = true) {
+  const token = localStorage.getItem('token');
+  
+  showLoading();
+  
+  fetch(`/api/productos/${productoId}/estado`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ 
+      activo: activo,
+      resetearStock: resetearStock 
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => {
+        throw new Error(err.message || `Error al ${activo ? 'activar' : 'desactivar'} el producto`);
       });
     }
-  );
+    return response.json();
+  })
+  .then(data => {
+    showToast(`Producto ${activo ? 'activado' : 'desactivado'} correctamente`, 'success');
+    
+    // Recargar ambas listas según sea necesario
+    if (activo) {
+      loadInactiveProducts(); // Actualizar lista de inactivos si se activó un producto
+    }
+    loadProductos(); // Siempre actualizar la lista principal
+  })
+  .catch(error => {
+    console.error('Error al cambiar estado:', error);
+    showToast(error.message, 'error');
+  })
+  .finally(() => {
+    hideLoading();
+  });
 }
 
 // Resetear el stock de un producto desactivado a 0
@@ -2042,18 +2089,25 @@ function createConfirmDialog() {
   cancelBtn.addEventListener('click', hideConfirm);
 }
 
-// Mostrar diálogo de confirmación
-function showConfirm(title, message, iconClass, onConfirm) {
+// Mostrar diálogo de confirmación mejorado con soporte para tercer botón
+function showConfirm(title, message, iconClass, onConfirm, onCancel, options) {
   const overlay = document.querySelector('.confirm-overlay');
   const dialog = document.querySelector('.confirm-dialog');
   const titleEl = document.getElementById('confirm-title');
   const messageEl = document.getElementById('confirm-message');
   const iconEl = dialog.querySelector('.confirm-dialog-header i');
   const confirmBtn = document.getElementById('confirm-ok');
+  const actionsContainer = document.querySelector('.confirm-dialog-actions');
   
   // Actualizar contenido
   titleEl.textContent = title;
-  messageEl.textContent = message;
+  
+  // Permitir HTML en el mensaje si contiene etiquetas <br>
+  if (message.includes('<br>')) {
+    messageEl.innerHTML = message;
+  } else {
+    messageEl.textContent = message;
+  }
   
   if (iconClass) {
     iconEl.className = `fas ${iconClass}`;
@@ -2061,13 +2115,67 @@ function showConfirm(title, message, iconClass, onConfirm) {
     iconEl.className = 'fas fa-question-circle';
   }
   
+  // Eliminar el botón adicional si existe de una ejecución anterior
+  const existingAdditionalBtn = document.getElementById('confirm-additional');
+  if (existingAdditionalBtn) {
+    existingAdditionalBtn.remove();
+  }
+  
   // Configurar botón de confirmar
+  const cancelBtn = document.getElementById('confirm-cancel');
+  
   confirmBtn.onclick = () => {
     hideConfirm();
     if (typeof onConfirm === 'function') {
       onConfirm();
     }
   };
+  
+  cancelBtn.onclick = () => {
+    hideConfirm();
+    if (typeof onCancel === 'function') {
+      onCancel();
+    }
+  };
+  
+  // Si se proporcionan opciones, procesarlas
+  if (options) {
+    // Cambiar texto del botón OK si se especifica
+    if (options.okButtonText) {
+      confirmBtn.textContent = options.okButtonText;
+    } else {
+      confirmBtn.textContent = 'Aceptar';
+    }
+    
+    // Añadir botón adicional si se especifica
+    if (options.additionalButton) {
+      const additionalBtn = document.createElement('button');
+      additionalBtn.id = 'confirm-additional';
+      additionalBtn.textContent = options.additionalButton.text || 'Opción adicional';
+      
+      // Añadir clases específicas si se han definido
+      if (options.additionalButton.className) {
+        const classes = options.additionalButton.className.split(' ');
+        classes.forEach(cls => additionalBtn.classList.add(cls));
+      } else {
+        additionalBtn.classList.add('primary'); // Clase por defecto
+      }
+      
+      // Configurar el evento click
+      additionalBtn.onclick = () => {
+        hideConfirm();
+        if (typeof options.additionalButton.onClick === 'function') {
+          options.additionalButton.onClick();
+        }
+      };
+      
+      // Insertar entre el botón de cancelar y el botón OK
+      cancelBtn.parentNode.insertBefore(additionalBtn, confirmBtn);
+    }
+  } else {
+    // Restaurar texto por defecto si no hay opciones
+    confirmBtn.textContent = 'Aceptar';
+  }
   
   // Mostrar diálogo
   overlay.classList.add('active');

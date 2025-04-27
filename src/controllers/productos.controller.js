@@ -718,7 +718,7 @@ exports.getProductosBajoStock = async (req, res) => {
 exports.updateEstado = async (req, res) => {
   try {
     const { id } = req.params;
-    const { activo } = req.body;
+    const { activo, resetearStock } = req.body;
     
     if (activo === undefined) {
       return res.status(400).json({
@@ -736,20 +736,34 @@ exports.updateEstado = async (req, res) => {
       });
     }
     
-    // Si estamos desactivando el producto, asegurarnos de que su cantidad sea 0
-    if (!activo && producto.cantidad > 0) {
-      await producto.update({ 
-        activo: false,
-        cantidad: 0
-      });
+    // Guardamos el valor actual del stock por si necesitamos usarlo
+    const stockActual = producto.cantidad;
+    
+    // Si estamos desactivando el producto, verificar si debemos resetear el stock
+    if (!activo && stockActual > 0) {
+      // Solo resetear stock si se solicita explícitamente
+      if (resetearStock === true) {
+        console.log(`Desactivando producto ${id} y reseteando stock de ${stockActual} a 0`);
+        await producto.update({ 
+          activo: false,
+          cantidad: 0
+        });
+      } else {
+        console.log(`Desactivando producto ${id} manteniendo stock de ${stockActual}`);
+        await producto.update({ activo: false });
+      }
     } else {
+      // Si estamos activando el producto, simplemente actualizamos su estado
       await producto.update({ activo });
     }
     
     return res.status(200).json({
       success: true,
       message: `Producto ${activo ? 'activado' : 'desactivado'} exitosamente`,
-      data: producto
+      data: {
+        ...producto.toJSON(),
+        stockMantenido: !activo && stockActual > 0 && resetearStock !== true
+      }
     });
   } catch (error) {
     console.error('Error al actualizar estado del producto:', error);
