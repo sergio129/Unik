@@ -1,29 +1,4 @@
-2025/04/27-14:51:15.229 1498 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/04/27-14:51:15.230 1498 Recovering log #1087
-2025/04/27-14:51:15.236 1498 Level-0 table #1092: started
-2025/04/27-14:51:15.241 1498 Level-0 table #1092: 139918 bytes OK
-2025/04/27-14:51:15.242 1498 Recovering log #1107
-2025/04/27-14:51:15.245 1498 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/001107.log 
-2025/04/27-14:51:15.247 1498 Delete type=0 #1087
-2025/04/27-14:51:15.247 1498 Delete type=2 #1109
-2025/04/27-14:51:15.247 1498 Delete type=2 #1110
-2025/04/27-14:51:16.489 4e68 Moved #1092 to level-1 139918 bytes OK: files[ 0 1 2 0 0 0 0 ]
-2025/04/27-14:51:17.146 35e0 Level-0 table #1109: started
-2025/04/27-14:51:17.152 35e0 Level-0 table #1109: 123225 bytes OK
-2025/04/27-14:51:17.154 35e0 Delete type=0 #1107
-2025/04/27-14:51:17.154 35e0 Manual compaction at level-0 from ' q\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' r\x01\x00\x00\x00' @ 0 : 0; will stop at ' q\x01\x00\x00\x05' @ 908392 : 1
-2025/04/27-14:51:17.154 35e0 Compacting 1@0 + 1@1 files
-2025/04/27-14:51:17.163 35e0 Generated table #1110@0: 5686 keys, 119648 bytes
-2025/04/27-14:51:17.163 35e0 Compacted 1@0 + 1@1 files => 119648 bytes
-2025/04/27-14:51:17.165 35e0 compacted to: files[ 0 1 2 0 0 0 0 ]
-2025/04/27-14:51:17.165 35e0 Delete type=2 #1109
-2025/04/27-14:51:17.166 3b98 Manual compaction at level-0 from ' q\x01\x00\x00\x05' @ 908392 : 1 .. ' r\x01\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/04/27-14:51:18.677 4e68 Compacting 1@1 + 2@2 files
-2025/04/27-14:51:18.755 4e68 Generated table #1111@1: 67966 keys, 2229172 bytes
-2025/04/27-14:51:18.796 4e68 Generated table #1112@1: 39185 keys, 1390941 bytes
-2025/04/27-14:51:18.796 4e68 Compacted 1@1 + 2@2 files => 3620113 bytes
-2025/04/27-14:51:18.798 4e68 compacted to: files[ 0 0 2 0 0 0 0 ]
-2025/04/27-14:51:18.799 4e68 Delete type=2 #1089
-2025/04/27-14:51:18.799 4e68 Delete type=2 #1090
-2025/04/27-14:51:18.799 4e68 Delete type=2 #1092
-2025/04/27-14:51:18.799 4e68 Delete type=2 #1110
+2025/04/27-16:25:44.685 4724 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/04/27-16:25:44.686 4724 Recovering log #1114
+2025/04/27-16:25:44.697 4724 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/001114.log 
+2025/04/27-16:25:46.550 2ca4 Manual compaction at level-0 from ' s\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' t\x01\x00\x00\x00' @ 0 : 0; will stop at (end)

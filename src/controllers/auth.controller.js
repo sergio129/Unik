@@ -46,19 +46,12 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: usuario.id, username: usuario.username, rol: usuario.rol },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' } // Usar variable de entorno o fallback de 1 hora
     );
 
-    // Calcular fecha de expiración
-    const expiresIn = process.env.JWT_EXPIRES_IN || '1d';
-    const expiration = new Date();
-    if (expiresIn.endsWith('d')) {
-      expiration.setDate(expiration.getDate() + parseInt(expiresIn));
-    } else if (expiresIn.endsWith('h')) {
-      expiration.setHours(expiration.getHours() + parseInt(expiresIn));
-    } else {
-      expiration.setDate(expiration.getDate() + 1); // Por defecto 1 día
-    }
+    // Calcular la fecha de expiración basada en el tiempo real del token
+    const decodedToken = jwt.decode(token);
+    const expirationDate = new Date(decodedToken.exp * 1000);
 
     // Registrar sesión en base de datos
     await Sesion.create({
@@ -66,7 +59,7 @@ exports.login = async (req, res) => {
       token,
       ip_address: req.ip,
       user_agent: req.headers['user-agent'],
-      fecha_expiracion: expiration
+      fecha_expiracion: expirationDate // Usar la fecha de expiración real del token
     });
 
     // Actualizar último acceso
@@ -254,11 +247,11 @@ exports.resetPasswordRequest = async (req, res) => {
       });
     }
 
-    // Generar token de restablecimiento de contraseña (válido por 1 hora)
+    // Generar token de restablecimiento de contraseña (válido por 15 minutos)
     const resetToken = jwt.sign(
-      { id: usuario.id, action: 'password_reset' },
+      { id: usuario.id },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '15m' } // Token de reseteo con expiración corta (15 minutos)
     );
 
     // Guardar token en la base de datos asociado al usuario
@@ -283,4 +276,72 @@ exports.resetPasswordRequest = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }
+};
+
+// Restablecer la contraseña usando el token
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token y nueva contraseña son requeridos'
+      });
+    }
+
+    // Verificar el token de restablecimiento
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token inválido o expirado'
+      });
+    }
+
+    // Buscar usuario por ID del token
+    const usuario = await Usuario.findByPk(decoded.id);
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Verificar si el token coincide con el guardado en la base de datos
+    if (usuario.reset_token !== token) {
+        return res.status(401).json({
+            success: false,
+            message: 'Token inválido o ya utilizado'
+        });
+    }
+
+    // Actualizar la contraseña del usuario
+    await Usuario.updatePassword(usuario.id, newPassword);
+
+    // Invalidar el token de restablecimiento después de usarlo
+    await Usuario.clearResetToken(usuario.id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Contraseña restablecida exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error al restablecer contraseña:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error en el servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Verificar token (puede ser útil para validar sesiones en el frontend)
+exports.verifyToken = (req, res) => {
+    // El middleware de autenticación ya verifica el token
+    // Si llega aquí, el token es válido
+    res.status(200).json({ success: true, auth: true, user: req.user });
 };

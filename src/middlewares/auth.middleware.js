@@ -17,8 +17,8 @@ exports.authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     try {
-      // Verificar token JWT
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Verificar token JWT especificando algoritmos permitidos (previene ataque 'none')
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] }); // Asume HS256, ajusta si usas otro
       req.user = decoded;
 
       // Verificar si la sesión está activa en la base de datos
