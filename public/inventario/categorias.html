@@ -9,8 +9,86 @@
   <link rel="stylesheet" href="../css/dashboard.css">
   <link rel="stylesheet" href="../css/admin.css">
   <link rel="stylesheet" href="../css/pedidos/whatsapp.css">
+  <style>
+    /* Estilos para el spinner */
+    .spinner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001; /* Encima del overlay del modal */
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .spinner-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: var(--primary-color);
+      animation: spin 1s ease infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Estilos para ordenación */
+    .sortable { cursor: pointer; }
+    .sortable .sort-icon { margin-left: 5px; color: #ccc; }
+    .sortable.asc .sort-icon.asc,
+    .sortable.desc .sort-icon.desc { color: var(--primary-color); }
+    /* Estilos paginación */
+    .pagination-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      margin-top: 10px;
+    }
+    .pagination-controls button {
+      margin: 0 5px;
+      padding: 5px 10px;
+    }
+    .pagination-controls button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    /* Error message */
+    .error-message {
+      color: #d9534f;
+      font-size: 0.85em;
+      margin-top: 5px;
+      display: none;
+    }
+    .form-control.is-invalid {
+      border-color: #d9534f;
+    }
+    /* Botón con spinner */
+    .btn-spinner {
+      display: none;
+    }
+    /* Modal search */
+    .modal-search {
+      margin-bottom: 15px;
+    }
+  </style>
 </head>
 <body>
+  <!-- Spinner Overlay -->
+  <div id="spinner-overlay" class="spinner-overlay">
+    <div class="spinner"></div>
+  </div>
+
   <header>
     <div class="container">
       <nav>
@@ -62,11 +140,11 @@
           <table class="data-table" id="categorias-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Nombre</th>
+                <th class="sortable" data-sort="id">ID <span class="sort-icon asc">▲</span><span class="sort-icon desc">▼</span></th>
+                <th class="sortable" data-sort="nombre">Nombre <span class="sort-icon asc">▲</span><span class="sort-icon desc">▼</span></th>
                 <th>Descripción</th>
                 <th>Productos</th>
-                <th>Estado</th>
+                <th class="sortable" data-sort="activo">Estado <span class="sort-icon asc">▲</span><span class="sort-icon desc">▼</span></th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -77,16 +155,24 @@
             </tbody>
           </table>
         </div>
+        <div class="pagination-container">
+          <span id="pagination-info">Mostrando 0-0 de 0</span>
+          <div class="pagination-controls">
+            <button id="prev-page" class="secondary" disabled><i class="fas fa-chevron-left"></i> Anterior</button>
+            <span id="current-page">Página 1</span>
+            <button id="next-page" class="secondary" disabled>Siguiente <i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
       </section>
     </div>
   </main>
 
   <!-- Modal para crear/editar categoría -->
-  <div id="categoria-modal" class="modal">
+  <div id="categoria-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modal-title">Nueva Categoría</h2>
-        <button class="close-modal">&times;</button>
+        <button class="close-modal" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
         <form id="categoria-form">
@@ -96,8 +182,9 @@
             <label for="nombre">Nombre *</label>
             <div class="input-group">
               <i class="fas fa-tag"></i>
-              <input type="text" id="nombre" class="form-control" required>
+              <input type="text" id="nombre" class="form-control" required aria-required="true">
             </div>
+            <small id="nombre-error" class="error-message"></small>
           </div>
           
           <div class="form-group">
@@ -121,7 +208,10 @@
           
           <div class="form-actions">
             <button type="button" id="btn-cancel" class="secondary">Cancelar</button>
-            <button type="submit" class="primary">Guardar</button>
+            <button type="submit" id="btn-save-categoria" class="primary">
+              <span class="btn-text">Guardar</span>
+              <span class="btn-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+            </button>
           </div>
         </form>
       </div>
@@ -129,11 +219,11 @@
   </div>
 
   <!-- Modal de confirmación para eliminar -->
-  <div id="confirm-modal" class="modal">
+  <div id="confirm-modal" class="modal" role="alertdialog" aria-labelledby="confirm-modal-title" aria-modal="true">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Confirmar Eliminación</h2>
-        <button class="close-modal">&times;</button>
+        <h2 id="confirm-modal-title">Confirmar Eliminación</h2>
+        <button class="close-modal" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
         <p>¿Está seguro que desea eliminar la categoría <strong id="delete-category-name"></strong>?</p>
@@ -141,20 +231,27 @@
         
         <div class="form-actions">
           <button type="button" id="btn-cancel-delete" class="secondary">Cancelar</button>
-          <button type="button" id="btn-confirm-delete" class="danger">Eliminar</button>
+          <button type="button" id="btn-confirm-delete" class="danger">
+            <span class="btn-text">Eliminar</span>
+            <span class="btn-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Modal de confirmación para vista de productos -->
-  <div id="productos-categoria-modal" class="modal">
+  <div id="productos-categoria-modal" class="modal" role="dialog" aria-labelledby="productos-modal-title" aria-modal="true">
     <div class="modal-content" style="width: 150%; max-width: 700px;">
       <div class="modal-header">
-        <h2>Productos en categoría: <span id="categoria-nombre"></span></h2>
-        <button class="close-modal">&times;</button>
+        <h2 id="productos-modal-title">Productos en categoría: <span id="categoria-nombre"></span></h2>
+        <button class="close-modal" aria-label="Cerrar modal">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="search-container modal-search">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-productos-modal" placeholder="Buscar producto en esta categoría...">
+        </div>
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -171,6 +268,12 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div id="productos-loading" style="text-align: center; padding: 20px; display: none;">
+          <i class="fas fa-spinner fa-spin"></i> Cargando productos...
+        </div>
+        <div id="productos-empty" style="text-align: center; padding: 20px; display: none;">
+          No se encontraron productos.
         </div>
         
         <div class="form-actions">

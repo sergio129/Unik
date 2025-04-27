@@ -1,15 +1,29 @@
-2025/04/27-16:29:15.377 8f4 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/04/27-16:29:15.377 8f4 Recovering log #1114
-2025/04/27-16:29:15.388 8f4 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/001114.log 
-2025/04/27-16:29:17.147 8f4 Level-0 table #1120: started
-2025/04/27-16:29:17.156 8f4 Level-0 table #1120: 290712 bytes OK
-2025/04/27-16:29:17.158 8f4 Delete type=0 #1114
-2025/04/27-16:29:17.159 8f4 Manual compaction at level-0 from ' t\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' u\x01\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/04/27-16:29:18.375 3b48 Compacting 1@1 + 2@2 files
-2025/04/27-16:29:18.451 3b48 Generated table #1121@1: 68402 keys, 2229611 bytes
-2025/04/27-16:29:18.490 3b48 Generated table #1122@1: 41017 keys, 1441466 bytes
-2025/04/27-16:29:18.490 3b48 Compacted 1@1 + 2@2 files => 3671077 bytes
-2025/04/27-16:29:18.492 3b48 compacted to: files[ 0 0 2 0 0 0 0 ]
-2025/04/27-16:29:18.492 3b48 Delete type=2 #1116
-2025/04/27-16:29:18.492 3b48 Delete type=2 #1117
-2025/04/27-16:29:18.492 3b48 Delete type=2 #1120
+2025/04/27-17:20:27.518 1ca4 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/04/27-17:20:27.519 1ca4 Recovering log #1119
+2025/04/27-17:20:27.526 1ca4 Level-0 table #1124: started
+2025/04/27-17:20:27.531 1ca4 Level-0 table #1124: 110437 bytes OK
+2025/04/27-17:20:27.532 1ca4 Recovering log #1154
+2025/04/27-17:20:27.539 1ca4 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/001154.log 
+2025/04/27-17:20:27.542 1ca4 Delete type=0 #1119
+2025/04/27-17:20:27.542 1ca4 Delete type=2 #1156
+2025/04/27-17:20:27.542 1ca4 Delete type=2 #1157
+2025/04/27-17:20:29.359 2bd4 Moved #1124 to level-1 110437 bytes OK: files[ 0 1 2 0 0 0 0 ]
+2025/04/27-17:20:29.953 3768 Level-0 table #1156: started
+2025/04/27-17:20:29.959 3768 Level-0 table #1156: 129362 bytes OK
+2025/04/27-17:20:29.961 3768 Delete type=0 #1154
+2025/04/27-17:20:29.962 1ca4 Manual compaction at level-0 from ' u\x01\x00\x00\x00' @ 72057594037927935 : 1 .. ' v\x01\x00\x00\x00' @ 0 : 0; will stop at ' u\x01\x00\x00\x05' @ 1009817 : 1
+2025/04/27-17:20:29.962 1ca4 Compacting 1@0 + 1@1 files
+2025/04/27-17:20:29.969 1ca4 Generated table #1157@0: 4372 keys, 99696 bytes
+2025/04/27-17:20:29.970 1ca4 Compacted 1@0 + 1@1 files => 99696 bytes
+2025/04/27-17:20:29.971 1ca4 compacted to: files[ 0 1 2 0 0 0 0 ]
+2025/04/27-17:20:29.972 1ca4 Manual compaction at level-0 from ' u\x01\x00\x00\x05' @ 1009817 : 1 .. ' v\x01\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/04/27-17:20:32.169 2bd4 Compacting 1@1 + 2@2 files
+2025/04/27-17:20:32.248 2bd4 Generated table #1158@1: 68795 keys, 2230744 bytes
+2025/04/27-17:20:32.305 2bd4 Generated table #1159@1: 41654 keys, 1469735 bytes
+2025/04/27-17:20:32.305 2bd4 Compacted 1@1 + 2@2 files => 3700479 bytes
+2025/04/27-17:20:32.307 2bd4 compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/04/27-17:20:32.309 2bd4 Delete type=2 #1121
+2025/04/27-17:20:32.309 2bd4 Delete type=2 #1122
+2025/04/27-17:20:32.309 2bd4 Delete type=2 #1124
+2025/04/27-17:20:32.309 2bd4 Delete type=2 #1156
+2025/04/27-17:20:32.309 2bd4 Delete type=2 #1157

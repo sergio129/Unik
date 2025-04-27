@@ -1,3 +1,8 @@
-2025/04/27-16:29:14.904 1f00 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\Local Storage\leveldb/MANIFEST-000001
-2025/04/27-16:29:14.914 1f00 Recovering log #23
-2025/04/27-16:29:14.918 1f00 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\Local Storage\leveldb/000023.log 
+2025/04/27-17:20:27.048 2d48 Reusing MANIFEST E:\Proyectos\Unika\whatsapp-sessions\session\Default\Local Storage\leveldb/MANIFEST-000001
+2025/04/27-17:20:27.058 2d48 Recovering log #23
+2025/04/27-17:20:27.060 2d48 Level-0 table #25: started
+2025/04/27-17:20:27.068 2d48 Level-0 table #25: 12575 bytes OK
+2025/04/27-17:20:27.068 2d48 Recovering log #25
+2025/04/27-17:20:27.074 2d48 Reusing old log E:\Proyectos\Unika\whatsapp-sessions\session\Default\Local Storage\leveldb/000025.log 
+2025/04/27-17:20:27.080 2d48 Delete type=0 #23
+2025/04/27-17:20:27.080 2d48 Delete type=2 #26
