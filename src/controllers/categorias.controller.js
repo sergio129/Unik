@@ -1,6 +1,7 @@
 // Controlador para la gestión de categorías
 const Categoria = require('../models/categoria.model');
 const Producto = require('../models/producto.model');
+const { Op } = require('sequelize');
 
 // Obtener todas las categorías
 exports.getAllCategorias = async (req, res) => {
@@ -213,6 +214,125 @@ exports.getProductosByCategoria = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener productos por categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Activar múltiples categorías
+exports.bulkActivate = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    // Validar que se proporcionen IDs
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere un array de IDs para activar categorías'
+      });
+    }
+
+    // Actualizar en bloque todas las categorías seleccionadas
+    const [affectedRows] = await Categoria.update(
+      { activo: true },
+      { where: { id: { [Op.in]: ids } } }
+    );
+    
+    return res.status(200).json({
+      success: true,
+      message: `${affectedRows} categorías activadas exitosamente`,
+      affectedRows
+    });
+  } catch (error) {
+    console.error('Error al activar categorías en bloque:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al activar las categorías',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Desactivar múltiples categorías
+exports.bulkDeactivate = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    // Validar que se proporcionen IDs
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere un array de IDs para desactivar categorías'
+      });
+    }
+
+    // Actualizar en bloque todas las categorías seleccionadas
+    const [affectedRows] = await Categoria.update(
+      { activo: false },
+      { where: { id: { [Op.in]: ids } } }
+    );
+    
+    return res.status(200).json({
+      success: true,
+      message: `${affectedRows} categorías desactivadas exitosamente`,
+      affectedRows
+    });
+  } catch (error) {
+    console.error('Error al desactivar categorías en bloque:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al desactivar las categorías',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Eliminar múltiples categorías
+exports.bulkDelete = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    
+    // Validar que se proporcionen IDs
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere un array de IDs para eliminar categorías'
+      });
+    }
+
+    // Verificar productos asociados a estas categorías
+    const productosAsociados = await Producto.findAll({
+      where: { categoria_id: { [Op.in]: ids } },
+      attributes: ['categoria_id'],
+      group: ['categoria_id'],
+    });
+
+    if (productosAsociados.length > 0) {
+      // Hay categorías con productos asociados
+      const categoriasConProductos = productosAsociados.map(p => p.categoria_id);
+      
+      return res.status(400).json({
+        success: false,
+        message: `No se pueden eliminar algunas categorías porque tienen productos asociados. Considere desactivarlas en su lugar.`,
+        categoriasConProductos
+      });
+    }
+
+    // Eliminar en bloque todas las categorías seleccionadas
+    const affectedRows = await Categoria.destroy({
+      where: { id: { [Op.in]: ids } }
+    });
+    
+    return res.status(200).json({
+      success: true,
+      message: `${affectedRows} categorías eliminadas exitosamente`,
+      affectedRows
+    });
+  } catch (error) {
+    console.error('Error al eliminar categorías en bloque:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al eliminar las categorías',
       error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }

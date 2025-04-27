@@ -81,6 +81,89 @@
     .modal-search {
       margin-bottom: 15px;
     }
+    /* Estilos para checkbox de selección múltiple */
+    .checkbox-column {
+      width: 40px;
+      text-align: center;
+    }
+    .custom-checkbox {
+      display: inline-block;
+      position: relative;
+      padding-left: 2px;
+      cursor: pointer;
+      user-select: none;
+      line-height: 1;
+    }
+    .custom-checkbox input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+    .checkbox-mark {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 18px;
+      width: 18px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      transition: all 0.2s ease;
+    }
+    .custom-checkbox:hover .checkbox-mark {
+      background-color: #e0e0e0;
+    }
+    .custom-checkbox input:checked ~ .checkbox-mark {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    .checkbox-mark:after {
+      content: "";
+      display: none;
+    }
+    .custom-checkbox input:checked ~ .checkbox-mark:after {
+      display: block;
+      color: white;
+    }
+    .custom-checkbox .checkbox-mark:after {
+      content: "\f00c";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      font-size: 11px;
+      color: white;
+    }
+    /* Estilos para la barra de acciones masivas */
+    .bulk-actions {
+      display: none;
+      align-items: center;
+      background-color: #f8f9fa;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      border: 1px solid #e0e0e0;
+    }
+    .bulk-actions.visible {
+      display: flex;
+    }
+    .bulk-actions .selected-count {
+      margin-right: 15px;
+      font-weight: 500;
+    }
+    .bulk-actions .bulk-actions-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .bulk-actions button {
+      padding: 5px 15px;
+    }
+    tr.selected {
+      background-color: rgba(0, 123, 255, 0.05);
+    }
+    tr.selected:hover {
+      background-color: rgba(0, 123, 255, 0.1);
+    }
   </style>
 </head>
 <body>
@@ -140,6 +223,7 @@
           <table class="data-table" id="categorias-table">
             <thead>
               <tr>
+                <th class="checkbox-column"><input type="checkbox"></th>
                 <th class="sortable" data-sort="id">ID <span class="sort-icon asc">▲</span><span class="sort-icon desc">▼</span></th>
                 <th class="sortable" data-sort="nombre">Nombre <span class="sort-icon asc">▲</span><span class="sort-icon desc">▼</span></th>
                 <th>Descripción</th>
@@ -150,10 +234,18 @@
             </thead>
             <tbody id="categorias-list">
               <tr>
-                <td colspan="6" class="text-center">Cargando categorías...</td>
+                <td colspan="7" class="text-center">Cargando categorías...</td>
               </tr>
             </tbody>
           </table>
+        </div>
+        <div class="bulk-actions">
+          <span class="selected-count">0 seleccionados</span>
+          <div class="bulk-actions-buttons">
+            <button id="btn-bulk-activate" class="primary"><i class="fas fa-toggle-on"></i> Activar</button>
+            <button id="btn-bulk-deactivate" class="secondary"><i class="fas fa-toggle-off"></i> Desactivar</button>
+            <button id="btn-bulk-delete" class="danger"><i class="fas fa-trash-alt"></i> Eliminar</button>
+          </div>
         </div>
         <div class="pagination-container">
           <span id="pagination-info">Mostrando 0-0 de 0</span>
@@ -279,6 +371,28 @@
         <div class="form-actions">
           <button type="button" id="btn-close-productos" class="secondary">Cerrar</button>
           <a href="/inventario/productos" class="primary">Ir a Productos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación para acciones masivas -->
+  <div id="bulk-action-modal" class="modal" role="alertdialog" aria-labelledby="bulk-action-modal-title" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="bulk-action-modal-title">Confirmar acción masiva</h2>
+        <button class="close-modal" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="bulk-action-message">¿Está seguro que desea realizar esta acción para <strong id="selected-count-text"></strong> categorías?</p>
+        <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> Esta acción no se puede deshacer.</p>
+        
+        <div class="form-actions">
+          <button type="button" id="btn-cancel-bulk" class="secondary">Cancelar</button>
+          <button type="button" id="btn-confirm-bulk" class="danger">
+            <span class="btn-text">Proceder</span>
+            <span class="btn-spinner"><i class="fas fa-spinner fa-spin"></i></span>
+          </button>
         </div>
       </div>
     </div>

@@ -22,4 +22,9 @@ router.delete('/:id', authenticate, categoriasController.deleteCategoria);
 // Obtener productos por categoría
 router.get('/:id/productos', authenticate, categoriasController.getProductosByCategoria);
 
+// Operaciones masivas
+router.post('/bulk-activate', authenticate, categoriasController.bulkActivate);
+router.post('/bulk-deactivate', authenticate, categoriasController.bulkDeactivate);
+router.post('/bulk-delete', authenticate, categoriasController.bulkDelete);
+
 module.exports = router;

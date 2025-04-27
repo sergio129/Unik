@@ -37,6 +37,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const prevPageButton = document.getElementById('prev-page');
   const nextPageButton = document.getElementById('next-page');
   const tableHeaders = document.querySelectorAll('#categorias-table th.sortable');
+  // Elementos para selección múltiple
+  const selectAllCheckbox = document.querySelector('#categorias-table thead input[type="checkbox"]');
+  const bulkActionsBar = document.querySelector('.bulk-actions');
+  const selectedCountSpan = document.querySelector('.bulk-actions .selected-count');
+  const btnBulkActivate = document.getElementById('btn-bulk-activate');
+  const btnBulkDeactivate = document.getElementById('btn-bulk-deactivate');
+  const btnBulkDelete = document.getElementById('btn-bulk-delete');
+  const bulkActionModal = document.getElementById('bulk-action-modal');
+  const bulkActionModalTitle = document.getElementById('bulk-action-modal-title');
+  const bulkActionMessage = document.getElementById('bulk-action-message');
+  const selectedCountText = document.getElementById('selected-count-text');
+  const btnCancelBulk = document.getElementById('btn-cancel-bulk');
+  const btnConfirmBulk = document.getElementById('btn-confirm-bulk');
   
   // Verificación de elementos del DOM
   const elementosRequeridos = {
@@ -46,7 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'currentPageSpan': currentPageSpan,
     'prevPageButton': prevPageButton,
     'nextPageButton': nextPageButton,
-    'tableHeaders': tableHeaders.length > 0 ? true : false
+    'tableHeaders': tableHeaders.length > 0 ? true : false,
+    'selectAllCheckbox': selectAllCheckbox,
+    'bulkActionsBar': bulkActionsBar,
+    'btnBulkActivate': btnBulkActivate,
+    'btnBulkDeactivate': btnBulkDeactivate,
+    'btnBulkDelete': btnBulkDelete,
+    'bulkActionModal': bulkActionModal
   };
   
   console.log('Verificación de elementos DOM requeridos:', elementosRequeridos);
@@ -69,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let sortColumn = 'id';
   let sortDirection = 'asc';
   let currentSearchTerm = '';
+  let selectedCategories = new Set(); // Conjunto para almacenar IDs de categorías seleccionadas
+  let currentBulkAction = ''; // 'activate', 'deactivate', 'delete'
 
   // Verificación de autenticación
   const token = localStorage.getItem('token');
@@ -102,8 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadCategorias = async () => {
     showSpinner();
     try {
-      // NOTA: Idealmente, la API debería soportar paginación, ordenación y búsqueda en el backend.
-      // Por ahora, simularemos esto en el frontend después de obtener *todos* los datos.
       const response = await fetch('/api/categorias', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -117,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       allCategorias = data.data || []; // Guardar todos los datos
       
-      // Aplicar filtro de búsqueda localmente
       let filteredCategorias = allCategorias;
       if (currentSearchTerm) {
         const term = currentSearchTerm.toLowerCase();
@@ -129,17 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       totalItems = filteredCategorias.length;
 
-      // Aplicar ordenación localmente
       filteredCategorias.sort((a, b) => {
         let valA = a[sortColumn];
         let valB = b[sortColumn];
 
-        // Manejar booleanos (activo)
         if (typeof valA === 'boolean') {
           valA = valA ? 1 : 0;
           valB = valB ? 1 : 0;
         }
-        // Manejar strings (case-insensitive)
         if (typeof valA === 'string') {
           valA = valA.toLowerCase();
           valB = valB.toLowerCase();
@@ -156,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('Error:', error);
       mostrarNotificacion('Error al cargar las categorías', 'error');
-      categoriasListElement.innerHTML = `<tr><td colspan="6" class="text-center">Error al cargar datos.</td></tr>`;
+      categoriasListElement.innerHTML = `<tr><td colspan="7" class="text-center">Error al cargar datos.</td></tr>`;
       updatePaginationControls(0, 0);
     } finally {
       hideSpinner();
@@ -172,18 +187,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (paginatedItems.length === 0 && totalItems === 0) {
       categoriasListElement.innerHTML = `
         <tr>
-          <td colspan="6" class="text-center">No se encontraron categorías ${currentSearchTerm ? 'para "'+currentSearchTerm+'"' : ''}</td>
+          <td colspan="7" class="text-center">No se encontraron categorías ${currentSearchTerm ? 'para "'+currentSearchTerm+'"' : ''}</td>
         </tr>
       `;
+      selectAllCheckbox.disabled = true;
+      selectAllCheckbox.checked = false;
     } else if (paginatedItems.length === 0 && totalItems > 0) {
        categoriasListElement.innerHTML = `
         <tr>
-          <td colspan="6" class="text-center">No hay categorías en esta página.</td>
+          <td colspan="7" class="text-center">No hay categorías en esta página.</td>
         </tr>
       `;
+      selectAllCheckbox.disabled = true;
+      selectAllCheckbox.checked = false;
     } else {
+      selectAllCheckbox.disabled = false;
+      
       categoriasListElement.innerHTML = paginatedItems.map(categoria => `
-        <tr data-id="${categoria.id}" data-nombre="${categoria.nombre}">
+        <tr data-id="${categoria.id}" data-nombre="${categoria.nombre}" class="${selectedCategories.has(categoria.id) ? 'selected' : ''}">
+          <td class="checkbox-column">
+            <label class="custom-checkbox">
+              <input type="checkbox" ${selectedCategories.has(categoria.id) ? 'checked' : ''} data-id="${categoria.id}">
+              <span class="checkbox-mark"></span>
+            </label>
+          </td>
           <td>${categoria.id}</td>
           <td>${categoria.nombre}</td>
           <td>${categoria.descripcion || '-'}</td>
@@ -209,8 +236,13 @@ document.addEventListener('DOMContentLoaded', () => {
           </td>
         </tr>
       `).join('');
+      
+      const checkboxes = categoriasListElement.querySelectorAll('input[type="checkbox"]');
+      const allSelected = Array.from(checkboxes).every(checkbox => checkbox.checked);
+      selectAllCheckbox.checked = allSelected && checkboxes.length > 0;
     }
     updatePaginationControls(startIndex, endIndex);
+    updateBulkActionsVisibility();
   };
 
   const renderProductosList = (productos) => {
@@ -244,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const goToPage = (page) => {
     if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) return;
     currentPage = page;
-    loadCategorias(); // Recargar para aplicar paginación
+    loadCategorias();
   };
 
   const handleSort = (column) => {
@@ -254,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sortColumn = column;
       sortDirection = 'asc';
     }
-    currentPage = 1; // Resetear a la primera página al ordenar
+    currentPage = 1;
     loadCategorias();
   };
 
@@ -267,13 +299,207 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  // --- Funciones para selección múltiple ---
+  const updateSelectedCount = () => {
+    const count = selectedCategories.size;
+    selectedCountSpan.textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
+    selectedCountText.textContent = `${count} categoría${count !== 1 ? 's' : ''}`;
+    
+    // Determinar si hay categorías activas e inactivas entre las seleccionadas
+    const activas = [];
+    const inactivas = [];
+    
+    selectedCategories.forEach(id => {
+      const categoria = allCategorias.find(cat => cat.id === id);
+      if (categoria) {
+        if (categoria.activo) {
+          activas.push(id);
+        } else {
+          inactivas.push(id);
+        }
+      }
+    });
+    
+    // Mostrar u ocultar botones según corresponda
+    if (activas.length > 0 && inactivas.length === 0) {
+      // Solo hay categorías activas seleccionadas
+      btnBulkActivate.style.display = 'none';
+      btnBulkDeactivate.style.display = 'inline-block';
+    } else if (inactivas.length > 0 && activas.length === 0) {
+      // Solo hay categorías inactivas seleccionadas
+      btnBulkActivate.style.display = 'inline-block';
+      btnBulkDeactivate.style.display = 'none';
+    } else {
+      // Hay mezcla de categorías activas e inactivas o ninguna seleccionada
+      btnBulkActivate.style.display = 'inline-block';
+      btnBulkDeactivate.style.display = 'inline-block';
+    }
+  };
+
+  const updateBulkActionsVisibility = () => {
+    if (selectedCategories.size > 0) {
+      bulkActionsBar.classList.add('visible');
+    } else {
+      bulkActionsBar.classList.remove('visible');
+    }
+    updateSelectedCount();
+  };
+
+  const toggleRowSelection = (checkbox, categoryId) => {
+    const row = checkbox.closest('tr');
+    
+    if (checkbox.checked) {
+      selectedCategories.add(categoryId);
+      row.classList.add('selected');
+    } else {
+      selectedCategories.delete(categoryId);
+      row.classList.remove('selected');
+      selectAllCheckbox.checked = false;
+    }
+    
+    updateBulkActionsVisibility();
+  };
+
+  const toggleAllSelection = (checked) => {
+    const checkboxes = categoriasListElement.querySelectorAll('input[type="checkbox"]');
+    
+    checkboxes.forEach(checkbox => {
+      const categoryId = parseInt(checkbox.dataset.id);
+      checkbox.checked = checked;
+      
+      const row = checkbox.closest('tr');
+      if (checked) {
+        selectedCategories.add(categoryId);
+        row.classList.add('selected');
+      } else {
+        selectedCategories.delete(categoryId);
+        row.classList.remove('selected');
+      }
+    });
+    
+    updateBulkActionsVisibility();
+  };
+
+  const showBulkActionConfirm = (action) => {
+    currentBulkAction = action;
+    
+    switch (action) {
+      case 'activate':
+        bulkActionModalTitle.textContent = 'Confirmar activación masiva';
+        bulkActionMessage.innerHTML = `¿Está seguro que desea <strong>activar</strong> <strong id="selected-count-text">${selectedCategories.size} categoría${selectedCategories.size !== 1 ? 's' : ''}</strong>?`;
+        btnConfirmBulk.className = 'primary';
+        btnConfirmBulk.querySelector('.btn-text').textContent = 'Activar';
+        break;
+      case 'deactivate':
+        bulkActionModalTitle.textContent = 'Confirmar desactivación masiva';
+        bulkActionMessage.innerHTML = `¿Está seguro que desea <strong>desactivar</strong> <strong id="selected-count-text">${selectedCategories.size} categoría${selectedCategories.size !== 1 ? 's' : ''}</strong>?`;
+        btnConfirmBulk.className = 'secondary';
+        btnConfirmBulk.querySelector('.btn-text').textContent = 'Desactivar';
+        break;
+      case 'delete':
+        bulkActionModalTitle.textContent = 'Confirmar eliminación masiva';
+        bulkActionMessage.innerHTML = `¿Está seguro que desea <strong>eliminar</strong> <strong id="selected-count-text">${selectedCategories.size} categoría${selectedCategories.size !== 1 ? 's' : ''}</strong>?`;
+        btnConfirmBulk.className = 'danger';
+        btnConfirmBulk.querySelector('.btn-text').textContent = 'Eliminar';
+        break;
+    }
+    
+    const btnText = btnConfirmBulk.querySelector('.btn-text');
+    const btnSpinner = btnConfirmBulk.querySelector('.btn-spinner');
+    btnText.style.display = 'inline';
+    btnSpinner.style.display = 'none';
+    btnConfirmBulk.disabled = false;
+    
+    showModal(bulkActionModal);
+  };
+
+  const executeBulkAction = async () => {
+    const btnText = btnConfirmBulk.querySelector('.btn-text');
+    const btnSpinner = btnConfirmBulk.querySelector('.btn-spinner');
+    btnText.style.display = 'none';
+    btnSpinner.style.display = 'inline';
+    btnConfirmBulk.disabled = true;
+
+    try {
+      const categoryIds = Array.from(selectedCategories);
+      let endpoint = '';
+      let method = 'POST';
+      let actionMessage = '';
+      
+      switch (currentBulkAction) {
+        case 'activate':
+          endpoint = '/api/categorias/bulk-activate';
+          actionMessage = 'activadas';
+          break;
+        case 'deactivate':
+          endpoint = '/api/categorias/bulk-deactivate';
+          actionMessage = 'desactivadas';
+          break;
+        case 'delete':
+          endpoint = '/api/categorias/bulk-delete';
+          actionMessage = 'eliminadas';
+          break;
+      }
+      
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: categoryIds })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || `Error al realizar la acción masiva`);
+      }
+      
+      mostrarNotificacion(
+        `${selectedCategories.size} categorías ${actionMessage} correctamente`, 
+        'success'
+      );
+      
+      if (currentBulkAction === 'delete') {
+        allCategorias = allCategorias.filter(cat => !selectedCategories.has(cat.id));
+      } else {
+        const newStatus = currentBulkAction === 'activate';
+        allCategorias = allCategorias.map(cat => {
+          if (selectedCategories.has(cat.id)) {
+            return { ...cat, activo: newStatus };
+          }
+          return cat;
+        });
+      }
+      
+      selectedCategories.clear();
+      totalItems = allCategorias.length;
+      
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      if (currentPage > totalPages && totalPages > 0) {
+          currentPage = totalPages;
+      }
+      
+      hideModal(bulkActionModal);
+      renderCategoriasPage(allCategorias);
+      
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message, 'error');
+      btnText.style.display = 'inline';
+      btnSpinner.style.display = 'none';
+      btnConfirmBulk.disabled = false;
+    }
+  };
+
   // --- Funciones de Acciones CRUD ---
   const showProductos = async (categoriaId, categoriaNombre) => {
     categoriaNombreSpan.textContent = categoriaNombre;
-    productosListElement.innerHTML = ''; // Limpiar lista anterior
-    productosLoadingDiv.style.display = 'block'; // Mostrar carga
+    productosListElement.innerHTML = '';
+    productosLoadingDiv.style.display = 'block';
     productosEmptyDiv.style.display = 'none';
-    searchProductosModalInput.value = ''; // Limpiar búsqueda modal
+    searchProductosModalInput.value = '';
     showModal(productosModal);
 
     try {
@@ -288,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await response.json();
-      allProductosCategoria = data.data || []; // Guardar todos los productos de esta categoría
+      allProductosCategoria = data.data || [];
       renderProductosList(allProductosCategoria);
 
     } catch (error) {
@@ -311,7 +537,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const showDeleteConfirm = (id, nombre) => {
     deleteCategoryName.textContent = nombre;
     btnConfirmDelete.dataset.id = id;
-    // Reset button state
     const btnText = btnConfirmDelete.querySelector('.btn-text');
     const btnSpinner = btnConfirmDelete.querySelector('.btn-spinner');
     btnText.style.display = 'inline';
@@ -342,20 +567,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       mostrarNotificacion('Categoría eliminada correctamente', 'success');
-      // Optimización: en lugar de recargar todo, eliminar de `allCategorias` y re-renderizar
       allCategorias = allCategorias.filter(cat => cat.id !== parseInt(id));
       totalItems = allCategorias.length;
-      // Ajustar currentPage si la última página quedó vacía
       const totalPages = Math.ceil(totalItems / itemsPerPage);
       if (currentPage > totalPages && totalPages > 0) {
           currentPage = totalPages;
       }
-      renderCategoriasPage(allCategorias); // Re-renderizar con datos actualizados
+      renderCategoriasPage(allCategorias);
       hideModal(confirmModal);
     } catch (error) {
       console.error('Error:', error);
       mostrarNotificacion(error.message, 'error');
-      // Re-enable button on error
       btnText.style.display = 'inline';
       btnSpinner.style.display = 'none';
       btnConfirmDelete.disabled = false;
@@ -400,10 +622,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetForm = () => {
     categoriaForm.reset();
     categoriaIdInput.value = '';
-    nombreError.style.display = 'none'; // Ocultar error
-    nombreInput.classList.remove('is-invalid'); // Quitar clase de error
+    nombreError.style.display = 'none';
+    nombreInput.classList.remove('is-invalid');
     document.getElementById('activo-group').style.display = 'none';
-    // Reset button state
     const btnText = btnSaveCategoria.querySelector('.btn-text');
     const btnSpinner = btnSaveCategoria.querySelector('.btn-spinner');
     btnText.style.display = 'inline';
@@ -422,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
       nombreInput.classList.add('is-invalid');
       isValid = false;
     }
-    // Añadir más validaciones si es necesario
     return isValid;
   };
 
@@ -476,27 +696,22 @@ document.addEventListener('DOMContentLoaded', () => {
       );
       
       hideModal(categoryModal);
-      // Optimización: Actualizar o añadir en `allCategorias` y re-renderizar
-      // En lugar de llamar a loadCategorias() que hace otra llamada API
       if (isEdit) {
         const index = allCategorias.findIndex(cat => cat.id === parseInt(categoriaId));
         if (index !== -1) {
-          allCategorias[index] = { ...allCategorias[index], ...categoriaData, id: parseInt(categoriaId) }; // Actualizar datos
+          allCategorias[index] = { ...allCategorias[index], ...categoriaData, id: parseInt(categoriaId) };
         }
       } else {
-        // Asumiendo que la API devuelve la nueva categoría con su ID
         const nuevaCategoria = data.data; 
         allCategorias.push(nuevaCategoria);
         totalItems = allCategorias.length;
       }
-      // Recalcular y re-renderizar la página actual
-      currentPage = isEdit ? currentPage : Math.ceil(totalItems / itemsPerPage); // Ir a la última página si es nuevo
-      loadCategorias(); // Recargar para aplicar filtros/ordenación/paginación actualizados
+      currentPage = isEdit ? currentPage : Math.ceil(totalItems / itemsPerPage);
+      loadCategorias();
 
     } catch (error) {
       console.error('Error:', error);
       mostrarNotificacion(error.message, 'error');
-      // Re-enable button on error
       btnText.style.display = 'inline';
       btnSpinner.style.display = 'none';
       btnSaveCategoria.disabled = false;
@@ -507,7 +722,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.classList.add('active');
     modalOverlay.classList.add('active');
     modal.setAttribute('aria-hidden', 'false');
-    // Focus trap (simple example, might need a library for robustness)
     const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
     if (focusableElements.length > 0) focusableElements[0].focus();
   };
@@ -515,7 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const hideModal = (modal) => {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
-    // Solo quitar overlay si no hay otros modales activos
     if (!document.querySelector('.modal.active')) {
       modalOverlay.classList.remove('active');
     }
@@ -545,30 +758,26 @@ document.addEventListener('DOMContentLoaded', () => {
       notificacion.classList.add('show');
     }, 10);
     
-    setTimeout(removeNotif, 5000); // Auto-cierre después de 5 segundos
+    setTimeout(removeNotif, 5000);
   };
 
   // --- Event Listeners ---
   
-  // Búsqueda principal
   searchInput.addEventListener('input', debounce(() => {
     currentSearchTerm = searchInput.value;
-    currentPage = 1; // Resetear a la primera página al buscar
+    currentPage = 1;
     loadCategorias();
   }, 300));
 
-  // Búsqueda en modal de productos
   searchProductosModalInput.addEventListener('input', debounce(filterProductosModal, 300));
 
-  // Abrir modal para nueva categoría
   btnNewCategory.addEventListener('click', () => {
     resetForm();
     modalTitle.textContent = 'Nueva Categoría';
-    document.getElementById('activo-group').style.display = 'none'; // Ocultar estado para nuevo
+    document.getElementById('activo-group').style.display = 'none';
     showModal(categoryModal);
   });
 
-  // Cerrar modales
   closeModalButtons.forEach(button => {
     button.addEventListener('click', () => {
       hideModal(button.closest('.modal'));
@@ -581,7 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Cerrar modal con tecla Escape
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       document.querySelectorAll('.modal.active').forEach(modal => {
@@ -590,44 +798,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Cancelar formulario
   btnCancel.addEventListener('click', () => {
     hideModal(categoryModal);
   });
 
-  // Cancelar eliminación
   btnCancelDelete.addEventListener('click', () => {
     hideModal(confirmModal);
   });
 
-  // Cerrar modal de productos
   btnCloseProductos.addEventListener('click', () => {
     hideModal(productosModal);
   });
 
-  // Confirmar eliminación
   btnConfirmDelete.addEventListener('click', () => {
     deleteCategoria(btnConfirmDelete.dataset.id);
   });
 
-  // Guardar categoría
   categoriaForm.addEventListener('submit', saveCategoria);
 
-  // Paginación
   prevPageButton.addEventListener('click', () => goToPage(currentPage - 1));
   nextPageButton.addEventListener('click', () => goToPage(currentPage + 1));
 
-  // Ordenación
   tableHeaders.forEach(th => {
     th.addEventListener('click', () => handleSort(th.dataset.sort));
   });
 
-  // Event Delegation para botones de acción en la tabla
   categoriasListElement.addEventListener('click', (event) => {
     const target = event.target;
     const actionButton = target.closest('.btn-edit, .btn-delete, .btn-show-productos');
     
-    if (!actionButton) return; // No se hizo clic en un botón de acción
+    if (!actionButton) return;
 
     const row = target.closest('tr');
     const categoriaId = row.dataset.id;
@@ -642,7 +842,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- Función Debounce ---
+  categoriasListElement.addEventListener('change', (event) => {
+    const target = event.target;
+    if (target.type === 'checkbox') {
+      const categoryId = parseInt(target.dataset.id);
+      toggleRowSelection(target, categoryId);
+    }
+  });
+  
+  selectAllCheckbox.addEventListener('change', () => {
+    toggleAllSelection(selectAllCheckbox.checked);
+  });
+  
+  btnBulkActivate.addEventListener('click', () => showBulkActionConfirm('activate'));
+  btnBulkDeactivate.addEventListener('click', () => showBulkActionConfirm('deactivate'));
+  btnBulkDelete.addEventListener('click', () => showBulkActionConfirm('delete'));
+  
+  btnCancelBulk.addEventListener('click', () => {
+    hideModal(bulkActionModal);
+  });
+  
+  btnConfirmBulk.addEventListener('click', executeBulkAction);
+
   function debounce(func, timeout = 300) {
     let timer;
     return (...args) => {
@@ -651,6 +872,5 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // --- Inicialización ---
-  loadCategorias(); // Carga inicial
+  loadCategorias();
 });
