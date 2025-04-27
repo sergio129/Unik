@@ -2,6 +2,7 @@
 const Categoria = require('../models/categoria.model');
 const Producto = require('../models/producto.model');
 const { Op } = require('sequelize');
+const { sequelize } = require('../utils/database');
 
 // Obtener todas las categorías
 exports.getAllCategorias = async (req, res) => {
@@ -74,12 +75,37 @@ exports.createCategoria = async (req, res) => {
       });
     }
     
-    // Crear la categoría
-    const nuevaCategoria = await Categoria.create({
-      nombre,
-      descripcion,
-      activo: true
-    });
+    // Buscar el primer ID disponible (hueco en la secuencia)
+    const [result] = await sequelize.query(`
+      SELECT t1.id + 1 AS next_id
+      FROM categorias t1
+      LEFT JOIN categorias t2 ON t1.id + 1 = t2.id
+      WHERE t2.id IS NULL
+      ORDER BY t1.id
+      LIMIT 1
+    `);
+
+    let nextId = null;
+    if (result && result.length > 0) {
+      nextId = result[0].next_id;
+    }
+
+    // Si no hay huecos, o la tabla está vacía, dejar que autoincrement asigne el ID
+    let nuevaCategoria;
+    if (nextId) {
+      nuevaCategoria = await Categoria.create({
+        id: nextId,
+        nombre,
+        descripcion,
+        activo: true
+      });
+    } else {
+      nuevaCategoria = await Categoria.create({
+        nombre,
+        descripcion,
+        activo: true
+      });
+    }
     
     return res.status(201).json({
       success: true,
