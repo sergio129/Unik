@@ -1,4 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Cargar logo de manera segura para evitar bucles de error
+    const logoContainer = document.getElementById('logoContainer');
+    if (logoContainer) {
+        const img = new Image();
+        img.onload = function() {
+            logoContainer.appendChild(img);
+        };
+        img.onerror = function() {
+            // En caso de error, crear un elemento fallback en lugar de intentar cargar otra imagen
+            const fallbackLogo = document.createElement('div');
+            fallbackLogo.className = 'logo-fallback';
+            fallbackLogo.textContent = 'UNIKA';
+            logoContainer.appendChild(fallbackLogo);
+        };
+        // Solo intentar cargar la imagen una vez
+        img.src = 'images/logo.png';
+    }
+
     const loginForm = document.getElementById('loginForm');
     const errorMessage = document.getElementById('error-message');
     const successMessage = document.getElementById('success-message');
