@@ -43,9 +43,26 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function inicializarTabla() {
+    // Destruir la tabla anterior si ya existe
+    if ($.fn.DataTable.isDataTable('#tabla-clientes')) {
+      $('#tabla-clientes').DataTable().destroy();
+    }
+    
+    // Inicializar la tabla con todas las opciones correctas
     tablaClientes = $('#tabla-clientes').DataTable({
       language: {
-        url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        search: "Buscar:",
+        lengthMenu: "Mostrar _MENU_ registros por página",
+        zeroRecords: "No se encontraron registros",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+        infoEmpty: "Mostrando 0 a 0 de 0 registros",
+        infoFiltered: "(filtrados de _MAX_ registros totales)",
+        paginate: {
+          first: "Primero",
+          last: "Último",
+          next: "Siguiente",
+          previous: "Anterior"
+        }
       },
       columns: [
         { data: 'id' },
