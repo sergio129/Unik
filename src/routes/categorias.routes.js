@@ -6,6 +6,8 @@ const categoriasController = require('../controllers/categorias.controller');
 // Rutas para obtener estadísticas
 // (Importante: Estas rutas deben estar ANTES de las rutas con parámetros)
 router.get('/stats/productos', authenticate, categoriasController.getCategoriasConMasProductos);
+// Ruta para contar categorías activas
+router.get('/count', authenticate, categoriasController.countCategorias);
 
 // Rutas para obtener categorías
 router.get('/', authenticate, categoriasController.getAllCategorias);
