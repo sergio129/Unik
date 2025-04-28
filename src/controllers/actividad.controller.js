@@ -6,6 +6,7 @@ const MovimientoInventario = require('../models/movimiento.model');
 const Usuario = require('../models/usuario.model');
 const Cliente = require('../models/cliente.model');
 const Producto = require('../models/producto.model');
+const db = require('../config/db.config');
 
 // Obtener actividad reciente (ventas, movimientos de inventario, etc.)
 exports.getRecentActivity = async (req, res) => {
@@ -134,6 +135,55 @@ exports.getRecentActivity = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener la actividad reciente',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtiene las categorías más activas basadas en ventas y movimientos recientes
+ * @param {Object} req - Objeto de solicitud Express
+ * @param {Object} res - Objeto de respuesta Express
+ */
+exports.getCategoriasTopActividad = async (req, res) => {
+  try {
+    const limit = req.query.limit || 5; // Por defecto, devolver las 5 principales
+    const diasAtras = req.query.dias || 30; // Por defecto, considerar los últimos 30 días
+    
+    // Esta consulta muestra las categorías con más productos
+    const results = await sequelize.query(`
+      SELECT 
+        c.id,
+        c.nombre,
+        COUNT(p.codigo) AS total_productos,
+        SUM(p.cantidad) AS stock_total
+      FROM 
+        categorias c
+      LEFT JOIN productos p ON p.categoria_id = c.id
+      WHERE 
+        c.activo = 1
+      GROUP BY 
+        c.id, c.nombre
+      ORDER BY 
+        total_productos DESC
+      LIMIT ?
+    `, {
+      replacements: [parseInt(limit)],
+      type: sequelize.QueryTypes.SELECT
+    });
+    
+    // Asegurar que siempre devolvemos un array
+    const dataArray = Array.isArray(results) ? results : [results].filter(Boolean);
+    
+    res.status(200).json({
+      success: true,
+      data: dataArray
+    });
+  } catch (error) {
+    console.error('Error al obtener categorías más activas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener categorías más activas',
       error: error.message
     });
   }

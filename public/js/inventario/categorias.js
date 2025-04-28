@@ -37,6 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const prevPageButton = document.getElementById('prev-page');
   const nextPageButton = document.getElementById('next-page');
   const tableHeaders = document.querySelectorAll('#categorias-table th.sortable');
+  
+  // Elementos para estadísticas
+  const btnRefreshStats = document.getElementById('btn-refresh-stats');
+  const topCategoriesProductsElement = document.getElementById('top-categories-products');
+  const topActiveCategoriesElement = document.getElementById('top-active-categories');
+  
   // Elementos para selección múltiple
   const selectAllCheckbox = document.querySelector('#categorias-table thead input[type="checkbox"]');
   const bulkActionsBar = document.querySelector('.bulk-actions');
@@ -202,6 +208,131 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePaginationControls(0, 0);
     } finally {
       hideSpinner();
+    }
+  };
+
+  // --- Funciones para estadísticas ---
+  // Cargar estadísticas de categorías
+  const loadStats = async () => {
+    try {
+      // Establecer estado de carga
+      topCategoriesProductsElement.innerHTML = '<div class="stats-loading">Cargando estadísticas...</div>';
+      topActiveCategoriesElement.innerHTML = '<div class="stats-loading">Cargando estadísticas...</div>';
+      
+      // Categorías con más productos - Datos reales
+      await fetchTopCategoriesProducts();
+      
+      // Categorías más activas - Datos reales de actividad
+      await fetchTopActiveCategories();
+      
+    } catch (error) {
+      console.error('Error al cargar estadísticas:', error);
+      
+      topCategoriesProductsElement.innerHTML = '<div class="stats-error">Error al cargar estadísticas.</div>';
+      topActiveCategoriesElement.innerHTML = '<div class="stats-error">Error al cargar estadísticas.</div>';
+    }
+  };
+  
+  // Obtener y renderizar las categorías con más productos
+  const fetchTopCategoriesProducts = async () => {
+    try {
+      // Obtener datos reales de la API
+      const response = await fetch('/api/categorias/stats/productos', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar estadísticas de productos por categoría');
+      }
+
+      const data = await response.json();
+      const categoriasConProductos = data.data || [];
+      
+      if (categoriasConProductos.length === 0) {
+        topCategoriesProductsElement.innerHTML = '<div class="stats-no-data">No hay categorías con productos.</div>';
+        return;
+      }
+      
+      // Calcular el máximo para las barras de progreso
+      const maxProductos = Math.max(...categoriasConProductos.map(cat => cat.productos_count || 0));
+      
+      // Generar HTML para las estadísticas
+      const statsHTML = categoriasConProductos.map(cat => {
+        const porcentaje = maxProductos ? Math.round((cat.productos_count / maxProductos) * 100) : 0;
+        
+        return `
+          <div class="stats-item">
+            <span class="stats-item-name">${cat.nombre}</span>
+            <div class="stats-item-bar-container">
+              <div class="stats-item-bar" style="width: ${porcentaje}%"></div>
+            </div>
+            <span class="stats-item-value">${cat.productos_count}</span>
+          </div>
+        `;
+      }).join('');
+      
+      topCategoriesProductsElement.innerHTML = statsHTML;
+      
+    } catch (error) {
+      console.error('Error al cargar categorías con más productos:', error);
+      topCategoriesProductsElement.innerHTML = '<div class="stats-error">Error al cargar las estadísticas.</div>';
+    }
+  };
+  
+  // Obtener y renderizar las categorías más activas (basadas en actividad real)
+  const fetchTopActiveCategories = async () => {
+    try {
+      // Obtener datos reales de actividad de la API
+      const response = await fetch('/api/actividad/categorias/top', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cargar datos de actividad de categorías');
+      }
+
+      const data = await response.json();
+      const topActivas = data.data || [];
+      
+      if (!topActivas || topActivas.length === 0) {
+        topActiveCategoriesElement.innerHTML = '<div class="stats-no-data">No hay datos de actividad disponibles.</div>';
+        return;
+      }
+      
+      // Transformar los datos para mostrarlos en la UI
+      const statsData = topActivas.map(cat => ({
+        nombre: cat.nombre,
+        valor: cat.total_productos || 0,
+        stock: cat.stock_total || 0
+      }));
+      
+      // Encontrar el máximo valor para calcular porcentajes
+      const maxProductos = Math.max(...statsData.map(cat => cat.valor));
+      
+      // Generar HTML para las estadísticas
+      const statsHTML = statsData.map(cat => {
+        const porcentaje = maxProductos ? Math.round((cat.valor / maxProductos) * 100) : 0;
+        
+        return `
+          <div class="stats-item">
+            <span class="stats-item-name">${cat.nombre}</span>
+            <div class="stats-item-bar-container">
+              <div class="stats-item-bar" style="width: ${porcentaje}%"></div>
+            </div>
+            <span class="stats-item-value">${cat.valor} productos</span>
+          </div>
+        `;
+      }).join('');
+      
+      topActiveCategoriesElement.innerHTML = statsHTML || '<div class="stats-no-data">No hay datos de actividad disponibles.</div>';
+      
+    } catch (error) {
+      console.error('Error al cargar categorías activas:', error);
+      topActiveCategoriesElement.innerHTML = '<div class="stats-error">Error al cargar datos de actividad.</div>';
     }
   };
 
@@ -1078,6 +1209,8 @@ document.addEventListener('DOMContentLoaded', () => {
   btnAplicarFiltros.addEventListener('click', handleApplyFilters);
   btnLimpiarFiltros.addEventListener('click', handleClearFilters);
 
+  btnRefreshStats.addEventListener('click', loadStats);
+
   function debounce(func, timeout = 300) {
     let timer;
     return (...args) => {
@@ -1087,4 +1220,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadCategorias();
+  loadStats();
 });

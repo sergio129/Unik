@@ -42,6 +42,149 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    /* Estilos para el panel de estadísticas */
+    .stats-panel {
+      margin-bottom: 20px;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+    }
+    
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .stats-header h3 {
+      font-size: 1.1rem;
+      margin: 0;
+      color: #333;
+    }
+    
+    .stats-header i {
+      margin-right: 8px;
+      color: var(--primary-color);
+    }
+    
+    .icon-button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #6c757d;
+      padding: 5px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .icon-button:hover {
+      color: var(--primary-color);
+      background-color: #f0f0f0;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .stats-card {
+      border: 1px solid #eee;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .stats-card-header {
+      padding: 10px 15px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .stats-card-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #495057;
+    }
+    
+    .stats-card-body {
+      padding: 15px;
+    }
+    
+    .stats-loading {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 15px 0;
+    }
+    
+    .stats-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed #eee;
+    }
+    
+    .stats-item:last-child {
+      border-bottom: none;
+    }
+    
+    .stats-item-name {
+      font-weight: 500;
+      color: #333;
+      flex-grow: 1;
+    }
+    
+    .stats-item-value {
+      font-weight: 600;
+      background-color: #e9ecef;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: #495057;
+    }
+    
+    .stats-item-bar-container {
+      flex-grow: 1;
+      margin: 0 15px;
+      height: 8px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .stats-item-bar {
+      height: 100%;
+      background-color: var(--primary-color);
+    }
+    
+    .stats-no-data {
+      text-align: center;
+      color: #6c757d;
+      padding: 15px 0;
+      font-style: italic;
+    }
+    
+    .stats-error {
+      text-align: center;
+      color: #dc3545;
+      padding: 15px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* Estilos para ordenación */
     .sortable { cursor: pointer; }
     .sortable .sort-icon { margin-left: 5px; color: #ccc; }
@@ -322,6 +465,34 @@
             <i class="fas fa-filter"></i> Filtros avanzados <span id="filter-badge" class="filter-badge hidden">0</span>
           </button>
           <button id="btn-new-category" class="primary"><i class="fas fa-plus"></i> Nueva Categoría</button>
+        </div>
+      </section>
+
+      <!-- Panel de estadísticas básicas -->
+      <section class="stats-panel" id="stats-panel">
+        <div class="stats-header">
+          <h3><i class="fas fa-chart-bar"></i> Estadísticas de Categorías</h3>
+          <button id="btn-refresh-stats" class="icon-button" title="Actualizar estadísticas">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-card-header">
+              <h4>Categorías con más productos</h4>
+            </div>
+            <div class="stats-card-body" id="top-categories-products">
+              <div class="stats-loading">Cargando estadísticas...</div>
+            </div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card-header">
+              <h4>Categorías más activas</h4>
+            </div>
+            <div class="stats-card-body" id="top-active-categories">
+              <div class="stats-loading">Cargando estadísticas...</div>
+            </div>
+          </div>
         </div>
       </section>
 

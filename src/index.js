@@ -23,13 +23,13 @@ Usuario.hasMany(Sesion, { foreignKey: 'usuario_id' });
 // Importación de rutas
 const authRoutes = require('./routes/auth.route');
 const usuariosRoutes = require('./routes/usuarios.route');
-const categoriasRoutes = require('./routes/categorias.route');
+const categoriasRoutes = require('./routes/categorias.routes'); // Corregido: .route -> .routes
 const productosRoutes = require('./routes/productos.route');
 const movimientosRoutes = require('./routes/movimientos.route');
 const reportesRoutes = require('./routes/reportes.final'); // Usando el archivo final con el patrón correcto
 const clientesRoutes = require('./routes/clientes.route');
 const ventasRoutes = require('./routes/ventas.route');
-const actividadRoutes = require('./routes/actividad.route'); // Nueva ruta para actividad reciente
+const actividadRoutes = require('./routes/actividad.routes'); // Corregido: .route -> .routes
 const pedidosRoutes = require('./routes/pedidos.route'); // Nueva ruta para gestión de pedidos
 const proveedoresRoutes = require('./routes/proveedores.routes'); // Nueva ruta para gestión de proveedores
 const whatsappRoutes = require('./routes/whatsapp.route'); // Nueva ruta para gestión de WhatsApp

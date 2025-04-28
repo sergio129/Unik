@@ -3,6 +3,7 @@ const Categoria = require('../models/categoria.model');
 const Producto = require('../models/producto.model');
 const { Op } = require('sequelize');
 const { sequelize } = require('../utils/database');
+const db = require('../config/db.config'); // Importamos db correctamente para poder usar db.query
 
 // Obtener todas las categorías
 exports.getAllCategorias = async (req, res) => {
@@ -658,6 +659,53 @@ exports.bulkDelete = async (req, res) => {
       success: false,
       message: 'Error al eliminar las categorías',
       error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+/**
+ * Obtiene las categorías con más productos
+ * @param {Object} req - Objeto de solicitud Express
+ * @param {Object} res - Objeto de respuesta Express
+ */
+exports.getCategoriasConMasProductos = async (req, res) => {
+  try {
+    const limit = req.query.limit || 5; // Por defecto, devolver las 5 principales
+
+    // Usar sequelize para la consulta en lugar de raw query
+    const results = await sequelize.query(`
+      SELECT 
+        c.id, 
+        c.nombre, 
+        COUNT(p.codigo) AS productos_count 
+      FROM 
+        categorias c
+      LEFT JOIN 
+        productos p ON p.categoria_id = c.id
+      WHERE 
+        c.activo = true
+      GROUP BY 
+        c.id, c.nombre
+      HAVING 
+        productos_count > 0
+      ORDER BY 
+        productos_count DESC
+      LIMIT :limit
+    `, {
+      replacements: { limit: parseInt(limit) },
+      type: sequelize.QueryTypes.SELECT
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas de categorías:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas de categorías',
+      error: error.message
     });
   }
 };
