@@ -164,6 +164,90 @@
     tr.selected:hover {
       background-color: rgba(0, 123, 255, 0.1);
     }
+
+    /* Estilos para filtros avanzados */
+    .filter-toggle {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      color: #333;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s;
+    }
+    .filter-toggle:hover {
+      background-color: #e9ecef;
+    }
+    .filter-toggle i {
+      margin-right: 5px;
+    }
+    .filter-toggle.active {
+      background-color: #e9ecef;
+    }
+    .advanced-filters {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: none;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out;
+    }
+    .advanced-filters.active {
+      display: block;
+    }
+    .filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: flex-end;
+      margin-bottom: 15px;
+    }
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    .filter-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 5px;
+    }
+    .date-range {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .date-range input {
+      flex: 1;
+    }
+    .filter-badge {
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.7rem;
+      margin-left: 5px;
+      font-weight: bold;
+    }
+    .filter-badge.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -214,9 +298,50 @@
           <input type="text" id="search-categorias" placeholder="Buscar categoría...">
         </div>
         <div>
+          <button id="btn-advanced-filters" class="secondary">
+            <i class="fas fa-filter"></i> Filtros avanzados <span id="filter-badge" class="filter-badge hidden">0</span>
+          </button>
           <button id="btn-new-category" class="primary"><i class="fas fa-plus"></i> Nueva Categoría</button>
         </div>
       </section>
+
+      <div id="advanced-filters" class="advanced-filters">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label for="filter-estado">Estado</label>
+            <select id="filter-estado" class="form-control">
+              <option value="">Todos</option>
+              <option value="true">Activos</option>
+              <option value="false">Inactivos</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filter-productos">Cantidad de productos</label>
+            <select id="filter-productos" class="form-control">
+              <option value="">Todos</option>
+              <option value="0">Sin productos</option>
+              <option value="1-10">1-10 productos</option>
+              <option value="11-50">11-50 productos</option>
+              <option value="50+">Más de 50 productos</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Fecha de creación</label>
+            <div class="date-range">
+              <input type="date" id="filter-fecha-inicio" class="form-control" placeholder="Desde">
+              <span>-</span>
+              <input type="date" id="filter-fecha-fin" class="form-control" placeholder="Hasta">
+            </div>
+          </div>
+        </div>
+        
+        <div class="filter-actions">
+          <button id="btn-limpiar-filtros" class="secondary"><i class="fas fa-times"></i> Limpiar filtros</button>
+          <button id="btn-aplicar-filtros" class="primary"><i class="fas fa-check"></i> Aplicar filtros</button>
+        </div>
+      </div>
 
       <section class="card">
         <div class="table-container">

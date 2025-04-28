@@ -51,6 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCancelBulk = document.getElementById('btn-cancel-bulk');
   const btnConfirmBulk = document.getElementById('btn-confirm-bulk');
   
+  // Elementos para filtros avanzados
+  const btnAdvancedFilters = document.getElementById('btn-advanced-filters');
+  const advancedFiltersSection = document.getElementById('advanced-filters');
+  const filterEstado = document.getElementById('filter-estado');
+  const filterProductos = document.getElementById('filter-productos');
+  const filterFechaInicio = document.getElementById('filter-fecha-inicio');
+  const filterFechaFin = document.getElementById('filter-fecha-fin');
+  const btnAplicarFiltros = document.getElementById('btn-aplicar-filtros');
+  const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros');
+  const filterBadge = document.getElementById('filter-badge');
+  
   // Verificación de elementos del DOM
   const elementosRequeridos = {
     'categoriasListElement': categoriasListElement,
@@ -90,6 +101,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentSearchTerm = '';
   let selectedCategories = new Set(); // Conjunto para almacenar IDs de categorías seleccionadas
   let currentBulkAction = ''; // 'activate', 'deactivate', 'delete'
+  
+  // Estado de filtros avanzados
+  let advancedFilters = {
+    estado: '',
+    productos: '',
+    fechaInicio: '',
+    fechaFin: ''
+  };
+  let filtersActive = false;
 
   // Verificación de autenticación
   const token = localStorage.getItem('token');
@@ -136,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       allCategorias = data.data || []; // Guardar todos los datos
       
+      // Primero aplicar filtro de búsqueda 
       let filteredCategorias = allCategorias;
       if (currentSearchTerm) {
         const term = currentSearchTerm.toLowerCase();
@@ -144,9 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
           (categoria.descripcion && categoria.descripcion.toLowerCase().includes(term))
         );
       }
+      
+      // Aplicar filtros avanzados
+      filteredCategorias = applyAdvancedFilters(filteredCategorias);
 
       totalItems = filteredCategorias.length;
 
+      // Aplicar ordenación
       filteredCategorias.sort((a, b) => {
         let valA = a[sortColumn];
         let valB = b[sortColumn];
@@ -176,6 +201,126 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       hideSpinner();
     }
+  };
+
+  // --- Funciones para filtrado avanzado ---
+  const toggleAdvancedFilters = () => {
+    if (advancedFiltersSection.classList.contains('active')) {
+      advancedFiltersSection.classList.remove('active');
+      btnAdvancedFilters.classList.remove('active');
+    } else {
+      advancedFiltersSection.classList.add('active');
+      btnAdvancedFilters.classList.add('active');
+    }
+  };
+
+  const applyAdvancedFilters = (categorias) => {
+    if (!filtersActive) return categorias;
+    
+    return categorias.filter(categoria => {
+      // Filtro por estado
+      if (advancedFilters.estado !== '') {
+        const estadoDeseado = advancedFilters.estado === 'true';
+        if (categoria.activo !== estadoDeseado) return false;
+      }
+      
+      // Filtro por fecha de creación
+      if (advancedFilters.fechaInicio || advancedFilters.fechaFin) {
+        const fechaCreacion = new Date(categoria.fecha_creacion);
+        
+        if (advancedFilters.fechaInicio) {
+          const fechaInicio = new Date(advancedFilters.fechaInicio);
+          fechaInicio.setHours(0, 0, 0, 0);
+          if (fechaCreacion < fechaInicio) return false;
+        }
+        
+        if (advancedFilters.fechaFin) {
+          const fechaFin = new Date(advancedFilters.fechaFin);
+          fechaFin.setHours(23, 59, 59, 999);
+          if (fechaCreacion > fechaFin) return false;
+        }
+      }
+      
+      // Filtro por cantidad de productos (esto requiere que cada categoría tenga un contador de productos)
+      if (advancedFilters.productos !== '') {
+        // Para simplificar, asumimos que tenemos la información de productos por categoría
+        // En una implementación real, esto podría requerir una llamada API separada
+        const productosCount = getProductosCount(categoria.id);
+        
+        switch (advancedFilters.productos) {
+          case '0':
+            if (productosCount !== 0) return false;
+            break;
+          case '1-10':
+            if (productosCount < 1 || productosCount > 10) return false;
+            break;
+          case '11-50':
+            if (productosCount < 11 || productosCount > 50) return false;
+            break;
+          case '50+':
+            if (productosCount <= 50) return false;
+            break;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  // Función para obtener el número de productos por categoría
+  // En un sistema real, esto podría venir directamente de la API
+  const getProductosCount = (categoriaId) => {
+    // Simulamos la cantidad de productos por categoría (esto debe reemplazarse con datos reales)
+    // En una implementación real, esta información podría venir con los datos de categoría o mediante otra API
+    const categoria = allCategorias.find(cat => cat.id === categoriaId);
+    return categoria.productos_count || 0;
+  };
+
+  const handleApplyFilters = () => {
+    advancedFilters = {
+      estado: filterEstado.value,
+      productos: filterProductos.value,
+      fechaInicio: filterFechaInicio.value,
+      fechaFin: filterFechaFin.value
+    };
+    
+    // Contar los filtros activos
+    const activeFilters = Object.values(advancedFilters).filter(value => value !== '').length;
+    
+    // Actualizar contador de filtros
+    if (activeFilters > 0) {
+      filterBadge.textContent = activeFilters;
+      filterBadge.classList.remove('hidden');
+      filtersActive = true;
+    } else {
+      filterBadge.classList.add('hidden');
+      filtersActive = false;
+    }
+    
+    currentPage = 1; // Resetear a primera página al filtrar
+    loadCategorias();
+  };
+
+  const handleClearFilters = () => {
+    // Limpiar todos los campos de filtro
+    filterEstado.value = '';
+    filterProductos.value = '';
+    filterFechaInicio.value = '';
+    filterFechaFin.value = '';
+    
+    // Reiniciar estado de filtros
+    advancedFilters = {
+      estado: '',
+      productos: '',
+      fechaInicio: '',
+      fechaFin: ''
+    };
+    
+    filterBadge.classList.add('hidden');
+    filtersActive = false;
+    
+    currentPage = 1;
+    loadCategorias();
   };
 
   // --- Funciones de Renderizado ---
@@ -863,6 +1008,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   btnConfirmBulk.addEventListener('click', executeBulkAction);
+
+  btnAdvancedFilters.addEventListener('click', toggleAdvancedFilters);
+  btnAplicarFiltros.addEventListener('click', handleApplyFilters);
+  btnLimpiarFiltros.addEventListener('click', handleClearFilters);
 
   function debounce(func, timeout = 300) {
     let timer;
