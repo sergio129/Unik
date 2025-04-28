@@ -514,8 +514,10 @@
   <script src="../js/inventario/inventario.js"></script>
   <script src="../js/inventario/dashboard-custom.js"></script>
   <script src="../js/inventario/reportes.js"></script>
+  <!-- Cargar solo un archivo de WhatsApp -->
   <script src="../js/common/global-whatsapp-init.js"></script>
-  <script src="../js/pedidos/whatsapp-chat.js"></script>
+  <!-- Evitar cargar dos veces el módulo WhatsAppChat -->
+  <!-- <script src="../js/pedidos/whatsapp-chat.js"></script> -->
 
 
   <!-- Script para asegurar la funcionalidad de personalización -->
@@ -844,7 +846,237 @@
       }
       
       // Funciones auxiliares
-      // ...existing code...
+      function capitalizar(texto) {
+          if (!texto) return '';
+          return texto.charAt(0).toUpperCase() + texto.slice(1);
+      }
+      
+      // Función para inicializar el modo de edición
+      function initializeEditMode() {
+          console.log("Inicializando modo de edición");
+          const dashboard = document.getElementById('custom-dashboard');
+          
+          // Añadir controles de edición a cada widget
+          const widgets = dashboard.querySelectorAll('.dashboard-card');
+          widgets.forEach(widget => {
+              // Verificar si ya tiene controles para evitar duplicados
+              if (widget.querySelector('.widget-controls')) {
+                  return;
+              }
+              
+              // Crear controles para el widget
+              const controls = document.createElement('div');
+              controls.className = 'widget-controls';
+              controls.innerHTML = `
+                  <button class="widget-control widget-remove" title="Eliminar widget">
+                      <i class="fas fa-times"></i>
+                  </button>
+                  <button class="widget-control widget-move" title="Mover widget">
+                      <i class="fas fa-arrows-alt"></i>
+                  </button>
+                  <button class="widget-control widget-size" title="Cambiar tamaño">
+                      <i class="fas fa-expand"></i>
+                  </button>
+              `;
+              widget.appendChild(controls);
+              
+              // Añadir eventos a los controles
+              const removeBtn = widget.querySelector('.widget-remove');
+              const sizeBtn = widget.querySelector('.widget-size');
+              
+              if (removeBtn) {
+                  removeBtn.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      widget.remove();
+                  });
+              }
+              
+              if (sizeBtn) {
+                  sizeBtn.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      toggleWidgetSize(widget);
+                  });
+              }
+          });
+          
+          // Inicializar Sortable para permitir arrastrar los widgets
+          if (window.Sortable) {
+              new Sortable(dashboard, {
+                  animation: 150,
+                  handle: '.widget-move',
+                  ghostClass: 'widget-ghost',
+                  onEnd: function() {
+                      console.log("Orden de widgets actualizado");
+                  }
+              });
+          } else {
+              console.error("Sortable.js no está disponible");
+          }
+      }
+      
+      // Función para cambiar el tamaño de un widget
+      function toggleWidgetSize(widget) {
+          if (widget.classList.contains('widget-size-1')) {
+              widget.classList.remove('widget-size-1');
+              widget.classList.add('widget-size-2');
+          } else if (widget.classList.contains('widget-size-2')) {
+              widget.classList.remove('widget-size-2');
+              widget.classList.add('widget-size-3');
+          } else if (widget.classList.contains('widget-size-3')) {
+              widget.classList.remove('widget-size-3');
+              widget.classList.add('widget-size-1');
+          } else {
+              widget.classList.add('widget-size-1');
+          }
+      }
+      
+      // Función para salir del modo de edición
+      function exitEditMode() {
+          const dashboard = document.getElementById('custom-dashboard');
+          dashboard.classList.remove('edit-mode');
+          
+          // Eliminar los controles de edición
+          const controls = dashboard.querySelectorAll('.widget-controls');
+          controls.forEach(control => control.remove());
+          
+          // Eliminar Sortable
+          if (window.Sortable && dashboard.sortable) {
+              dashboard.sortable.destroy();
+          }
+      }
+      
+      // Guardar la configuración actual del dashboard
+      function saveCurrentLayout() {
+          const dashboard = document.getElementById('custom-dashboard');
+          const widgets = dashboard.querySelectorAll('.dashboard-card');
+          const layout = [];
+          
+          widgets.forEach((widget, index) => {
+              layout.push({
+                  id: widget.id || `widget-${index + 1}`,
+                  type: widget.getAttribute('data-type'),
+                  size: widget.classList.contains('widget-size-3') ? 'widget-size-3' : 
+                         widget.classList.contains('widget-size-2') ? 'widget-size-2' : 'widget-size-1'
+              });
+          });
+          
+          // Guardar en localStorage
+          localStorage.setItem('dashboard-layout', JSON.stringify(layout));
+          
+          // Mostrar notificación de guardado exitoso
+          Toastify({
+              text: "Configuración del dashboard guardada con éxito",
+              duration: 3000,
+              close: true,
+              gravity: "top",
+              position: "right",
+              stopOnFocus: true,
+              className: "toast-success",
+          }).showToast();
+      }
+      
+      // Cargar la configuración guardada
+      function loadSavedLayout() {
+          const savedLayout = localStorage.getItem('dashboard-layout');
+          if (!savedLayout) {
+              console.log("No hay configuración guardada");
+              return false;
+          }
+          
+          try {
+              const layout = JSON.parse(savedLayout);
+              const dashboard = document.getElementById('custom-dashboard');
+              
+              // Limpiar dashboard actual
+              dashboard.innerHTML = '';
+              
+              // Reconstruir con la configuración guardada
+              layout.forEach(widget => {
+                  const definition = window.widgetDefinitions[widget.type];
+                  if (definition) {
+                      const widgetElement = document.createElement('div');
+                      widgetElement.className = `dashboard-card draggable-widget ${widget.size}`;
+                      widgetElement.id = widget.id;
+                      widgetElement.setAttribute('data-type', widget.type);
+                      widgetElement.innerHTML = definition.content();
+                      dashboard.appendChild(widgetElement);
+                      
+                      // Inicializar widget
+                      if (definition.onLoad) {
+                          setTimeout(() => definition.onLoad(), 100);
+                      }
+                  }
+              });
+              
+              return true;
+          } catch (error) {
+              console.error("Error al cargar configuración guardada:", error);
+              return false;
+          }
+      }
+      
+      // Añadir un nuevo widget al dashboard
+      function addWidgetToLayout(widgetType) {
+          const definition = window.widgetDefinitions[widgetType];
+          if (!definition) {
+              console.error("Tipo de widget no encontrado:", widgetType);
+              return;
+          }
+          
+          // Crear ID único para el widget
+          const timestamp = new Date().getTime();
+          const widgetId = `widget-${widgetType}-${timestamp}`;
+          
+          // Crear el elemento del widget
+          const widgetElement = document.createElement('div');
+          widgetElement.className = `dashboard-card draggable-widget ${definition.size || 'widget-size-1'}`;
+          widgetElement.id = widgetId;
+          widgetElement.setAttribute('data-type', widgetType);
+          widgetElement.innerHTML = definition.content();
+          
+          // Añadir al dashboard
+          const dashboard = document.getElementById('custom-dashboard');
+          dashboard.appendChild(widgetElement);
+          
+          // Añadir controles de edición
+          const controls = document.createElement('div');
+          controls.className = 'widget-controls';
+          controls.innerHTML = `
+              <button class="widget-control widget-remove" title="Eliminar widget">
+                  <i class="fas fa-times"></i>
+              </button>
+              <button class="widget-control widget-move" title="Mover widget">
+                  <i class="fas fa-arrows-alt"></i>
+              </button>
+              <button class="widget-control widget-size" title="Cambiar tamaño">
+                  <i class="fas fa-expand"></i>
+              </button>
+          `;
+          widgetElement.appendChild(controls);
+          
+          // Añadir eventos a los controles
+          const removeBtn = widgetElement.querySelector('.widget-remove');
+          const sizeBtn = widgetElement.querySelector('.widget-size');
+          
+          if (removeBtn) {
+              removeBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  widgetElement.remove();
+              });
+          }
+          
+          if (sizeBtn) {
+              sizeBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  toggleWidgetSize(widgetElement);
+              });
+          }
+          
+          // Inicializar widget
+          if (definition.onLoad) {
+              setTimeout(() => definition.onLoad(), 100);
+          }
+      }
       
       // Funciones para cargar datos en los widgets
       function loadProductCount() {

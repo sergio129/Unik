@@ -78,7 +78,11 @@ function checkAuthentication() {
             const now = new Date().getTime();
             
             if (!lastAuth || (now - parseInt(lastAuth)) > 300000) { // 5 minutos
-                showToast(`Bienvenido, ${data.data.nombre_completo || data.data.username}`, 'success');
+                // Verificar que data.data existe y tiene propiedades antes de acceder
+                const nombreUsuario = data.usuario ? data.usuario.nombre_completo : 
+                                    (data.data && data.data.nombre_completo ? data.data.nombre_completo : 
+                                    (data.data && data.data.username ? data.data.username : 'Usuario'));
+                showToast(`Bienvenido, ${nombreUsuario}`, 'success');
                 sessionStorage.setItem('lastAuth', now);
             }
         }
