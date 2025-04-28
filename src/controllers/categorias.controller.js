@@ -709,3 +709,27 @@ exports.getCategoriasConMasProductos = async (req, res) => {
     });
   }
 };
+
+// Contar categorías
+exports.countCategorias = async (req, res) => {
+  try {
+    // Obtener el total de categorías activas
+    const count = await Categoria.count({
+      where: {
+        activo: true
+      }
+    });
+    
+    return res.status(200).json({
+      success: true,
+      count: count
+    });
+  } catch (error) {
+    console.error('Error al contar categorías:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener el conteo de categorías',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};

@@ -9,6 +9,7 @@ router.use(authMiddleware.authenticate);
 
 // Rutas para movimientos de inventario
 router.get('/', movimientosController.getAllMovimientos);
+router.get('/count', movimientosController.countMovimientos);
 router.get('/resumen', movimientosController.getResumenMovimientos);
 router.get('/:id', movimientosController.getMovimientoById);
 router.post('/', movimientosController.createMovimiento);

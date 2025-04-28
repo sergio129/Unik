@@ -1857,3 +1857,27 @@ async function importarProductosDB(productos, usuarioId) {
   
   return resultado;
 }
+
+// Contar productos
+exports.countProductos = async (req, res) => {
+  try {
+    // Obtener el total de productos
+    const count = await Producto.count({
+      where: {
+        activo: true
+      }
+    });
+    
+    return res.status(200).json({
+      success: true,
+      count: count
+    });
+  } catch (error) {
+    console.error('Error al contar productos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener el conteo de productos',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};

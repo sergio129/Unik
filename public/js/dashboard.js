@@ -1,174 +1,77 @@
-// Dashboard functionality for La UNIKA
-document.addEventListener('DOMContentLoaded', async function() {
-    // Verificar autenticación primero
-    if (!await checkAuthentication()) {
-        return;
-    }
-    
-    // Configurar modales antes de cualquier otra operación
-    setupModals();
-    
-    // Configurar elementos de la interfaz
-    setupUI();
+/**
+ * dashboard.js - Script principal para el panel de control
+ * La UNIKA - Sistema de gestión de inventario
+ */
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar componentes del dashboard
+    initDashboard();
     
     // Cargar datos del dashboard
     loadDashboardData();
+    
+    // Inicializar manejo de notificaciones
+    initNotifications();
+    
+    // Inicializar el panel de bajo stock
+    initLowStockPanel();
 });
 
-// Verificar si el usuario está autenticado
-async function checkAuthentication() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+// Función para inicializar el dashboard
+function initDashboard() {
+    // Configurar el nombre de usuario
+    const userDisplay = document.getElementById('user-display');
+    const userData = JSON.parse(localStorage.getItem('userData'));
     
-    if (!token || !user) {
-        // Redirigir al login si no hay token
-        window.location.href = '/login';
-        return false;
-    }
-    
-    try {
-        const response = await fetch('/api/auth/me', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            // Token inválido, limpiar localStorage y redirigir al login
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-            return false;
-        }
-        
-        return true;
-    } catch (error) {
-        console.error('Error al verificar autenticación:', error);
-        return false;
-    }
-}
-
-// Configurar elementos de la interfaz
-function setupUI() {
-    // Cargar información del usuario
-    loadUserInfo();
-    
-    // Resaltar página actual en el menú
-    highlightCurrentPage();
-    
-    // Configurar función de logout
-    document.querySelector('button.secondary').addEventListener('click', logout);
-}
-
-// Mostrar información del usuario
-function loadUserInfo() {
-    try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (user) {
-            const userDisplay = document.getElementById('user-display');
-            if (userDisplay) {
-                userDisplay.textContent = user.nombre_completo || user.username;
-            }
-            
-            // Mostrar elementos específicos según el rol del usuario
-            if (user.rol) {
-                document.body.setAttribute('data-role', user.rol);
-                
-                // Ajustar visibilidad de elementos según el rol
-                const adminElements = document.querySelectorAll('.admin-only');
-                const vendedorElements = document.querySelectorAll('.vendedor-only');
-                const inventarioElements = document.querySelectorAll('.inventario-only');
-                
-                adminElements.forEach(el => {
-                    el.style.display = user.rol === 'admin' ? 'block' : 'none';
-                });
-                
-                vendedorElements.forEach(el => {
-                    el.style.display = user.rol === 'vendedor' || user.rol === 'admin' ? 'block' : 'none';
-                });
-                
-                inventarioElements.forEach(el => {
-                    el.style.display = user.rol === 'inventario' || user.rol === 'admin' ? 'block' : 'none';
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Error al cargar información del usuario:', error);
-    }
-}
-
-// Resaltar página actual en el menú
-function highlightCurrentPage() {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('nav ul li a');
-    
-    navLinks.forEach(link => {
-        if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
-        } else {
-            link.classList.remove('active');
-        }
-    });
-}
-
-// Función para cerrar sesión
-function logout() {
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-        // Hacer petición al servidor para invalidar el token
-        fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .then(response => {
-            // Independientemente de la respuesta, limpiamos localStorage
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            
-            // Redirigir al login
-            window.location.href = '/login';
-        })
-        .catch(error => {
-            console.error('Error al cerrar sesión:', error);
-            
-            // En caso de error, igualmente limpiamos y redirigimos
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-        });
+    if (userData && userData.nombre) {
+        userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${userData.nombre}`;
     } else {
-        // Si no hay token, simplemente redirigir
+        userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Usuario';
+    }
+    
+    // Configurar botón de salir
+    const logoutButton = document.querySelector('.user-menu button');
+    logoutButton.addEventListener('click', function() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
         window.location.href = '/login';
+    });
+    
+    // Mostrar/ocultar elementos según el rol del usuario
+    configureUserRoleElements();
+}
+
+// Configurar elementos según el rol del usuario
+function configureUserRoleElements() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    const adminElements = document.querySelectorAll('.admin-only');
+    
+    if (userData && userData.rol === 'admin') {
+        adminElements.forEach(el => el.style.display = 'block');
+    } else {
+        adminElements.forEach(el => el.style.display = 'none');
     }
 }
 
 // Cargar datos para el dashboard
 function loadDashboardData() {
-    // Cargar conteo de productos
-    loadProductCount();
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
     
-    // Cargar resumen de ventas
-    loadSalesData();
-    
-    // Cargar conteo de pedidos pendientes
-    loadPendingOrders();
-    
-    // Cargar actividad reciente
-    loadRecentActivity();
-    
-    // Cargar productos con bajo stock
-    loadLowStockProducts();
+    // Cargar datos para el dashboard original (secciones estáticas)
+    loadDashboardCounts();
+    loadActivityLog();
 }
 
-// Cargar conteo de productos en inventario
-function loadProductCount() {
+// Cargar contadores para el dashboard estático
+function loadDashboardCounts() {
     const token = localStorage.getItem('token');
     
-    // Obtener el conteo real desde la API
-    fetch('/api/productos?activo=true', {
+    // Cargar conteo de productos
+    fetch('/api/productos/count', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -176,163 +79,136 @@ function loadProductCount() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const count = data.data.length;
-            document.getElementById('total-productos').textContent = count.toLocaleString();
-        } else {
-            throw new Error(data.message || 'Error al cargar el conteo de productos');
+            document.getElementById('total-productos').textContent = data.count || 0;
         }
     })
     .catch(error => {
         console.error('Error al cargar conteo de productos:', error);
-        document.getElementById('total-productos').textContent = '...';
+        document.getElementById('total-productos').textContent = '0';
     });
-}
-
-// Cargar datos de ventas
-function loadSalesData() {
-    const token = localStorage.getItem('token');
     
-    fetch('/api/ventas/resumen/diario', {
+    // Cargar ventas del día
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    
+    fetch(`/api/ventas/conteo-diario?fecha=${formattedDate}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error al obtener datos de ventas');
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Formatear el total con separadores de miles
-            const total = parseFloat(data.data.total).toLocaleString('es-CO', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            const ventasElement = document.getElementById('ventas-hoy');
+            const transaccionesElement = document.getElementById('transacciones-hoy');
             
-            // Actualizar los elementos del DOM
-            document.getElementById('ventas-hoy').textContent = `$${total}`;
-            
-            // Mostrar el texto con el número de transacciones
-            const cantidad = data.data.cantidad;
-            document.getElementById('transacciones-hoy').textContent = 
-                `${cantidad} ${cantidad === 1 ? 'transacción' : 'transacciones'} hoy`;
-        } else {
-            throw new Error(data.message || 'Error al obtener los datos de ventas');
-        }
-    })
-    .catch(error => {
-        console.error('Error al cargar datos de ventas:', error);
-        document.getElementById('ventas-hoy').textContent = '$0.00';
-        document.getElementById('transacciones-hoy').textContent = '0 transacciones hoy';
-    });
-}
-
-// Cargar conteo de pedidos pendientes
-function loadPendingOrders() {
-    // En una aplicación real, esto se cargaría desde la API
-    // Por ahora usamos datos de ejemplo
-    setTimeout(() => {
-        document.getElementById('pedidos-pendientes').textContent = '8';
-    }, 600);
-}
-
-// Cargar actividad reciente
-function loadRecentActivity() {
-    const token = localStorage.getItem('token');
-    const activityLog = document.getElementById('activity-log');
-    
-    // Mostrar mensaje de carga mientras se obtienen los datos
-    activityLog.innerHTML = '<tr><td colspan="4" class="text-center">Cargando actividad reciente...</td></tr>';
-    
-    // Hacer petición a la API para obtener la actividad reciente
-    fetch('/api/actividad/reciente?limit=5', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error al obtener la actividad reciente');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            const actividades = data.data;
-            
-            // Si no hay actividades recientes
-            if (actividades.length === 0) {
-                activityLog.innerHTML = '<tr><td colspan="4" class="text-center">No hay actividades recientes</td></tr>';
-                return;
+            if (ventasElement) {
+                ventasElement.textContent = `$${data.total.toLocaleString()}`;
             }
             
-            // Limpiar tabla
-            activityLog.innerHTML = '';
-            
-            // Poblar tabla con datos reales
-            actividades.forEach(item => {
-                const row = document.createElement('tr');
-                
-                // Formatear fecha
-                const fecha = new Date(item.fecha);
-                const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                
-                // Determinar la clase del badge según el tipo de actividad
-                let badgeClass, badgeValue;
-                if (item.tipo === 'venta') {
-                    badgeClass = 'badge-success';
-                    badgeValue = `$${parseFloat(item.detalle.valor).toLocaleString('es-CO', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}`;
-                } else if (item.tipo === 'entrada_producto') {
-                    badgeClass = 'badge-primary';
-                    badgeValue = `${item.detalle.cantidad} unidades`;
-                } else if (item.tipo === 'salida_producto') {
-                    badgeClass = 'badge-warning';
-                    badgeValue = `${item.detalle.cantidad} unidades`;
-                } else {
-                    badgeClass = 'badge-info';
-                    badgeValue = 'Ver detalle';
-                }
-                
-                row.innerHTML = `
-                    <td>${fechaFormateada}</td>
-                    <td>${item.descripcion}</td>
-                    <td>${item.usuario}</td>
-                    <td><span class="badge ${badgeClass}">${badgeValue}</span></td>
-                `;
-                
-                activityLog.appendChild(row);
-            });
-            
-            // Agregar funcionalidad al botón "Ver todo"
-            document.querySelector('.card-header button.secondary').addEventListener('click', function() {
-                // Aquí podríamos navegar a una página de historial completo si existiera
-                showNotification('Esta funcionalidad estará disponible próximamente', 'info');
-            });
-            
-        } else {
-            throw new Error(data.message || 'Error al obtener la actividad reciente');
+            if (transaccionesElement) {
+                const word = data.count === 1 ? 'transacción' : 'transacciones';
+                transaccionesElement.textContent = `${data.count} ${word} hoy`;
+            }
         }
     })
     .catch(error => {
-        console.error('Error al cargar actividad reciente:', error);
-        activityLog.innerHTML = `<tr><td colspan="4" class="text-center">Error al cargar la actividad: ${error.message}</td></tr>`;
+        console.error('Error al cargar ventas del día:', error);
+        if (document.getElementById('ventas-hoy')) {
+            document.getElementById('ventas-hoy').textContent = '$0';
+        }
+        if (document.getElementById('transacciones-hoy')) {
+            document.getElementById('transacciones-hoy').textContent = '0 transacciones hoy';
+        }
+    });
+    
+    // Cargar pedidos pendientes
+    fetch('/api/pedidos/pendientes/count', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const pedidosElement = document.getElementById('pedidos-pendientes');
+            if (pedidosElement) {
+                pedidosElement.textContent = data.count || 0;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar pedidos pendientes:', error);
+        if (document.getElementById('pedidos-pendientes')) {
+            document.getElementById('pedidos-pendientes').textContent = '0';
+        }
     });
 }
 
-// Cargar productos con bajo stock
-function loadLowStockProducts() {
+// Cargar log de actividad reciente
+function loadActivityLog() {
     const token = localStorage.getItem('token');
-    const lowStockTable = document.getElementById('low-stock-products');
     
-    // Limpiar tabla
-    lowStockTable.innerHTML = '<tr><td colspan="5" class="text-center">Cargando productos...</td></tr>';
+    fetch('/api/actividad?limit=10', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data) {
+            renderActivityLog(data.data);
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar log de actividad:', error);
+    });
+}
+
+// Renderizar el log de actividad
+function renderActivityLog(activities) {
+    const activityLogElement = document.getElementById('activity-log');
+    if (!activityLogElement || !activities.length) return;
     
-    // Obtener productos con bajo stock desde la API
+    let html = '';
+    activities.forEach(activity => {
+        const fecha = new Date(activity.fecha_creacion);
+        const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString().substr(0, 5)}`;
+        
+        let badgeClass = 'badge-info';
+        let detalle = activity.detalle || '';
+        
+        // Determinar el tipo de badge según el tipo de actividad
+        if (activity.tipo.includes('venta')) {
+            badgeClass = 'badge-success';
+            if (activity.detalle && !isNaN(activity.detalle)) {
+                detalle = `$${parseFloat(activity.detalle).toLocaleString()}`;
+            }
+        } else if (activity.tipo.includes('inventario') || activity.tipo.includes('producto')) {
+            badgeClass = 'badge-primary';
+        } else if (activity.tipo.includes('pedido')) {
+            badgeClass = 'badge-warning';
+        } else if (activity.tipo.includes('error') || activity.tipo.includes('eliminado')) {
+            badgeClass = 'badge-danger';
+        }
+        
+        html += `
+        <tr>
+            <td>${fechaFormateada}</td>
+            <td>${activity.tipo}</td>
+            <td>${activity.usuario || 'Sistema'}</td>
+            <td><span class="badge ${badgeClass}">${detalle}</span></td>
+        </tr>
+        `;
+    });
+    
+    activityLogElement.innerHTML = html;
+}
+
+// Inicializar panel de bajo stock
+function initLowStockPanel() {
+    const token = localStorage.getItem('token');
+    
     fetch('/api/productos/bajo-stock', {
         headers: {
             'Authorization': `Bearer ${token}`
@@ -340,164 +216,232 @@ function loadLowStockProducts() {
     })
     .then(response => response.json())
     .then(data => {
-        if (!data.success) {
-            throw new Error(data.message || 'Error al cargar productos con bajo stock');
-        }
-        
-        const productos = data.data;
-        
-        // Actualizar mensaje con la cantidad real de productos
-        document.getElementById('low-stock-count').textContent = 
-            `${productos.length} producto${productos.length !== 1 ? 's' : ''} con bajo inventario`;
-        
-        // Si no hay productos con bajo stock
-        if (productos.length === 0) {
-            lowStockTable.innerHTML = '<tr><td colspan="5" class="text-center">No hay productos con bajo stock</td></tr>';
-            return;
-        }
-        
-        // Limpiar tabla
-        lowStockTable.innerHTML = '';
-        
-        // Poblar tabla con datos reales
-        productos.forEach(item => {
-            const row = document.createElement('tr');
+        if (data.success) {
+            const lowStockProducts = data.products || [];
+            renderLowStockProducts(lowStockProducts);
             
-            row.innerHTML = `
-                <td>${item.nombre}</td>
-                <td>${item.categoria ? item.categoria.nombre : 'Sin categoría'}</td>
-                <td><span class="badge badge-danger">${item.cantidad}</span></td>
-                <td>${item.stock_minimo}</td>
-                <td>
-                    <button class="secondary" onclick="ordenarProducto('${item.codigo}')">
-                        <i class="fas fa-plus"></i> Ordenar
-                    </button>
-                </td>
-            `;
-            
-            lowStockTable.appendChild(row);
-        });
+            // Actualizar mensaje de alerta
+            const lowStockCount = document.getElementById('low-stock-count');
+            if (lowStockCount) {
+                if (lowStockProducts.length > 0) {
+                    lowStockCount.innerHTML = `Hay <strong>${lowStockProducts.length}</strong> productos con bajo stock que requieren atención.`;
+                } else {
+                    lowStockCount.innerHTML = 'No hay productos con bajo stock actualmente.';
+                    document.getElementById('low-stock-message').className = 'alert alert-success';
+                }
+            }
+        }
     })
     .catch(error => {
-        console.error('Error al cargar productos con bajo stock:', error);
-        lowStockTable.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center">
-                    Error al cargar productos con bajo stock: ${error.message}
-                </td>
-            </tr>
+        console.error('Error al obtener productos con bajo stock:', error);
+        const lowStockCount = document.getElementById('low-stock-count');
+        if (lowStockCount) {
+            lowStockCount.textContent = 'Error al cargar productos con bajo stock.';
+            document.getElementById('low-stock-message').className = 'alert alert-danger';
+        }
+    });
+    
+    // Configurar modal de creación de pedidos
+    setupPedidoModal();
+}
+
+// Renderizar tabla de productos con bajo stock
+function renderLowStockProducts(products) {
+    const tableBody = document.getElementById('low-stock-products');
+    if (!tableBody) return;
+    
+    if (!products.length) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center">No hay productos con bajo stock actualmente.</td></tr>`;
+        return;
+    }
+    
+    let html = '';
+    products.forEach(product => {
+        const porcentajeStock = (product.stock / product.stock_minimo) * 100;
+        let stockClass = 'text-danger';
+        
+        if (porcentajeStock >= 75) {
+            stockClass = 'text-warning';
+        }
+        
+        html += `
+        <tr>
+            <td>${product.nombre}</td>
+            <td>${product.categoria ? product.categoria.nombre : 'Sin categoría'}</td>
+            <td class="${stockClass}"><strong>${product.stock}</strong></td>
+            <td>${product.stock_minimo}</td>
+            <td>
+                <button class="button-sm crear-pedido" data-id="${product.id}" data-nombre="${product.nombre}">
+                    <i class="fas fa-truck"></i> Crear pedido
+                </button>
+            </td>
+        </tr>
         `;
+    });
+    
+    tableBody.innerHTML = html;
+    
+    // Añadir event listeners a los botones de crear pedido
+    document.querySelectorAll('.crear-pedido').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productoId = this.getAttribute('data-id');
+            const productoNombre = this.getAttribute('data-nombre');
+            openPedidoModal(productoId, productoNombre);
+        });
     });
 }
 
-// Función para ordenar un producto
-function ordenarProducto(productId) {
-    showPedidoModal(productId);
+// Configurar modal de creación de pedidos
+function setupPedidoModal() {
+    const modal = document.getElementById('pedido-modal');
+    const overlay = document.querySelector('.modal-overlay');
+    const closeButton = modal.querySelector('.close-modal');
+    const cancelButton = document.getElementById('btn-cancel-pedido');
+    const form = document.getElementById('pedido-form');
+    
+    // Configurar fecha mínima para entrega (mañana)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('fecha-entrega').min = tomorrow.toISOString().split('T')[0];
+    
+    // Cargar lista de proveedores
+    loadProveedores();
+    
+    // Cerrar modal con botón X
+    closeButton.addEventListener('click', function() {
+        closeModal();
+    });
+    
+    // Cerrar modal con botón Cancelar
+    cancelButton.addEventListener('click', function() {
+        closeModal();
+    });
+    
+    // Cerrar modal al hacer clic en overlay
+    overlay.addEventListener('click', function() {
+        closeModal();
+    });
+    
+    // Manejar envío del formulario
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        crearPedido();
+    });
+    
+    function closeModal() {
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+        form.reset();
+    }
+    
+    // Exportar función al ámbito global
+    window.closeModal = closeModal;
 }
 
-// Funciones para la modal de pedidos
-function showPedidoModal(productoId) {
+// Cargar lista de proveedores para el modal
+function loadProveedores() {
     const token = localStorage.getItem('token');
-    const modal = document.getElementById('pedido-modal');
-    const modalOverlay = document.querySelector('.modal-overlay');
+    const selectProveedor = document.getElementById('proveedor');
     
-    // Limpiar formulario antes de mostrar la modal
-    const form = document.getElementById('pedido-form');
-    if (form) form.reset();
-    
-    // Obtener información del producto
-    fetch(`/api/productos/${productoId}`, {
+    fetch('/api/proveedores', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            const producto = data.data;
-            document.getElementById('producto-id').value = producto.codigo;
-            document.getElementById('producto-nombre').value = producto.nombre;
-            document.getElementById('precio-unitario').value = producto.precio_compra || '';
-
-            // Establecer fecha mínima de entrega a mañana
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('fecha-entrega').min = tomorrow.toISOString().split('T')[0];
+        if (data.success && data.data) {
+            const proveedores = data.data;
+            let options = '<option value="">Seleccione un proveedor</option>';
             
-            // Mostrar la modal
-            if (modal) modal.classList.add('active');
-            if (modalOverlay) modalOverlay.classList.add('active');
-        } else {
-            showNotification('Error al cargar información del producto', 'error');
+            proveedores.forEach(proveedor => {
+                options += `<option value="${proveedor.id}">${proveedor.nombre}</option>`;
+            });
+            
+            selectProveedor.innerHTML = options;
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error al cargar información del producto', 'error');
+        console.error('Error al cargar proveedores:', error);
+        selectProveedor.innerHTML = '<option value="">Error al cargar proveedores</option>';
     });
 }
 
-function hidePedidoModal() {
-    const modal = document.getElementById('pedido-modal');
-    const modalOverlay = document.querySelector('.modal-overlay');
-    const form = document.getElementById('pedido-form');
-
-    // Ocultar modal y overlay
-    if (modal) modal.classList.remove('active');
-    if (modalOverlay) modalOverlay.classList.remove('active');
+// Abrir modal de creación de pedido
+function openPedidoModal(productoId, productoNombre) {
+    document.getElementById('producto-id').value = productoId;
+    document.getElementById('producto-nombre').value = productoNombre;
     
-    // Limpiar formulario al cerrar
-    if (form) form.reset();
+    // Mostrar modal
+    document.getElementById('pedido-modal').style.display = 'block';
+    document.querySelector('.modal-overlay').style.display = 'block';
 }
 
-function setupModals() {
-    const pedidoModal = document.getElementById('pedido-modal');
-    const pedidoForm = document.getElementById('pedido-form');
-    const btnCancelPedido = document.getElementById('btn-cancel-pedido');
-    const closeModalBtns = document.querySelectorAll('.close-modal');
-    const modalOverlay = document.querySelector('.modal-overlay');
-
-    // Asegurarse de que la modal esté oculta inicialmente
-    hidePedidoModal();
+// Crear pedido desde el modal
+function crearPedido() {
+    const token = localStorage.getItem('token');
+    const productoId = document.getElementById('producto-id').value;
+    const proveedorId = document.getElementById('proveedor').value;
+    const cantidad = document.getElementById('cantidad-pedido').value;
+    const precioUnitario = document.getElementById('precio-unitario').value;
+    const fechaEntrega = document.getElementById('fecha-entrega').value;
+    const notas = document.getElementById('notas').value;
     
-    if (pedidoForm) {
-        pedidoForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            showNotification('Pedido creado exitosamente', 'success');
-            hidePedidoModal();
-        });
-    }
+    // Preparar datos para enviar
+    const pedidoData = {
+        producto_id: productoId,
+        proveedor_id: proveedorId,
+        cantidad: cantidad,
+        precio_unitario: precioUnitario,
+        fecha_entrega_estimada: fechaEntrega,
+        notas: notas,
+        estado: 'pendiente'
+    };
     
-    if (btnCancelPedido) {
-        btnCancelPedido.addEventListener('click', hidePedidoModal);
-    }
-    
-    // Cerrar modal con el botón X
-    closeModalBtns.forEach(btn => {
-        btn.addEventListener('click', hidePedidoModal);
+    // Enviar pedido a la API
+    fetch('/api/pedidos', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(pedidoData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cerrar modal
+            window.closeModal();
+            
+            // Mostrar notificación de éxito
+            showNotification('¡Pedido creado!', 'El pedido ha sido creado correctamente.', 'success');
+            
+            // Recargar la lista de productos con bajo stock
+            initLowStockPanel();
+        } else {
+            throw new Error(data.message || 'Error al crear el pedido');
+        }
+    })
+    .catch(error => {
+        console.error('Error al crear pedido:', error);
+        showNotification('Error', 'No se pudo crear el pedido: ' + error.message, 'error');
     });
-
-    // Cerrar modal con click en overlay
-    modalOverlay?.addEventListener('click', hidePedidoModal);
 }
 
-// Sistema de notificaciones
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        <span>${message}</span>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Animar entrada
-    setTimeout(() => notification.classList.add('show'), 10);
-    
-    // Remover después de 3 segundos
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+// Inicializar sistema de notificaciones
+function initNotifications() {
+    // El código de notificaciones se maneja en notificaciones.js
+    if (typeof initializeNotifications === 'function') {
+        initializeNotifications();
+    }
+}
+
+// Función para mostrar notificaciones
+function showNotification(title, message, type = 'info') {
+    if (typeof displayNotification === 'function') {
+        displayNotification(title, message, type);
+    } else {
+        // Implementación alternativa si displayNotification no está disponible
+        alert(`${title}: ${message}`);
+    }
 }

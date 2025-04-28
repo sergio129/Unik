@@ -10,6 +10,9 @@ router.get('/', authenticate, productosController.getAllProductos);
 // Obtener productos con bajo stock
 router.get('/bajo-stock', authenticate, productosController.getProductosBajoStock);
 
+// Obtener conteo de productos
+router.get('/count', authenticate, productosController.countProductos);
+
 // Rutas para importar/exportar productos
 router.get('/exportar', authenticate, productosController.exportarProductos);
 router.post('/importar', authenticate, productosController.importarProductos);

@@ -7,6 +7,9 @@ const categoriasController = require('../controllers/categorias.controller');
 // Obtener todas las categorías
 router.get('/', authenticate, categoriasController.getAllCategorias);
 
+// Obtener conteo de categorías
+router.get('/count', authenticate, categoriasController.countCategorias);
+
 // Obtener una categoría específica
 router.get('/:id', authenticate, categoriasController.getCategoriaById);
 

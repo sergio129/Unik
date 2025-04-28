@@ -7,11 +7,14 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/inventario/dashboard-custom.css">
   <!-- Agregamos Toastify para notificaciones toast -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   <!-- Añadimos Chart.js para los gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Añadimos SortableJS para los widgets arrastrables -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <!-- Añadimos DateRangePicker para filtros de fecha -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
   <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
@@ -207,53 +210,84 @@
         <h1>Gestión de Inventario</h1>
         <p class="mb-4">Administra productos, categorías y movimientos del inventario.</p>
         
-        <div class="dashboard">
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Productos</span>
-              <i class="fas fa-box text-primary"></i>
-            </div>
-            <div class="dashboard-card-value" id="total-productos">...</div>
-            <div class="dashboard-card-description">Productos registrados</div>
-            <a href="/inventario/productos" class="button mt-3">
-              <i class="fas fa-list"></i> Ver productos
-            </a>
+        <!-- Dashboard Controls -->
+        <div class="dashboard-controls">
+          <h3 class="dashboard-title">Mi Dashboard</h3>
+          <div class="dashboard-actions">
+            <button id="btn-edit-dashboard" class="button-sm"><i class="fas fa-pencil-alt"></i> Personalizar</button>
+            <button id="btn-save-layout" class="button-sm primary" style="display: none;"><i class="fas fa-save"></i> Guardar</button>
+            <button id="btn-cancel-edit" class="button-sm secondary" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
+            <button id="btn-add-widget" class="button-sm" style="display: none;"><i class="fas fa-plus"></i> Añadir Widget</button>
           </div>
-          
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Categorías</span>
-              <i class="fas fa-tags text-success"></i>
-            </div>
-            <div class="dashboard-card-value" id="total-categorias">...</div>
-            <div class="dashboard-card-description">Categorías de productos</div>
-            <a href="/inventario/categorias" class="button mt-3">
-              <i class="fas fa-folder"></i> Ver categorías
-            </a>
+        </div>
+        
+        <!-- Dashboard Personalizable -->
+        <div id="custom-dashboard" class="dashboard">
+          <!-- Widgets serán agregados dinámicamente desde dashboard-custom.js -->
+        </div>
+        
+        <!-- Widget Library (Oculto por defecto) -->
+        <div id="widget-library" class="widget-library">
+          <div class="widget-library-header">
+            <h4>Biblioteca de Widgets</h4>
+            <button id="btn-close-widget-library" class="button-close"><i class="fas fa-times"></i></button>
           </div>
-          
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Movimientos</span>
-              <i class="fas fa-exchange-alt text-warning"></i>
+          <p>Seleccione un widget para añadirlo a su dashboard:</p>
+          <div class="widget-library-items">
+            <div class="widget-library-item" data-widget-type="productos">
+              <div class="widget-library-icon">
+                <i class="fas fa-box"></i>
+              </div>
+              <div class="widget-library-title">Productos</div>
             </div>
-            <div class="dashboard-card-value" id="total-movimientos">...</div>
-            <div class="dashboard-card-description">Movimientos recientes</div>
-            <a href="/inventario/movimientos" class="button mt-3">
-              <i class="fas fa-history"></i> Ver movimientos
-            </a>
-          </div>
-          
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Bajo Stock</span>
-              <i class="fas fa-exclamation-triangle text-danger"></i>
+            <div class="widget-library-item" data-widget-type="categorias">
+              <div class="widget-library-icon">
+                <i class="fas fa-tags"></i>
+              </div>
+              <div class="widget-library-title">Categorías</div>
             </div>
-            <div class="dashboard-card-value" id="bajo-stock">...</div>
-            <div class="dashboard-card-description">Productos a reordenar</div>
-            <a href="/inventario/productos#bajo-stock" class="button mt-3">
-              <i class="fas fa-shopping-basket"></i> Gestionar
-            </a>
+            <div class="widget-library-item" data-widget-type="movimientos">
+              <div class="widget-library-icon">
+                <i class="fas fa-exchange-alt"></i>
+              </div>
+              <div class="widget-library-title">Movimientos</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="bajo-stock">
+              <div class="widget-library-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="widget-library-title">Bajo Stock</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="top-vendidos">
+              <div class="widget-library-icon">
+                <i class="fas fa-trophy"></i>
+              </div>
+              <div class="widget-library-title">Top Vendidos</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="tendencias-stock">
+              <div class="widget-library-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="widget-library-title">Tendencias Stock</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="rotacion">
+              <div class="widget-library-icon">
+                <i class="fas fa-sync"></i>
+              </div>
+              <div class="widget-library-title">Rotación</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="proyecciones">
+              <div class="widget-library-icon">
+                <i class="fas fa-chart-area"></i>
+              </div>
+              <div class="widget-library-title">Proyecciones</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="ultimos-movimientos">
+              <div class="widget-library-icon">
+                <i class="fas fa-history"></i>
+              </div>
+              <div class="widget-library-title">Últimos Movimientos</div>
+            </div>
           </div>
         </div>
       </section>
@@ -478,9 +512,1070 @@
   <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
   
   <script src="../js/inventario/inventario.js"></script>
+  <script src="../js/inventario/dashboard-custom.js"></script>
   <script src="../js/inventario/reportes.js"></script>
   <script src="../js/common/global-whatsapp-init.js"></script>
   <script src="../js/pedidos/whatsapp-chat.js"></script>
-  <script src="../js/pedidos/whatsapp-status.js"></script>
+
+
+  <!-- Script para asegurar la funcionalidad de personalización -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("Inicializando controles de dashboard personalizable");
+      
+      // Verificar que los elementos existen
+      const btnEditDashboard = document.getElementById('btn-edit-dashboard');
+      const btnSaveLayout = document.getElementById('btn-save-layout');
+      const btnCancelEdit = document.getElementById('btn-cancel-edit');
+      const btnAddWidget = document.getElementById('btn-add-widget');
+      const widgetLibrary = document.getElementById('widget-library');
+      const dashboard = document.getElementById('custom-dashboard');
+      
+      console.log("Botón Personalizar:", btnEditDashboard);
+      console.log("Botón Guardar:", btnSaveLayout);
+      console.log("Dashboard container:", dashboard);
+      
+      // Definiciones de widgets disponibles
+      window.widgetDefinitions = {
+          'productos': {
+              title: 'Productos',
+              icon: 'box',
+              iconColor: 'text-primary',
+              size: 'widget-size-1',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Productos</span>
+                          <i class="fas fa-box text-primary"></i>
+                      </div>
+                      <div class="dashboard-card-value" id="total-productos">...</div>
+                      <div class="dashboard-card-description">Productos registrados</div>
+                      <a href="/inventario/productos" class="button mt-3">
+                          <i class="fas fa-list"></i> Ver productos
+                      </a>
+                  `;
+              },
+              onLoad: function() {
+                  loadProductCount();
+              }
+          },
+          'categorias': {
+              title: 'Categorías',
+              icon: 'tags',
+              iconColor: 'text-success',
+              size: 'widget-size-1',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Categorías</span>
+                          <i class="fas fa-tags text-success"></i>
+                      </div>
+                      <div class="dashboard-card-value" id="total-categorias">...</div>
+                      <div class="dashboard-card-description">Categorías de productos</div>
+                      <a href="/inventario/categorias" class="button mt-3">
+                          <i class="fas fa-folder"></i> Ver categorías
+                      </a>
+                  `;
+              },
+              onLoad: function() {
+                  loadCategoryCount();
+              }
+          },
+          'movimientos': {
+              title: 'Movimientos',
+              icon: 'exchange-alt',
+              iconColor: 'text-warning',
+              size: 'widget-size-1',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Movimientos</span>
+                          <i class="fas fa-exchange-alt text-warning"></i>
+                      </div>
+                      <div class="dashboard-card-value" id="total-movimientos">...</div>
+                      <div class="dashboard-card-description">Movimientos recientes</div>
+                      <a href="/inventario/movimientos" class="button mt-3">
+                          <i class="fas fa-history"></i> Ver movimientos
+                      </a>
+                  `;
+              },
+              onLoad: function() {
+                  loadMovementCount();
+              }
+          },
+          'bajo-stock': {
+              title: 'Bajo Stock',
+              icon: 'exclamation-triangle',
+              iconColor: 'text-danger',
+              size: 'widget-size-1',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Bajo Stock</span>
+                          <i class="fas fa-exclamation-triangle text-danger"></i>
+                      </div>
+                      <div class="dashboard-card-value" id="bajo-stock">...</div>
+                      <div class="dashboard-card-description">Productos a reordenar</div>
+                      <a href="/inventario/productos#bajo-stock" class="button mt-3">
+                          <i class="fas fa-shopping-basket"></i> Gestionar
+                      </a>
+                  `;
+              },
+              onLoad: function() {
+                  loadLowStockCount();
+              }
+          },
+          'top-vendidos': {
+              title: 'Top Vendidos',
+              icon: 'trophy',
+              iconColor: 'text-success',
+              size: 'widget-size-2',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Top Productos Vendidos</span>
+                          <i class="fas fa-trophy text-success"></i>
+                      </div>
+                      <div class="chart-container" style="height:200px;">
+                          <canvas id="widget-top-products-chart"></canvas>
+                      </div>
+                      <div class="top-products-mini-list" id="widget-top-selling-products">
+                          <!-- Se cargará dinámicamente -->
+                      </div>
+                  `;
+              },
+              onLoad: function() {
+                  loadTopProductsWidget();
+              }
+          },
+          'tendencias-stock': {
+              title: 'Tendencias de Stock',
+              icon: 'chart-line',
+              iconColor: 'text-primary',
+              size: 'widget-size-2',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Tendencias de Stock</span>
+                          <i class="fas fa-chart-line text-primary"></i>
+                      </div>
+                      <div class="chart-container" style="height:200px;">
+                          <canvas id="widget-stock-trend-chart"></canvas>
+                      </div>
+                  `;
+              },
+              onLoad: function() {
+                  loadStockTrendsWidget();
+              }
+          },
+          'rotacion': {
+              title: 'Rotación',
+              icon: 'sync',
+              iconColor: 'text-info',
+              size: 'widget-size-2',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Rotación de Inventario</span>
+                          <i class="fas fa-sync text-info"></i>
+                      </div>
+                      <div id="widget-rotation-content">
+                          <div class="product-list" id="widget-high-rotation-products">
+                              <!-- Se cargará dinámicamente -->
+                          </div>
+                      </div>
+                  `;
+              },
+              onLoad: function() {
+                  loadRotationWidget();
+              }
+          },
+          'proyecciones': {
+              title: 'Proyecciones',
+              icon: 'chart-area',
+              iconColor: 'text-warning',
+              size: 'widget-size-2',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Proyecciones de Stock</span>
+                          <i class="fas fa-chart-area text-warning"></i>
+                      </div>
+                      <div class="chart-container" style="height:200px;">
+                          <canvas id="widget-projection-chart"></canvas>
+                      </div>
+                  `;
+              },
+              onLoad: function() {
+                  loadProjectionWidget();
+              }
+          },
+          'ultimos-movimientos': {
+              title: 'Últimos Movimientos',
+              icon: 'history',
+              iconColor: 'text-secondary',
+              size: 'widget-size-2',
+              content: function() {
+                  return `
+                      <div class="dashboard-card-header">
+                          <span class="dashboard-card-title">Últimos Movimientos</span>
+                          <i class="fas fa-history text-secondary"></i>
+                      </div>
+                      <div class="mini-table-container">
+                          <table class="mini-table">
+                              <thead>
+                                  <tr>
+                                      <th>Fecha</th>
+                                      <th>Tipo</th>
+                                      <th>Producto</th>
+                                      <th>Cantidad</th>
+                                  </tr>
+                              </thead>
+                              <tbody id="widget-recent-movements">
+                                  <!-- Se cargará dinámicamente -->
+                              </tbody>
+                          </table>
+                      </div>
+                  `;
+              },
+              onLoad: function() {
+                  loadRecentMovementsWidget();
+              }
+          }
+      };
+
+      // Crear dashboard predeterminado si está vacío
+      if (!dashboard.hasChildNodes()) {
+        // Configuración predeterminada con 4 widgets básicos
+        const defaultWidgets = [
+            { id: 'widget-1', type: 'productos', size: 'widget-size-1' },
+            { id: 'widget-2', type: 'categorias', size: 'widget-size-1' },
+            { id: 'widget-3', type: 'movimientos', size: 'widget-size-1' },
+            { id: 'widget-4', type: 'bajo-stock', size: 'widget-size-1' }
+        ];
+        
+        // Agregar widgets al dashboard
+        defaultWidgets.forEach(widget => {
+            const definition = window.widgetDefinitions[widget.type];
+            const widgetElement = document.createElement('div');
+            widgetElement.className = `dashboard-card draggable-widget ${widget.size}`;
+            widgetElement.id = widget.id;
+            widgetElement.setAttribute('data-type', widget.type);
+            widgetElement.innerHTML = definition.content();
+            dashboard.appendChild(widgetElement);
+            
+            // Inicializar widget
+            if (definition.onLoad) {
+                setTimeout(() => definition.onLoad(), 100);
+            }
+        });
+      }
+
+      if (btnEditDashboard) {
+        // Forzar la asignación de eventos a los botones
+        btnEditDashboard.addEventListener('click', function() {
+          console.log("Botón Personalizar clickeado");
+          
+          // Entrar en modo de edición
+          dashboard.classList.add('edit-mode');
+          
+          // Mostrar botones de edición
+          btnEditDashboard.style.display = 'none';
+          btnSaveLayout.style.display = 'inline-flex';
+          btnCancelEdit.style.display = 'inline-flex';
+          btnAddWidget.style.display = 'inline-flex';
+          
+          // Inicializar widgets con controles de edición
+          initializeEditMode();
+        });
+        
+        btnSaveLayout.addEventListener('click', function() {
+          console.log("Botón Guardar clickeado");
+          
+          // Guardar configuración y salir del modo de edición
+          saveCurrentLayout();
+          exitEditMode();
+          
+          // Actualizar visualización de botones
+          btnEditDashboard.style.display = 'inline-flex';
+          btnSaveLayout.style.display = 'none';
+          btnCancelEdit.style.display = 'none';
+          btnAddWidget.style.display = 'none';
+        });
+        
+        btnCancelEdit.addEventListener('click', function() {
+          console.log("Botón Cancelar clickeado");
+          
+          // Cancelar edición y recargar configuración original
+          exitEditMode();
+          loadSavedLayout();
+          
+          // Actualizar visualización de botones
+          btnEditDashboard.style.display = 'inline-flex';
+          btnSaveLayout.style.display = 'none';
+          btnCancelEdit.style.display = 'none';
+          btnAddWidget.style.display = 'none';
+        });
+        
+        btnAddWidget.addEventListener('click', function() {
+          console.log("Botón Añadir Widget clickeado");
+          widgetLibrary.classList.toggle('open');
+        });
+        
+        // Cerrar biblioteca de widgets
+        const btnCloseWidgetLibrary = document.getElementById('btn-close-widget-library');
+        if (btnCloseWidgetLibrary) {
+          btnCloseWidgetLibrary.addEventListener('click', function() {
+            widgetLibrary.classList.remove('open');
+          });
+        }
+        
+        // Configurar eventos para items de la biblioteca de widgets
+        const widgetItems = document.querySelectorAll('.widget-library-item');
+        widgetItems.forEach(item => {
+          item.addEventListener('click', function() {
+            const widgetType = this.getAttribute('data-widget-type');
+            console.log("Widget seleccionado:", widgetType);
+            
+            addWidgetToLayout(widgetType);
+            widgetLibrary.classList.remove('open');
+          });
+        });
+      }
+      
+      // Funciones auxiliares
+      // ...existing code...
+      
+      // Funciones para cargar datos en los widgets
+      function loadProductCount() {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          
+          fetch('/api/productos/count', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  const totalProductos = document.getElementById('total-productos');
+                  if (totalProductos) {
+                      totalProductos.textContent = data.count || 0;
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar conteo de productos:', error);
+              const totalProductos = document.getElementById('total-productos');
+              if (totalProductos) {
+                  totalProductos.textContent = '0';
+              }
+          });
+      }
+      
+      function loadCategoryCount() {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          
+          fetch('/api/categorias/count', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  const totalCategorias = document.getElementById('total-categorias');
+                  if (totalCategorias) {
+                      totalCategorias.textContent = data.count || 0;
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar conteo de categorías:', error);
+              const totalCategorias = document.getElementById('total-categorias');
+              if (totalCategorias) {
+                  totalCategorias.textContent = '0';
+              }
+          });
+      }
+      
+      function loadMovementCount() {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          
+          fetch('/api/movimientos/count?recent=true', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  const totalMovimientos = document.getElementById('total-movimientos');
+                  if (totalMovimientos) {
+                      totalMovimientos.textContent = data.count || 0;
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar conteo de movimientos:', error);
+              const totalMovimientos = document.getElementById('total-movimientos');
+              if (totalMovimientos) {
+                  totalMovimientos.textContent = '0';
+              }
+          });
+      }
+      
+      function loadLowStockCount() {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          
+          fetch('/api/reportes/alertas', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success && data.data && data.data.stockBajo) {
+                  const bajoStock = document.getElementById('bajo-stock');
+                  if (bajoStock) {
+                      bajoStock.textContent = data.data.stockBajo.length || 0;
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar productos con bajo stock:', error);
+              const bajoStock = document.getElementById('bajo-stock');
+              if (bajoStock) {
+                  bajoStock.textContent = '0';
+              }
+          });
+      }
+      
+      function loadTopProductsWidget() {
+          const canvas = document.getElementById('widget-top-products-chart');
+          const container = document.getElementById('widget-top-selling-products');
+          if (!canvas || !container) return;
+          
+          const token = localStorage.getItem('token');
+          
+          // Obtener fecha de hace 30 días y fecha actual
+          const fechaFin = moment().format('YYYY-MM-DD');
+          const fechaInicio = moment().subtract(30, 'days').format('YYYY-MM-DD');
+          
+          fetch(`/api/reportes/top-products?startDate=${fechaInicio}&endDate=${fechaFin}`, {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error al cargar los productos más vendidos');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.success && data.data && data.data.topProducts) {
+                  const topProducts = data.data.topProducts.slice(0, 5);
+                  
+                  // Crear gráfico
+                  const labels = topProducts.map(p => p.name);
+                  const valores = topProducts.map(p => p.cantidad);
+                  
+                  new Chart(canvas, {
+                      type: 'bar',
+                      data: {
+                          labels: labels,
+                          datasets: [{
+                              label: 'Unidades vendidas',
+                              data: valores,
+                              backgroundColor: 'rgba(66, 133, 244, 0.6)',
+                              borderColor: 'rgba(66, 133, 244, 1)',
+                              borderWidth: 1
+                          }]
+                      },
+                      options: {
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                              legend: { display: false },
+                              tooltip: { displayColors: false }
+                          },
+                          scales: {
+                              y: { beginAtZero: true }
+                          }
+                      }
+                  });
+                  
+                  // Crear lista de top products
+                  let html = '';
+                  for (let i = 0; i < topProducts.length; i++) {
+                      html += `
+                          <div class="product-rank-item ${i < 3 ? 'top-3 rank-' + (i+1) : ''}">
+                              <div class="product-rank-position">${i+1}</div>
+                              <div class="product-rank-name">${topProducts[i].name}</div>
+                              <div class="product-rank-value">${topProducts[i].cantidad} u.</div>
+                          </div>
+                      `;
+                  }
+                  container.innerHTML = html;
+              } else {
+                  throw new Error('No se obtuvieron datos válidos');
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar datos de productos más vendidos:', error);
+              
+              // Mostrar mensaje de error en el contenedor
+              container.innerHTML = `<div class="alert alert-warning">Error al cargar datos: ${error.message}</div>`;
+              
+              // Crear un gráfico vacío 
+              new Chart(canvas, {
+                  type: 'bar',
+                  data: {
+                      labels: ['No hay datos disponibles'],
+                      datasets: [{
+                          label: 'Unidades vendidas',
+                          data: [0],
+                          backgroundColor: 'rgba(200, 200, 200, 0.6)',
+                          borderColor: 'rgba(200, 200, 200, 1)',
+                          borderWidth: 1
+                      }]
+                  },
+                  options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                          legend: { display: false }
+                      },
+                      scales: {
+                          y: { beginAtZero: true }
+                      }
+                  }
+              });
+          });
+      }
+      
+      function loadStockTrendsWidget() {
+          const canvas = document.getElementById('widget-stock-trend-chart');
+          if (!canvas) return;
+          
+          const token = localStorage.getItem('token');
+          
+          fetch('/api/reportes/stock-trends', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error al cargar tendencias de stock');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.success && data.data && data.data.labels && data.data.datasets) {
+                  // Crear gráfico con datos reales
+                  new Chart(canvas, {
+                      type: 'line',
+                      data: {
+                          labels: data.data.labels,
+                          datasets: data.data.datasets.map(dataset => {
+                              return {
+                                  ...dataset,
+                                  tension: 0.4
+                              };
+                          })
+                      },
+                      options: {
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          interaction: {
+                              mode: 'index',
+                              intersect: false
+                          },
+                          plugins: {
+                              legend: {
+                                  position: 'bottom',
+                                  labels: {
+                                      boxWidth: 12,
+                                      usePointStyle: true
+                                  }
+                              }
+                          },
+                          scales: {
+                              y: {
+                                  beginAtZero: true,
+                                  title: {
+                                      display: true,
+                                      text: 'Stock'
+                                  }
+                              }
+                          }
+                      }
+                  });
+              } else {
+                  throw new Error('Datos de tendencias en formato incorrecto');
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar datos de tendencias:', error);
+              
+              // Crear un gráfico demo con datos de ejemplo
+              const labels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+              const demoData = [
+                  {
+                      label: 'Producto A',
+                      data: [50, 45, 55, 60],
+                      borderColor: '#4285F4',
+                      backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                      tension: 0.4
+                  },
+                  {
+                      label: 'Producto B',
+                      data: [30, 35, 32, 38],
+                      borderColor: '#34A853',
+                      backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                      tension: 0.4
+                  }
+              ];
+              
+              new Chart(canvas, {
+                  type: 'line',
+                  data: {
+                      labels: labels,
+                      datasets: demoData
+                  },
+                  options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                          title: {
+                              display: true,
+                              text: 'Datos de demostración',
+                              font: {
+                                  size: 10
+                              },
+                              color: '#999'
+                          },
+                          legend: {
+                              position: 'bottom',
+                              labels: {
+                                  boxWidth: 12,
+                                  usePointStyle: true
+                              }
+                          }
+                      },
+                      scales: {
+                          y: {
+                              beginAtZero: true
+                          }
+                      }
+                  }
+              });
+          });
+      }
+      
+      function loadRotationWidget() {
+          const container = document.getElementById('widget-high-rotation-products');
+          if (!container) return;
+          
+          const token = localStorage.getItem('token');
+          
+          fetch('/api/reportes/rotation', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error al cargar datos de rotación');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.success && data.data && data.data.highRotation && data.data.highRotation.length > 0) {
+                  let html = '';
+                  
+                  data.data.highRotation.forEach(product => {
+                      html += `
+                          <div class="product-item">
+                              <div class="product-info">
+                                  <div class="product-name">${product.name}</div>
+                                  <div class="product-metric">
+                                      <span class="rotation-high">${product.value.toFixed(1)}</span> rotaciones/mes
+                                  </div>
+                              </div>
+                              <div class="product-stock">
+                                  <div class="stock-indicator" title="Stock actual: ${product.stock} unidades">
+                                      ${product.stock} u.
+                                  </div>
+                              </div>
+                          </div>
+                      `;
+                  });
+                  
+                  container.innerHTML = html;
+              } else {
+                  throw new Error('No se obtuvieron datos válidos de rotación');
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar datos de rotación:', error);
+              
+              // Mostrar datos de demostración
+              const demoData = [
+                  { name: 'Producto C', value: 15.8, stock: 25, daysToStockout: 5 },
+                  { name: 'Producto A', value: 12.5, stock: 30, daysToStockout: 8 },
+                  { name: 'Producto B', value: 10.2, stock: 22, daysToStockout: 7 }
+              ];
+              
+              let html = '<div class="widget-demo-notice">Datos de demostración</div>';
+              
+              demoData.forEach(product => {
+                  html += `
+                      <div class="product-item">
+                          <div class="product-info">
+                              <div class="product-name">${product.name}</div>
+                              <div class="product-metric">
+                                  <span class="rotation-high">${product.value.toFixed(1)}</span> rotaciones/mes
+                              </div>
+                          </div>
+                          <div class="product-stock">
+                              <div class="stock-indicator" title="Stock actual: ${product.stock} unidades">
+                                  ${product.stock} u.
+                              </div>
+                          </div>
+                      </div>
+                  `;
+              });
+              
+              container.innerHTML = html;
+              
+              // Agregar estilo para notificación de demo si no existe
+              if (!document.getElementById('widget-demo-styles')) {
+                  const style = document.createElement('style');
+                  style.id = 'widget-demo-styles';
+                  style.textContent = `
+                      .widget-demo-notice {
+                          font-size: 0.75rem;
+                          color: #999;
+                          text-align: center;
+                          margin-bottom: 0.5rem;
+                      }
+                      .product-item {
+                          display: flex;
+                          justify-content: space-between;
+                          align-items: center;
+                          padding: 0.5rem 0;
+                          border-bottom: 1px solid #f0f0f0;
+                      }
+                      .product-name {
+                          font-weight: 500;
+                      }
+                      .product-metric {
+                          font-size: 0.8rem;
+                          color: #666;
+                      }
+                      .rotation-high {
+                          color: #28a745;
+                          font-weight: 500;
+                      }
+                      .stock-indicator {
+                          background: #f8f9fa;
+                          padding: 0.2rem 0.5rem;
+                          border-radius: 4px;
+                          font-size: 0.8rem;
+                      }
+                  `;
+                  document.head.appendChild(style);
+              }
+          });
+      }
+      
+      function loadProjectionWidget() {
+          const canvas = document.getElementById('widget-projection-chart');
+          if (!canvas) return;
+          
+          const token = localStorage.getItem('token');
+          
+          fetch('/api/reportes/projections', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error al cargar proyecciones');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.success && data.data && data.data.projections) {
+                  // Crear gráfico con datos reales
+                  new Chart(canvas, {
+                      type: 'line',
+                      data: {
+                          labels: data.data.projections.labels,
+                          datasets: data.data.projections.datasets
+                      },
+                      options: {
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                              legend: {
+                                  position: 'bottom',
+                                  labels: {
+                                      boxWidth: 12,
+                                      usePointStyle: true
+                                  }
+                              }
+                          },
+                          scales: {
+                              y: {
+                                  beginAtZero: true
+                              }
+                          }
+                      }
+                  });
+              } else {
+                  throw new Error('Datos de proyección en formato incorrecto');
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar datos de proyecciones:', error);
+              
+              // Crear un gráfico demo con datos de ejemplo
+              const labels = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5', 'Semana 6'];
+              const demoData = [
+                  {
+                      label: 'Producto A (proyección)',
+                      data: [35, 32, 28, 25, 22, 18],
+                      borderColor: '#4285F4',
+                      backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                      borderDash: [5, 5],
+                      tension: 0.4
+                  },
+                  {
+                      label: 'Producto B (proyección)',
+                      data: [15, 20, 25, 30, 33, 35],
+                      borderColor: '#34A853',
+                      backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                      borderDash: [5, 5],
+                      tension: 0.4
+                  }
+              ];
+              
+              new Chart(canvas, {
+                  type: 'line',
+                  data: {
+                      labels: labels,
+                      datasets: demoData
+                  },
+                  options: {
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                          title: {
+                              display: true,
+                              text: 'Datos de demostración',
+                              font: {
+                                  size: 10
+                              },
+                              color: '#999'
+                          },
+                          legend: {
+                              position: 'bottom',
+                              labels: {
+                                  boxWidth: 12,
+                                  usePointStyle: true
+                              }
+                          }
+                      },
+                      scales: {
+                          y: {
+                              beginAtZero: true
+                          }
+                      }
+                  }
+              });
+          });
+      }
+      
+      function loadRecentMovementsWidget() {
+          const container = document.getElementById('widget-recent-movements');
+          if (!container) return;
+          
+          const token = localStorage.getItem('token');
+          
+          fetch('/api/movimientos?limit=4', {
+              headers: {
+                  'Authorization': `Bearer ${token}`
+              }
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Error al cargar movimientos recientes');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+                  let html = '';
+                  
+                  data.data.forEach(movimiento => {
+                      const fecha = new Date(movimiento.fecha_creacion);
+                      const fechaFormateada = fecha.toLocaleDateString() + ' ' + fecha.toLocaleTimeString().substr(0, 5);
+                      
+                      let badgeClass = 'badge-warning';
+                      if (movimiento.tipo_movimiento === 'entrada') {
+                          badgeClass = 'badge-success';
+                      } else if (movimiento.tipo_movimiento === 'salida') {
+                          badgeClass = 'badge-danger';
+                      }
+                      
+                      html += `
+                          <tr>
+                              <td>${fechaFormateada}</td>
+                              <td><span class="badge ${badgeClass}">${capitalizar(movimiento.tipo_movimiento)}</span></td>
+                              <td>${movimiento.producto ? movimiento.producto.nombre : 'Producto desconocido'}</td>
+                              <td>${Math.abs(movimiento.cantidad)}</td>
+                          </tr>
+                      `;
+                  });
+                  
+                  container.innerHTML = html;
+                  
+                  // Agregar estilos para la mini-tabla si no existen
+                  if (!document.getElementById('mini-table-styles')) {
+                      const style = document.createElement('style');
+                      style.id = 'mini-table-styles';
+                      style.textContent = `
+                          .mini-table-container {
+                              margin-top: 0.5rem;
+                              overflow-x: auto;
+                          }
+                          .mini-table {
+                              width: 100%;
+                              border-collapse: collapse;
+                              font-size: 0.8rem;
+                          }
+                          .mini-table th, .mini-table td {
+                              padding: 0.4rem;
+                              text-align: left;
+                              border-bottom: 1px solid #f0f0f0;
+                          }
+                          .mini-table th {
+                              font-weight: 500;
+                              color: #666;
+                              border-bottom: 2px solid #ddd;
+                          }
+                          .badge {
+                              padding: 0.2rem 0.4rem;
+                              font-size: 0.7rem;
+                              border-radius: 4px;
+                              color: white;
+                              font-weight: 500;
+                          }
+                          .badge-success { background-color: #28a745; }
+                          .badge-danger { background-color: #dc3545; }
+                          .badge-warning { background-color: #ffc107; color: #212529; }
+                          .badge-info { background-color: #17a2b8; }
+                      `;
+                      document.head.appendChild(style);
+                  }
+              } else {
+                  throw new Error('No se obtuvieron datos válidos');
+              }
+          })
+          .catch(error => {
+              console.error('Error al cargar movimientos recientes:', error);
+              
+              // Mostrar datos de demostración
+              const movimientos = [
+                  { fecha: '28/04/2025 10:30', tipo: 'entrada', producto: 'Producto A', cantidad: 50 },
+                  { fecha: '27/04/2025 15:45', tipo: 'salida', producto: 'Producto B', cantidad: 10 },
+                  { fecha: '27/04/2025 09:15', tipo: 'ajuste', producto: 'Producto C', cantidad: 5 },
+                  { fecha: '26/04/2025 14:20', tipo: 'entrada', producto: 'Producto D', cantidad: 25 }
+              ];
+              
+              let html = '';
+              
+              movimientos.forEach(mov => {
+                  let badgeClass = 'badge-warning';
+                  if (mov.tipo === 'entrada') {
+                      badgeClass = 'badge-success';
+                  } else if (mov.tipo === 'salida') {
+                      badgeClass = 'badge-danger';
+                  }
+                  
+                  html += `
+                      <tr>
+                          <td>${mov.fecha}</td>
+                          <td><span class="badge ${badgeClass}">${capitalizar(mov.tipo)}</span></td>
+                          <td>${mov.producto}</td>
+                          <td>${mov.cantidad}</td>
+                      </tr>
+                  `;
+              });
+              
+              container.innerHTML = html;
+              
+              // Agregar estilos para la mini-tabla si no existen
+              if (!document.getElementById('mini-table-styles')) {
+                  const style = document.createElement('style');
+                  style.id = 'mini-table-styles';
+                  style.textContent = `
+                      .mini-table-container {
+                          margin-top: 0.5rem;
+                          overflow-x: auto;
+                      }
+                      .mini-table {
+                          width: 100%;
+                          border-collapse: collapse;
+                          font-size: 0.8rem;
+                      }
+                      .mini-table th, .mini-table td {
+                          padding: 0.4rem;
+                          text-align: left;
+                          border-bottom: 1px solid #f0f0f0;
+                      }
+                      .mini-table th {
+                          font-weight: 500;
+                          color: #666;
+                          border-bottom: 2px solid #ddd;
+                      }
+                      .badge {
+                          padding: 0.2rem 0.4rem;
+                          font-size: 0.7rem;
+                          border-radius: 4px;
+                          color: white;
+                          font-weight: 500;
+                      }
+                      .badge-success { background-color: #28a745; }
+                      .badge-danger { background-color: #dc3545; }
+                      .badge-warning { background-color: #ffc107; color: #212529; }
+                      .badge-info { background-color: #17a2b8; }
+                  `;
+                  document.head.appendChild(style);
+              }
+          });
+      }
+      
+      function capitalizar(texto) {
+          if (!texto) return '';
+          return texto.charAt(0).toUpperCase() + texto.slice(1);
+      }
+      
+      // Inicializar widgets con valores
+      loadProductCount();
+      loadCategoryCount();
+      loadMovementCount();
+      loadLowStockCount();
+    });
+  </script>
 </body>
 </html>

@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/inventario/dashboard-custom.css">
   <link rel="stylesheet" href="css/components/notifications.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <link rel="stylesheet" href="../css/pedidos/whatsapp.css">
 </head>
 <body>
@@ -39,54 +41,84 @@
         <h1>Panel de Control</h1>
         <p class="mb-4">Bienvenido al sistema de gestión de inventario de LA UNIKA.</p>
         
-        <div class="dashboard">
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Inventario</span>
-              <i class="fas fa-boxes text-primary"></i>
-            </div>
-            <div class="dashboard-card-value" id="total-productos">...</div>
-            <div class="dashboard-card-description">Productos en inventario</div>
-            <a href="/inventario" class="button mt-3">
-              <i class="fas fa-eye"></i> Ver inventario
-            </a>
+        <!-- Dashboard Controls -->
+        <div class="dashboard-controls">
+          <h3 class="dashboard-title">Mi Dashboard</h3>
+          <div class="dashboard-actions">
+            <button id="btn-edit-dashboard" class="button-sm"><i class="fas fa-pencil-alt"></i> Personalizar</button>
+            <button id="btn-save-layout" class="button-sm primary" style="display: none;"><i class="fas fa-save"></i> Guardar</button>
+            <button id="btn-cancel-edit" class="button-sm secondary" style="display: none;"><i class="fas fa-times"></i> Cancelar</button>
+            <button id="btn-add-widget" class="button-sm" style="display: none;"><i class="fas fa-plus"></i> Añadir Widget</button>
           </div>
-          
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Ventas del día</span>
-              <i class="fas fa-chart-line text-success"></i>
-            </div>
-            <div class="dashboard-card-value" id="ventas-hoy">...</div>
-            <div class="dashboard-card-description" id="transacciones-hoy">...</div>
-            <a href="/ventas" class="button mt-3">
-              <i class="fas fa-receipt"></i> Ver ventas
-            </a>
+        </div>
+        
+        <!-- Dashboard Personalizable -->
+        <div id="custom-dashboard" class="dashboard">
+          <!-- Widgets serán agregados dinámicamente desde dashboard-custom.js -->
+        </div>
+        
+        <!-- Widget Library (Oculto por defecto) -->
+        <div id="widget-library" class="widget-library">
+          <div class="widget-library-header">
+            <h4>Biblioteca de Widgets</h4>
+            <button id="btn-close-widget-library" class="button-close"><i class="fas fa-times"></i></button>
           </div>
-          
-          <div class="dashboard-card fade-in">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Pedidos</span>
-              <i class="fas fa-truck text-warning"></i>
+          <p>Seleccione un widget para añadirlo a su dashboard:</p>
+          <div class="widget-library-items">
+            <div class="widget-library-item" data-widget-type="productos">
+              <div class="widget-library-icon">
+                <i class="fas fa-box"></i>
+              </div>
+              <div class="widget-library-title">Productos</div>
             </div>
-            <div class="dashboard-card-value" id="pedidos-pendientes">...</div>
-            <div class="dashboard-card-description">Pedidos pendientes</div>
-            <a href="/pedidos" class="button mt-3">
-              <i class="fas fa-clipboard-list"></i> Ver pedidos
-            </a>
-          </div>
-
-          <!-- Tarjeta de administración de usuarios (solo visible para admins) -->
-          <div class="dashboard-card fade-in admin-only">
-            <div class="dashboard-card-header">
-              <span class="dashboard-card-title">Administración</span>
-              <i class="fas fa-users-cog text-primary"></i>
+            <div class="widget-library-item" data-widget-type="categorias">
+              <div class="widget-library-icon">
+                <i class="fas fa-tags"></i>
+              </div>
+              <div class="widget-library-title">Categorías</div>
             </div>
-            <div class="dashboard-card-value">Usuarios</div>
-            <div class="dashboard-card-description">Gestión de perfiles y roles</div>
-            <a href="/admin/usuarios" class="button mt-3">
-              <i class="fas fa-user-shield"></i> Gestionar usuarios
-            </a>
+            <div class="widget-library-item" data-widget-type="movimientos">
+              <div class="widget-library-icon">
+                <i class="fas fa-exchange-alt"></i>
+              </div>
+              <div class="widget-library-title">Movimientos</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="bajo-stock">
+              <div class="widget-library-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="widget-library-title">Bajo Stock</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="top-vendidos">
+              <div class="widget-library-icon">
+                <i class="fas fa-trophy"></i>
+              </div>
+              <div class="widget-library-title">Top Vendidos</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="tendencias-stock">
+              <div class="widget-library-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="widget-library-title">Tendencias Stock</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="rotacion">
+              <div class="widget-library-icon">
+                <i class="fas fa-sync"></i>
+              </div>
+              <div class="widget-library-title">Rotación</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="proyecciones">
+              <div class="widget-library-icon">
+                <i class="fas fa-chart-area"></i>
+              </div>
+              <div class="widget-library-title">Proyecciones</div>
+            </div>
+            <div class="widget-library-item" data-widget-type="ultimos-movimientos">
+              <div class="widget-library-icon">
+                <i class="fas fa-history"></i>
+              </div>
+              <div class="widget-library-title">Últimos Movimientos</div>
+            </div>
           </div>
         </div>
       </section>
@@ -265,15 +297,20 @@
     </div>
   </footer>
 
- <!-- Elemento de audio para notificaciones de chat -->
- <audio id="notification-sound" src="/sounds/notification.mp3" preload="auto"></audio>
+  <!-- Elemento de audio para notificaciones de chat -->
+  <audio id="notification-sound" src="/sounds/notification.mp3" preload="auto"></audio>
 
-
-
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  
   <!-- Socket.IO para notificaciones en tiempo real -->
   <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
   <script src="js/common/notificaciones.js"></script>
   <script src="js/dashboard.js"></script>
+  <script src="js/inventario/dashboard-custom.js"></script>
   <script src="js/utils/stock-notifications.js"></script>
   <script src="js/common/global-whatsapp-init.js"></script>
   <script src="../js/common/global-whatsapp-init.js"></script>

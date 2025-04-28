@@ -323,3 +323,39 @@ exports.getResumenMovimientos = async (req, res) => {
     });
   }
 };
+
+// Contar movimientos recientes
+exports.countMovimientos = async (req, res) => {
+  try {
+    const { recent } = req.query;
+    let where = {};
+    
+    // Si se solicitan solo los movimientos recientes (últimos 7 días)
+    if (recent === 'true') {
+      const fechaActual = new Date();
+      const fechaHace7Dias = new Date(fechaActual);
+      fechaHace7Dias.setDate(fechaActual.getDate() - 7);
+      
+      where.fecha_creacion = {
+        [Op.between]: [fechaHace7Dias, fechaActual]
+      };
+    }
+    
+    // Obtener el total de movimientos
+    const count = await MovimientoInventario.count({
+      where
+    });
+    
+    return res.status(200).json({
+      success: true,
+      count: count
+    });
+  } catch (error) {
+    console.error('Error al contar movimientos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener el conteo de movimientos',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
