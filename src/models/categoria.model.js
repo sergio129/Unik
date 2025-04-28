@@ -22,12 +22,37 @@ const Categoria = sequelize.define('Categoria', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  categoria_padre_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'categorias',
+      key: 'id'
+    }
+  },
+  nivel: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
+    comment: 'Nivel jerárquico de la categoría (1 para principales, >1 para subcategorías)'
   }
 }, {
   tableName: 'categorias',
   timestamps: true,
   createdAt: 'fecha_creacion',
   updatedAt: 'fecha_actualizacion'
+});
+
+// Relación auto-referencial para subcategorías
+Categoria.hasMany(Categoria, {
+  as: 'subcategorias',
+  foreignKey: 'categoria_padre_id'
+});
+
+Categoria.belongsTo(Categoria, {
+  as: 'categoria_padre',
+  foreignKey: 'categoria_padre_id'
 });
 
 module.exports = Categoria;

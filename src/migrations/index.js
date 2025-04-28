@@ -12,6 +12,7 @@ const updatePedidosProveedorId = require('./update-pedidos-proveedor-id');
 const addTipoPedidoAndProveedor = require('./add-tipo-pedido-and-proveedor');
 const fixSeguimientoPedidos = require('./fix-seguimiento-pedidos');
 const addNitToProveedores = require('./add-nit-to-proveedores');
+const addSubcategoriesSupport = require('./add-subcategories-support');
 
 // Array ordenado de migraciones
 const migrations = [
@@ -28,7 +29,8 @@ const migrations = [
   updatePedidosProveedorId,
   addTipoPedidoAndProveedor,
   fixSeguimientoPedidos, // Migración para corregir SeguimientoPedidos
-  addNitToProveedores // Nueva migración para agregar columna nit a proveedores
+  addNitToProveedores, // Migración para agregar columna nit a proveedores
+  addSubcategoriesSupport // Migración para añadir soporte de subcategorías
 ];
 
 // Función para ejecutar las migraciones en orden

@@ -143,6 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadCategorias = async () => {
     showSpinner();
     try {
+      // NOTA: Idealmente, la API debería soportar paginación, ordenación y búsqueda en el backend.
+      // Por ahora, simularemos esto en el frontend después de obtener *todos* los datos.
       const response = await fetch('/api/categorias', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -332,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (paginatedItems.length === 0 && totalItems === 0) {
       categoriasListElement.innerHTML = `
         <tr>
-          <td colspan="7" class="text-center">No se encontraron categorías ${currentSearchTerm ? 'para "'+currentSearchTerm+'"' : ''}</td>
+          <td colspan="8" class="text-center">No se encontraron categorías ${currentSearchTerm ? 'para "'+currentSearchTerm+'"' : ''}</td>
         </tr>
       `;
       selectAllCheckbox.disabled = true;
@@ -340,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (paginatedItems.length === 0 && totalItems > 0) {
        categoriasListElement.innerHTML = `
         <tr>
-          <td colspan="7" class="text-center">No hay categorías en esta página.</td>
+          <td colspan="8" class="text-center">No hay categorías en esta página.</td>
         </tr>
       `;
       selectAllCheckbox.disabled = true;
@@ -348,39 +350,59 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       selectAllCheckbox.disabled = false;
       
-      categoriasListElement.innerHTML = paginatedItems.map(categoria => `
-        <tr data-id="${categoria.id}" data-nombre="${categoria.nombre}" class="${selectedCategories.has(categoria.id) ? 'selected' : ''}">
-          <td class="checkbox-column">
-            <label class="custom-checkbox">
-              <input type="checkbox" ${selectedCategories.has(categoria.id) ? 'checked' : ''} data-id="${categoria.id}">
-              <span class="checkbox-mark"></span>
-            </label>
-          </td>
-          <td>${categoria.id}</td>
-          <td>${categoria.nombre}</td>
-          <td>${categoria.descripcion || '-'}</td>
-          <td class="text-center">
-            <button class="btn-link btn-show-productos">
-              Ver productos
-            </button>
-          </td>
-          <td>
-            <span class="badge ${categoria.activo ? 'success' : 'danger'}">
-              ${categoria.activo ? 'Activo' : 'Inactivo'}
-            </span>
-          </td>
-          <td>
-            <div class="actions">
-              <button class="btn-icon btn-edit">
-                <i class="fas fa-edit" aria-label="Editar"></i>
+      categoriasListElement.innerHTML = paginatedItems.map(categoria => {
+        // Obtener información de la categoría padre si existe
+        const categoriaPadre = categoria.categoria_padre ? 
+          `<a href="#" class="btn-link" data-id="${categoria.categoria_padre.id}">${categoria.categoria_padre.nombre}</a>` : 
+          '<span class="text-muted">-</span>';
+
+        // Clase para mostrar la indentación basada en el nivel de la categoría
+        const nivelClass = categoria.nivel > 1 ? `nivel-${Math.min(categoria.nivel, 4)}` : '';
+        
+        return `
+          <tr data-id="${categoria.id}" data-nombre="${categoria.nombre}" class="${selectedCategories.has(categoria.id) ? 'selected' : ''} ${nivelClass}">
+            <td class="checkbox-column">
+              <label class="custom-checkbox">
+                <input type="checkbox" ${selectedCategories.has(categoria.id) ? 'checked' : ''} data-id="${categoria.id}">
+                <span class="checkbox-mark"></span>
+              </label>
+            </td>
+            <td>${categoria.id}</td>
+            <td>
+              ${categoria.nivel > 1 ? 
+                '<i class="fas fa-level-down-alt" style="transform: rotate(-90deg); margin-right: 5px; opacity: 0.5;"></i>' : ''} 
+              ${categoria.nombre}
+              ${categoria.subcategorias && categoria.subcategorias.length > 0 ? 
+                `<span class="badge info">${categoria.subcategorias.length} subcategorías</span>` : ''}
+            </td>
+            <td>${categoria.descripcion || '-'}</td>
+            <td>${categoriaPadre}</td>
+            <td class="text-center">
+              <button class="btn-link btn-show-productos" data-incluir-subcategorias="true">
+                Ver productos
               </button>
-              <button class="btn-icon btn-delete">
-                <i class="fas fa-trash-alt" aria-label="Eliminar"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+            </td>
+            <td>
+              <span class="badge ${categoria.activo ? 'success' : 'danger'}">
+                ${categoria.activo ? 'Activo' : 'Inactivo'}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                <button class="btn-icon btn-add-subcategory" title="Añadir subcategoría">
+                  <i class="fas fa-sitemap" aria-label="Añadir subcategoría"></i>
+                </button>
+                <button class="btn-icon btn-edit" title="Editar">
+                  <i class="fas fa-edit" aria-label="Editar"></i>
+                </button>
+                <button class="btn-icon btn-delete" title="Eliminar">
+                  <i class="fas fa-trash-alt" aria-label="Eliminar"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
       
       const checkboxes = categoriasListElement.querySelectorAll('input[type="checkbox"]');
       const allSelected = Array.from(checkboxes).every(checkbox => checkbox.checked);
