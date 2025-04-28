@@ -10,6 +10,8 @@ router.use(authenticate, authorize('admin'));
 
 // Rutas para gestión de usuarios
 router.get('/', usuariosController.getAllUsers);
+router.get('/estadisticas', usuariosController.getUserStats);
+router.get('/graficos', usuariosController.getUserCharts);
 router.get('/:id', usuariosController.getUserById);
 router.post('/', usuariosController.createUser);
 router.put('/:id', usuariosController.updateUser);

@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { Op } = require('sequelize');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt'); // Cambiado de bcryptjs a bcrypt
 const { sequelize } = require('../utils/database');
 
 const Usuario = sequelize.define('Usuario', {
@@ -30,6 +30,47 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.ENUM('admin', 'vendedor', 'inventario'),
     allowNull: false,
     defaultValue: 'vendedor'
+  },
+  // Nuevos campos para el perfil detallado del usuario
+  telefono: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  cargo: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  departamento: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  fecha_nacimiento: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  direccion: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  foto_perfil: {
+    type: DataTypes.STRING(255), // Ruta al archivo de imagen
+    allowNull: true
+  },
+  biografia: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  redes_sociales: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  habilidades: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  preferencias: {
+    type: DataTypes.JSON,
+    allowNull: true
   },
   fecha_creacion: {
     type: DataTypes.DATE,

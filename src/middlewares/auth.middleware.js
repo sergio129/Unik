@@ -78,3 +78,41 @@ exports.authorize = (roles) => {
     next();
   };
 };
+
+// Middleware para validar JWT (usado para perfiles y otras funcionalidades)
+exports.validarJWT = async (req, res, next) => {
+  // Obtener el token del header de autorización
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: 'No hay token en la petición'
+    });
+  }
+
+  try {
+    // Verificar token JWT
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Asignar usuario decodificado a la request
+    req.usuario = decoded;
+    
+    // Verificar si el usuario existe en la base de datos
+    const usuario = await Usuario.findByPk(decoded.id);
+    if (!usuario) {
+      return res.status(401).json({
+        ok: false,
+        mensaje: 'Token no válido - usuario no existe'
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error en validarJWT middleware:', error);
+    return res.status(401).json({
+      ok: false,
+      mensaje: 'Token no válido'
+    });
+  }
+};

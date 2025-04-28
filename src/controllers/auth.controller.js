@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/usuario.model');
 const Sesion = require('../models/sesion.model');
+const bcrypt = require('bcrypt'); // Cambiado de bcryptjs a bcrypt
 
 // Controlador para el login de usuarios
 exports.login = async (req, res) => {
@@ -335,6 +336,68 @@ exports.resetPassword = async (req, res) => {
       success: false,
       message: 'Error en el servidor',
       error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Cambiar contraseña (usuario autenticado)
+exports.cambiarPassword = async (req, res) => {
+  try {
+    const userId = req.usuario.id;
+    const { current_password, new_password } = req.body;
+
+    if (!current_password || !new_password) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'La contraseña actual y la nueva son requeridas'
+      });
+    }
+
+    // Verificar longitud mínima de contraseña
+    if (new_password.length < 6) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'La nueva contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
+    // Buscar usuario
+    const usuario = await Usuario.findByPk(userId);
+    if (!usuario) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
+    // Verificar contraseña actual
+    const isValidPassword = await usuario.comparePassword(current_password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        ok: false,
+        mensaje: 'La contraseña actual es incorrecta'
+      });
+    }
+
+    // Actualizar contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
+    
+    await usuario.update({ password: hashedPassword });
+
+    // Opcional: cerrar otras sesiones si se desea añadir esta funcionalidad
+    // await Sesion.deactivateAllExcept(req.headers.authorization?.split(' ')[1], userId);
+
+    return res.json({
+      ok: true,
+      mensaje: 'Contraseña actualizada correctamente'
+    });
+
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error);
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error interno del servidor'
     });
   }
 };

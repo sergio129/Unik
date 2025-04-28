@@ -6,7 +6,10 @@ const bcrypt = require('bcryptjs');
 exports.getAllUsers = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
-      attributes: ['id', 'username', 'email', 'nombre_completo', 'rol', 'fecha_creacion', 'ultimo_acceso']
+      attributes: [
+        'id', 'username', 'email', 'nombre_completo', 'rol', 
+        'fecha_creacion', 'ultimo_acceso', 'telefono', 'cargo', 'departamento'
+      ]
     });
     
     return res.status(200).json({
@@ -29,7 +32,10 @@ exports.getUserById = async (req, res) => {
     const { id } = req.params;
     
     const usuario = await Usuario.findByPk(id, {
-      attributes: ['id', 'username', 'email', 'nombre_completo', 'rol', 'fecha_creacion', 'ultimo_acceso']
+      attributes: [
+        'id', 'username', 'email', 'nombre_completo', 'rol', 
+        'fecha_creacion', 'ultimo_acceso', 'telefono', 'cargo', 'departamento'
+      ]
     });
     
     if (!usuario) {
@@ -56,7 +62,10 @@ exports.getUserById = async (req, res) => {
 // Crear un nuevo usuario
 exports.createUser = async (req, res) => {
   try {
-    const { username, password, email, nombre_completo, rol } = req.body;
+    const { 
+      username, password, email, nombre_completo, rol,
+      telefono, cargo, departamento 
+    } = req.body;
     
     // Validación básica
     if (!username || !password) {
@@ -75,13 +84,16 @@ exports.createUser = async (req, res) => {
       });
     }
     
-    // Crear nuevo usuario
+    // Crear nuevo usuario con campos extendidos
     const newUser = await Usuario.create({
       username,
       password, // El hash se genera en el hook beforeCreate
       email,
       nombre_completo,
-      rol: rol || 'vendedor' // Por defecto es vendedor si no se especifica
+      rol: rol || 'vendedor', // Por defecto es vendedor si no se especifica
+      telefono,
+      cargo,
+      departamento
     });
     
     return res.status(201).json({
@@ -92,7 +104,10 @@ exports.createUser = async (req, res) => {
         username: newUser.username,
         email: newUser.email,
         nombre_completo: newUser.nombre_completo,
-        rol: newUser.rol
+        rol: newUser.rol,
+        telefono: newUser.telefono,
+        cargo: newUser.cargo,
+        departamento: newUser.departamento
       }
     });
   } catch (error) {
@@ -109,7 +124,10 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, password, email, nombre_completo, rol } = req.body;
+    const { 
+      username, password, email, nombre_completo, rol,
+      telefono, cargo, departamento 
+    } = req.body;
     
     // Verificar si el usuario existe
     const usuario = await Usuario.findByPk(id);
@@ -131,12 +149,17 @@ exports.updateUser = async (req, res) => {
       }
     }
     
-    // Preparar datos a actualizar
+    // Preparar datos a actualizar, incluyendo campos extendidos
     const updateData = {};
     if (username) updateData.username = username;
     if (email) updateData.email = email;
     if (nombre_completo) updateData.nombre_completo = nombre_completo;
     if (rol) updateData.rol = rol;
+    
+    // Campos extendidos del perfil
+    if (telefono !== undefined) updateData.telefono = telefono;
+    if (cargo !== undefined) updateData.cargo = cargo;
+    if (departamento !== undefined) updateData.departamento = departamento;
     
     // Si hay nueva contraseña, hashearla
     if (password) {
@@ -155,7 +178,10 @@ exports.updateUser = async (req, res) => {
         username: updateData.username || usuario.username,
         email: updateData.email || usuario.email,
         nombre_completo: updateData.nombre_completo || usuario.nombre_completo,
-        rol: updateData.rol || usuario.rol
+        rol: updateData.rol || usuario.rol,
+        telefono: updateData.telefono !== undefined ? updateData.telefono : usuario.telefono,
+        cargo: updateData.cargo !== undefined ? updateData.cargo : usuario.cargo,
+        departamento: updateData.departamento !== undefined ? updateData.departamento : usuario.departamento
       }
     });
   } catch (error) {
@@ -260,6 +286,118 @@ exports.changePassword = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al cambiar la contraseña',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Obtener estadísticas de usuarios
+exports.getUserStats = async (req, res) => {
+  try {
+    // Cantidad total de usuarios
+    const totalUsers = await Usuario.count();
+    
+    // Usuarios por rol
+    const usersByRole = await Usuario.findAll({
+      attributes: ['rol', [Usuario.sequelize.fn('COUNT', Usuario.sequelize.col('id')), 'count']],
+      group: 'rol'
+    });
+    
+    // Usuarios creados en el último mes
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    
+    const newUsers = await Usuario.count({
+      where: {
+        fecha_creacion: {
+          [Usuario.sequelize.Op.gte]: lastMonth
+        }
+      }
+    });
+    
+    // Usuarios activos (que han iniciado sesión en el último mes)
+    const activeUsers = await Usuario.count({
+      where: {
+        ultimo_acceso: {
+          [Usuario.sequelize.Op.gte]: lastMonth
+        }
+      }
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        usersByRole: usersByRole.reduce((acc, item) => {
+          acc[item.rol] = parseInt(item.get('count'));
+          return acc;
+        }, {}),
+        newUsers,
+        activeUsers
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas de usuarios:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas de usuarios',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Obtener datos para gráficos de usuarios
+exports.getUserCharts = async (req, res) => {
+  try {
+    // Usuarios creados por mes en el último año
+    const lastYear = new Date();
+    lastYear.setFullYear(lastYear.getFullYear() - 1);
+    
+    const usersByMonth = await Usuario.findAll({
+      attributes: [
+        [Usuario.sequelize.fn('DATE_FORMAT', Usuario.sequelize.col('fecha_creacion'), '%Y-%m'), 'month'],
+        [Usuario.sequelize.fn('COUNT', Usuario.sequelize.col('id')), 'count']
+      ],
+      where: {
+        fecha_creacion: {
+          [Usuario.sequelize.Op.gte]: lastYear
+        }
+      },
+      group: [Usuario.sequelize.fn('DATE_FORMAT', Usuario.sequelize.col('fecha_creacion'), '%Y-%m')]
+    });
+    
+    // Actividad de usuarios (logins) por mes
+    const activityByMonth = await Usuario.findAll({
+      attributes: [
+        [Usuario.sequelize.fn('DATE_FORMAT', Usuario.sequelize.col('ultimo_acceso'), '%Y-%m'), 'month'],
+        [Usuario.sequelize.fn('COUNT', Usuario.sequelize.col('id')), 'count']
+      ],
+      where: {
+        ultimo_acceso: {
+          [Usuario.sequelize.Op.gte]: lastYear
+        }
+      },
+      group: [Usuario.sequelize.fn('DATE_FORMAT', Usuario.sequelize.col('ultimo_acceso'), '%Y-%m')]
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        usersByMonth: usersByMonth.map(item => ({
+          month: item.get('month'),
+          count: parseInt(item.get('count'))
+        })),
+        activityByMonth: activityByMonth.map(item => ({
+          month: item.get('month'),
+          count: parseInt(item.get('count'))
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener datos para gráficos de usuarios:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener datos para gráficos de usuarios',
       error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }

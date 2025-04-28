@@ -34,6 +34,7 @@ const pedidosRoutes = require('./routes/pedidos.route'); // Nueva ruta para gest
 const proveedoresRoutes = require('./routes/proveedores.routes'); // Nueva ruta para gestión de proveedores
 const whatsappRoutes = require('./routes/whatsapp.route'); // Nueva ruta para gestión de WhatsApp
 const notificacionesRoutes = require('./routes/notificaciones.routes'); // Nueva ruta para sistema de notificaciones
+const perfilRoutes = require('./routes/perfil.routes'); // Nueva ruta para gestión de perfiles de usuario
 
 const app = express();
 const server = http.createServer(app); // Crear servidor HTTP para Socket.IO
@@ -137,6 +138,7 @@ app.use('/api/pedidos', pedidosRoutes); // Nueva ruta para gestión de pedidos
 app.use('/api/proveedores', proveedoresRoutes); // Nueva ruta para gestión de proveedores
 app.use('/api/whatsapp', whatsappRoutes); // Nueva ruta para gestión de WhatsApp
 app.use('/api/notificaciones', notificacionesRoutes); // Nueva ruta para sistema de notificaciones
+app.use('/api/perfil', perfilRoutes); // Nueva ruta para gestión de perfiles de usuario
 
 // Ruta básica para la API
 app.get('/api', (req, res) => {

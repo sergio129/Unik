@@ -141,7 +141,7 @@
   </main>
 
   <div class="modal" id="user-modal">
-    <div class="modal-content">
+    <div class="modal-content modal-lg">
       <div class="modal-header">
         <h2 id="modal-title">Nuevo Usuario</h2>
         <button class="close-modal">&times;</button>
@@ -150,57 +150,169 @@
         <form id="user-form">
           <input type="hidden" id="user-id">
           
-          <div class="form-group">
-            <label for="username">Usuario:</label>
-            <div class="input-group">
-              <input type="text" id="username" name="username" class="form-control" required>
-              <i class="fas fa-user"></i>
-            </div>
-          </div>
+          <ul class="nav nav-tabs" id="userFormTabs">
+            <li class="nav-item">
+              <a class="nav-link active" href="#datos-basicos" data-toggle="tab">Datos Básicos</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#info-adicional" data-toggle="tab">Información Adicional</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#redes-habilidades" data-toggle="tab">Redes y Habilidades</a>
+            </li>
+          </ul>
           
-          <div class="form-group password-group">
-            <label for="password">Contraseña:</label>
-            <div class="input-group">
-              <input type="password" id="password" name="password" class="form-control">
-              <i class="fas fa-lock"></i>
-              <button type="button" class="toggle-password" title="Mostrar/ocultar contraseña">
-                <i class="fas fa-eye"></i>
-              </button>
+          <div class="tab-content">
+            <!-- Pestaña de datos básicos -->
+            <div class="tab-pane active" id="datos-basicos">
+              <div class="form-group">
+                <label for="username">Usuario:</label>
+                <div class="input-group">
+                  <input type="text" id="username" name="username" class="form-control" required>
+                  <i class="fas fa-user"></i>
+                </div>
+              </div>
+              
+              <div class="form-group password-group">
+                <label for="password">Contraseña:</label>
+                <div class="input-group">
+                  <input type="password" id="password" name="password" class="form-control">
+                  <i class="fas fa-lock"></i>
+                  <button type="button" class="toggle-password" title="Mostrar/ocultar contraseña">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <small class="edit-mode-text">Dejar en blanco para mantener la contraseña actual</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="nombre_completo">Nombre Completo:</label>
+                <div class="input-group">
+                  <input type="text" id="nombre_completo" name="nombre_completo" class="form-control">
+                  <i class="fas fa-id-card"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="email">Email:</label>
+                <div class="input-group">
+                  <input type="email" id="email" name="email" class="form-control">
+                  <i class="fas fa-envelope"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="rol">Rol:</label>
+                <div class="input-group">
+                  <select id="rol" name="rol" class="form-control" required>
+                    <option value="vendedor">Vendedor</option>
+                    <option value="admin">Administrador</option>
+                    <option value="inventario">Inventario</option>
+                  </select>
+                  <i class="fas fa-user-tag"></i>
+                </div>
+              </div>
             </div>
-            <small class="edit-mode-text">Dejar en blanco para mantener la contraseña actual</small>
-          </div>
-          
-          <div class="form-group">
-            <label for="nombre_completo">Nombre Completo:</label>
-            <div class="input-group">
-              <input type="text" id="nombre_completo" name="nombre_completo" class="form-control">
-              <i class="fas fa-id-card"></i>
+            
+            <!-- Pestaña de información adicional -->
+            <div class="tab-pane" id="info-adicional">
+              <div class="form-group">
+                <label for="telefono">Teléfono:</label>
+                <div class="input-group">
+                  <input type="tel" id="telefono" name="telefono" class="form-control">
+                  <i class="fas fa-phone"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="direccion">Dirección:</label>
+                <div class="input-group">
+                  <input type="text" id="direccion" name="direccion" class="form-control">
+                  <i class="fas fa-map-marker-alt"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
+                <div class="input-group">
+                  <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="form-control">
+                  <i class="fas fa-calendar"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="cargo">Cargo:</label>
+                <div class="input-group">
+                  <input type="text" id="cargo" name="cargo" class="form-control">
+                  <i class="fas fa-briefcase"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="departamento">Departamento:</label>
+                <div class="input-group">
+                  <input type="text" id="departamento" name="departamento" class="form-control">
+                  <i class="fas fa-building"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="biografia">Biografía:</label>
+                <div class="input-group">
+                  <textarea id="biografia" name="biografia" class="form-control" rows="4"></textarea>
+                  <i class="fas fa-user-edit"></i>
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="email">Email:</label>
-            <div class="input-group">
-              <input type="email" id="email" name="email" class="form-control">
-              <i class="fas fa-envelope"></i>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="rol">Rol:</label>
-            <div class="input-group">
-              <select id="rol" name="rol" class="form-control" required>
-                <option value="vendedor">Vendedor</option>
-                <option value="admin">Administrador</option>
-                <option value="inventario">Inventario</option>
-              </select>
-              <i class="fas fa-user-tag"></i>
+            
+            <!-- Pestaña de redes sociales y habilidades -->
+            <div class="tab-pane" id="redes-habilidades">
+              <div class="form-group">
+                <label for="habilidades">Habilidades:</label>
+                <div class="input-group">
+                  <input type="text" id="habilidades" name="habilidades" class="form-control" placeholder="Separe las habilidades con comas">
+                  <i class="fas fa-star"></i>
+                </div>
+                <small>Ejemplo: Excel, Word, PowerPoint</small>
+                <div id="habilidades-tags" class="tags-container"></div>
+              </div>
+              
+              <div class="section-divider">
+                <h4>Redes Sociales</h4>
+              </div>
+              
+              <div class="form-group">
+                <label for="linkedin">LinkedIn:</label>
+                <div class="input-group">
+                  <input type="url" id="linkedin" name="linkedin" class="form-control" placeholder="https://linkedin.com/in/usuario">
+                  <i class="fab fa-linkedin"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="twitter">Twitter:</label>
+                <div class="input-group">
+                  <input type="url" id="twitter" name="twitter" class="form-control" placeholder="https://twitter.com/usuario">
+                  <i class="fab fa-twitter"></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="facebook">Facebook:</label>
+                <div class="input-group">
+                  <input type="url" id="facebook" name="facebook" class="form-control" placeholder="https://facebook.com/usuario">
+                  <i class="fab fa-facebook"></i>
+                </div>
+              </div>
             </div>
           </div>
           
           <div class="form-actions">
             <button type="button" class="secondary" id="btn-cancel">Cancelar</button>
             <button type="submit" class="primary" id="btn-save">Guardar</button>
+            <button type="button" class="secondary" id="btn-view-profile">
+              <i class="fas fa-id-card"></i> Ver Perfil Completo
+            </button>
           </div>
         </form>
       </div>
@@ -258,6 +370,109 @@
         
         <div class="notifications-pagination">
           <span class="pagination-info">Mostrando las notificaciones más recientes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para ver perfil completo de usuario -->
+  <div class="modal" id="profile-modal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2><i class="fas fa-id-card"></i> <span id="profile-modal-title">Perfil de Usuario</span></h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-header">
+          <div class="profile-photo">
+            <img id="profile-photo" src="../images/default-profile.png" alt="Foto de perfil">
+          </div>
+          <div class="profile-basic-info">
+            <h3 id="profile-name">Nombre de Usuario</h3>
+            <p id="profile-role">Rol</p>
+            <p id="profile-account-since">Usuario desde: <span></span></p>
+            <p id="profile-last-login">Último acceso: <span></span></p>
+          </div>
+        </div>
+        
+        <div class="profile-tabs">
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <a class="nav-link active" href="#info-personal" data-toggle="tab">Información Personal</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#info-profesional" data-toggle="tab">Información Profesional</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#habilidades-redes" data-toggle="tab">Habilidades y Redes</a>
+            </li>
+          </ul>
+          
+          <div class="tab-content">
+            <!-- Pestaña de información personal -->
+            <div class="tab-pane active" id="info-personal">
+              <div class="profile-info-group">
+                <div class="profile-info-item">
+                  <label>Usuario:</label>
+                  <p id="profile-username"></p>
+                </div>
+                <div class="profile-info-item">
+                  <label>Email:</label>
+                  <p id="profile-email"></p>
+                </div>
+                <div class="profile-info-item">
+                  <label>Teléfono:</label>
+                  <p id="profile-telefono"></p>
+                </div>
+                <div class="profile-info-item">
+                  <label>Dirección:</label>
+                  <p id="profile-direccion"></p>
+                </div>
+                <div class="profile-info-item">
+                  <label>Fecha de Nacimiento:</label>
+                  <p id="profile-fecha-nacimiento"></p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Pestaña de información profesional -->
+            <div class="tab-pane" id="info-profesional">
+              <div class="profile-info-group">
+                <div class="profile-info-item">
+                  <label>Cargo:</label>
+                  <p id="profile-cargo"></p>
+                </div>
+                <div class="profile-info-item">
+                  <label>Departamento:</label>
+                  <p id="profile-departamento"></p>
+                </div>
+                <div class="profile-info-item full-width">
+                  <label>Biografía:</label>
+                  <p id="profile-biografia"></p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Pestaña de habilidades y redes sociales -->
+            <div class="tab-pane" id="habilidades-redes">
+              <div class="profile-section">
+                <h4>Habilidades</h4>
+                <div id="profile-habilidades" class="profile-skills"></div>
+              </div>
+              
+              <div class="profile-section">
+                <h4>Redes Sociales</h4>
+                <ul id="profile-redes" class="social-links"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="profile-actions">
+          <button type="button" class="secondary" id="btn-close-profile">Cerrar</button>
+          <button type="button" class="primary" id="btn-edit-profile">
+            <i class="fas fa-edit"></i> Editar Perfil
+          </button>
         </div>
       </div>
     </div>

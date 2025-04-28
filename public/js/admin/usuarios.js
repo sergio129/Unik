@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Cargar lista de usuarios con la nueva función paginada
   loadUsersWithPagination();
+  
+  // Inicializar funcionalidad de perfiles
+  initializeProfileTabs();
 });
 
 // Verificar que el usuario sea administrador
@@ -70,8 +73,102 @@ function initializeModals() {
     eyeIcon.classList.toggle('fa-eye-slash');
   });
   
+  // Inicializar las pestañas del formulario
+  initializeUserFormTabs();
+  
+  // Inicializar el campo de habilidades
+  initializeSkillsField();
+  
   // Manejar envío del formulario
   userForm.addEventListener('submit', handleUserFormSubmit);
+}
+
+// Inicializar las pestañas del formulario de usuario
+function initializeUserFormTabs() {
+  const tabLinks = document.querySelectorAll('#userFormTabs .nav-link');
+  
+  tabLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Remover clase active de todos los enlaces y paneles
+      document.querySelectorAll('#userFormTabs .nav-link').forEach(item => {
+        item.classList.remove('active');
+      });
+      document.querySelectorAll('#user-form .tab-pane').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Agregar clase active al enlace actual
+      this.classList.add('active');
+      
+      // Mostrar el panel correspondiente
+      const tabId = this.getAttribute('href').substring(1);
+      document.getElementById(tabId).classList.add('active');
+    });
+  });
+}
+
+// Inicializar el campo de habilidades
+function initializeSkillsField() {
+  const habilidadesInput = document.getElementById('habilidades');
+  const habilidadesContainer = document.getElementById('habilidades-tags');
+  
+  if (!habilidadesInput) return;
+  
+  // Función para renderizar las etiquetas de habilidades
+  function renderSkillTags() {
+    const skills = habilidadesInput.value
+      .split(',')
+      .map(skill => skill.trim())
+      .filter(skill => skill !== '');
+    
+    habilidadesContainer.innerHTML = '';
+    
+    skills.forEach(skill => {
+      if (skill) {
+        const tag = document.createElement('span');
+        tag.className = 'skill-tag';
+        tag.innerHTML = `${skill} <i class="fas fa-times remove-skill"></i>`;
+        habilidadesContainer.appendChild(tag);
+        
+        // Añadir evento para eliminar habilidad
+        tag.querySelector('.remove-skill').addEventListener('click', () => {
+          const updatedSkills = habilidadesInput.value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s !== skill && s !== '')
+            .join(', ');
+          
+          habilidadesInput.value = updatedSkills;
+          renderSkillTags();
+        });
+      }
+    });
+  }
+  
+  // Evento para actualizar tags cuando se modifica el input
+  habilidadesInput.addEventListener('change', renderSkillTags);
+  habilidadesInput.addEventListener('blur', renderSkillTags);
+  
+  // Evento para añadir habilidad con coma o Enter
+  habilidadesInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      
+      const currentValue = this.value.trim();
+      if (currentValue) {
+        const skills = currentValue.split(',').map(s => s.trim()).filter(s => s !== '');
+        
+        // Si ya hay valor y no termina en coma, añadir coma
+        if (skills.length > 0 && !currentValue.endsWith(',')) {
+          this.value = skills.join(', ') + ', ';
+        }
+        
+        renderSkillTags();
+      }
+    }
+  });
 }
 
 // Configurar eventos para botones y filtros
@@ -121,6 +218,18 @@ function setupEventListeners() {
     
     // Guardar preferencia en localStorage
     localStorage.setItem('userTablePageSize', pageSize);
+  });
+  
+  // Botones del modal de perfil
+  document.getElementById('btn-close-profile').addEventListener('click', closeAllModals);
+  document.getElementById('btn-edit-profile').addEventListener('click', editUserProfileFromView);
+  
+  // Botón Ver Perfil Completo en el formulario de usuario
+  document.getElementById('btn-view-profile').addEventListener('click', function() {
+    const userId = document.getElementById('user-id').value;
+    if (userId) {
+      viewUserProfile(userId);
+    }
   });
 }
 
@@ -354,6 +463,9 @@ function renderUsers(users) {
       <td>${formatDate(user.ultimo_acceso)}</td>
       <td>
         <div class="action-buttons">
+          <button class="btn-action btn-view" title="Ver Perfil" onclick="viewUserProfile(${user.id})">
+            <i class="fas fa-eye"></i>
+          </button>
           <button class="btn-action btn-edit" title="Editar" onclick="editUser(${user.id})">
             <i class="fas fa-edit"></i>
           </button>
@@ -436,6 +548,18 @@ async function loadUserData(userId) {
       document.getElementById('email').value = user.email || '';
       document.getElementById('rol').value = user.rol;
       
+      // Cargar campos extendidos del perfil
+      document.getElementById('telefono').value = user.telefono || '';
+      document.getElementById('cargo').value = user.cargo || '';
+      document.getElementById('departamento').value = user.departamento || '';
+      document.getElementById('habilidades').value = user.habilidades || '';
+      
+      // Renderizar etiquetas de habilidades
+      initializeSkillsField();
+      
+      // Mostrar botón de ver perfil completo en modo edición
+      document.getElementById('btn-view-profile').style.display = 'block';
+      
       // Quitar requerimiento de contraseña en modo edición
       document.getElementById('password').removeAttribute('required');
     } else {
@@ -456,12 +580,31 @@ async function handleUserFormSubmit(event) {
   const userId = document.getElementById('user-id').value;
   const isEditing = !!userId;
   
+  // Procesar las habilidades como array
+  let habilidades = document.getElementById('habilidades').value.trim();
+  habilidades = habilidades ? habilidades.split(',').map(h => h.trim()).filter(h => h !== '') : [];
+  
+  // Construir el objeto de redes sociales
+  const redes_sociales = {
+    linkedin: document.getElementById('linkedin').value.trim(),
+    twitter: document.getElementById('twitter').value.trim(),
+    facebook: document.getElementById('facebook').value.trim()
+  };
+  
   const userData = {
     username: document.getElementById('username').value,
     password: document.getElementById('password').value,
     nombre_completo: document.getElementById('nombre_completo').value,
     email: document.getElementById('email').value,
-    rol: document.getElementById('rol').value
+    rol: document.getElementById('rol').value,
+    telefono: document.getElementById('telefono').value,
+    direccion: document.getElementById('direccion').value,
+    fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
+    cargo: document.getElementById('cargo').value,
+    departamento: document.getElementById('departamento').value,
+    biografia: document.getElementById('biografia').value,
+    habilidades: habilidades,
+    redes_sociales: redes_sociales
   };
   
   // Si estamos editando y no se proporciona contraseña, eliminarla del objeto
@@ -694,6 +837,197 @@ function mapRoleName(role) {
   return roles[role] || role;
 }
 
+// Inicializar las pestañas del perfil
+function initializeProfileTabs() {
+  const tabLinks = document.querySelectorAll('.nav-link');
+  
+  tabLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Remover clase active de todos los enlaces y paneles
+      document.querySelectorAll('.nav-link').forEach(item => {
+        item.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-pane').forEach(item => {
+        item.classList.remove('active');
+      });
+      
+      // Agregar clase active al enlace actual
+      this.classList.add('active');
+      
+      // Mostrar el panel correspondiente
+      const tabId = this.getAttribute('href').substring(1);
+      document.getElementById(tabId).classList.add('active');
+    });
+  });
+}
+
+// Función para ver el perfil completo de un usuario
+async function viewUserProfile(userId) {
+  try {
+    const token = localStorage.getItem('token');
+    
+    // Mostrar indicador de carga
+    document.getElementById('profile-modal-title').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando perfil...';
+    
+    // Mostrar el modal
+    const profileModal = document.getElementById('profile-modal');
+    const modalOverlay = document.querySelector('.modal-overlay');
+    profileModal.style.display = 'block';
+    modalOverlay.style.display = 'block';
+    
+    // Obtener datos del usuario
+    const response = await fetch(`/api/perfil/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al cargar perfil del usuario');
+    }
+    
+    const result = await response.json();
+    
+    if (!result.ok) {
+      throw new Error(result.mensaje || 'Error al cargar perfil');
+    }
+    
+    // Mostrar datos en el perfil
+    const usuario = result.usuario;
+    
+    // Configurar el modal con la información del usuario
+    document.getElementById('profile-modal-title').textContent = `Perfil de ${usuario.nombre_completo || usuario.username}`;
+    document.getElementById('profile-name').textContent = usuario.nombre_completo || usuario.username;
+    document.getElementById('profile-role').textContent = mapRoleName(usuario.rol);
+    document.getElementById('profile-account-since').querySelector('span').textContent = formatDate(usuario.fecha_creacion);
+    document.getElementById('profile-last-login').querySelector('span').textContent = formatDate(usuario.ultimo_acceso);
+    
+    // Información personal
+    document.getElementById('profile-username').textContent = usuario.username || '-';
+    document.getElementById('profile-email').textContent = usuario.email || '-';
+    document.getElementById('profile-telefono').textContent = usuario.telefono || '-';
+    document.getElementById('profile-direccion').textContent = usuario.direccion || '-';
+    document.getElementById('profile-fecha-nacimiento').textContent = formatDate(usuario.fecha_nacimiento) || '-';
+    
+    // Información profesional
+    document.getElementById('profile-cargo').textContent = usuario.cargo || '-';
+    document.getElementById('profile-departamento').textContent = usuario.departamento || '-';
+    document.getElementById('profile-biografia').textContent = usuario.biografia || '-';
+    
+    // Foto de perfil
+    if (usuario.foto_perfil) {
+      document.getElementById('profile-photo').src = usuario.foto_perfil;
+    } else {
+      document.getElementById('profile-photo').src = '../images/default-profile.png';
+    }
+    
+    // Habilidades
+    const habilidadesContainer = document.getElementById('profile-habilidades');
+    habilidadesContainer.innerHTML = '';
+    
+    try {
+      let habilidades = [];
+      if (usuario.habilidades) {
+        habilidades = typeof usuario.habilidades === 'string' ? 
+                      JSON.parse(usuario.habilidades) : usuario.habilidades;
+      }
+      
+      if (habilidades && habilidades.length > 0) {
+        habilidades.forEach(habilidad => {
+          const badge = document.createElement('span');
+          badge.className = 'skill-badge';
+          badge.textContent = habilidad;
+          habilidadesContainer.appendChild(badge);
+        });
+      } else {
+        habilidadesContainer.innerHTML = '<p class="text-muted">No se han agregado habilidades</p>';
+      }
+    } catch (error) {
+      console.error('Error al procesar habilidades:', error);
+      habilidadesContainer.innerHTML = '<p class="text-muted">No se pudieron cargar las habilidades</p>';
+    }
+    
+    // Redes sociales
+    const redesContainer = document.getElementById('profile-redes');
+    redesContainer.innerHTML = '';
+    
+    try {
+      let redes = {};
+      if (usuario.redes_sociales) {
+        redes = typeof usuario.redes_sociales === 'string' ? 
+                JSON.parse(usuario.redes_sociales) : usuario.redes_sociales;
+      }
+      
+      if (redes && (redes.linkedin || redes.twitter || redes.facebook)) {
+        if (redes.linkedin) {
+          redesContainer.innerHTML += `
+            <li>
+              <a href="${redes.linkedin}" target="_blank">
+                <span class="social-icon linkedin"><i class="fab fa-linkedin-in"></i></span>
+                LinkedIn
+              </a>
+            </li>
+          `;
+        }
+        
+        if (redes.twitter) {
+          redesContainer.innerHTML += `
+            <li>
+              <a href="${redes.twitter}" target="_blank">
+                <span class="social-icon twitter"><i class="fab fa-twitter"></i></span>
+                Twitter
+              </a>
+            </li>
+          `;
+        }
+        
+        if (redes.facebook) {
+          redesContainer.innerHTML += `
+            <li>
+              <a href="${redes.facebook}" target="_blank">
+                <span class="social-icon facebook"><i class="fab fa-facebook-f"></i></span>
+                Facebook
+              </a>
+            </li>
+          `;
+        }
+      } else {
+        redesContainer.innerHTML = '<p class="text-muted">No se han agregado redes sociales</p>';
+      }
+    } catch (error) {
+      console.error('Error al procesar redes sociales:', error);
+      redesContainer.innerHTML = '<p class="text-muted">No se pudieron cargar las redes sociales</p>';
+    }
+    
+    // Guardar userId en el modal para referencia
+    profileModal.dataset.userId = userId;
+    
+  } catch (error) {
+    console.error('Error al cargar perfil de usuario:', error);
+    document.getElementById('profile-modal-title').textContent = 'Error al cargar perfil';
+    showMessage('Error al cargar perfil del usuario', 'error');
+  }
+}
+
+// Función para editar el perfil desde la vista de perfil
+function editUserProfileFromView() {
+  const profileModal = document.getElementById('profile-modal');
+  const userId = profileModal.dataset.userId;
+  
+  // Cerrar modal de perfil
+  closeAllModals();
+  
+  // Abrir modal de edición
+  if (userId) {
+    openUserModal(userId);
+  }
+}
+
 // Exponer funciones necesarias globalmente para eventos onclick
 window.editUser = editUser;
 window.confirmDeleteUser = confirmDeleteUser;
+window.viewUserProfile = viewUserProfile;

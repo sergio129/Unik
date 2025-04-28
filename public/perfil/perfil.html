@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - La UNIKa</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.min.css">
+    <!-- Tema personalizado -->
+    <link rel="stylesheet" href="../css/theme.css">
+    <!-- CSS específico para perfil -->
+    <link rel="stylesheet" href="../css/components/perfil.css">
+</head>
+<body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="../images/logo.png" alt="Logo La UNIKa" height="30" class="me-2">
+                La UNIKa
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            Módulos
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="../inventario/inventario.html">Inventario</a></li>
+                            <li><a class="dropdown-item" href="../ventas/ventas.html">Ventas</a></li>
+                            <li><a class="dropdown-item" href="../pedidos/pedidos.html">Pedidos</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown me-2" id="notificacionesDropdown">
+                        <!-- Contenido de notificaciones -->
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="username">Usuario</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item active" href="/perfil/perfil.html"><i class="fas fa-id-card me-2"></i>Mi Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="btnCerrarSesion"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="container-fluid mt-5 pt-3">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/inventario/inventario.html">
+                                <i class="fas fa-boxes me-2"></i>
+                                Inventario
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/ventas/ventas.html">
+                                <i class="fas fa-cash-register me-2"></i>
+                                Ventas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pedidos/pedidos.html">
+                                <i class="fas fa-truck me-2"></i>
+                                Pedidos
+                            </a>
+                        </li>
+                        <li class="nav-item admin-only">
+                            <a class="nav-link" href="/admin/usuarios.html">
+                                <i class="fas fa-users-cog me-2"></i>
+                                Administrar Usuarios
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="fas fa-id-card me-2"></i>Mi Perfil</h1>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <!-- Tarjeta de foto de perfil -->
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-image me-2"></i>Foto de perfil</h5>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="profile-pic-container mb-3">
+                                    <img id="profile-pic" src="../images/default-profile.png" alt="Foto de perfil" class="img-fluid rounded-circle profile-pic">
+                                    <div class="overlay">
+                                        <label for="foto-input" class="edit-icon">
+                                            <i class="fas fa-camera"></i>
+                                        </label>
+                                        <input type="file" id="foto-input" accept="image/*" style="display: none;">
+                                    </div>
+                                </div>
+                                <h5 id="user-display-name" class="mb-1">Nombre de Usuario</h5>
+                                <p id="user-role" class="text-muted">Rol</p>
+                                <button id="remove-photo" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt me-1"></i> Eliminar foto
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tarjeta de estadísticas -->
+                        <div class="card mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Estadísticas</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Último acceso</div>
+                                        </div>
+                                        <span id="ultimo-acceso">-</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Cuenta creada</div>
+                                        </div>
+                                        <span id="fecha-creacion">-</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <!-- Información de perfil -->
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información Personal</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="profile-form">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="username" class="form-label">Nombre de usuario</label>
+                                            <input type="text" class="form-control" id="username-field" disabled>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="email" class="form-label">Correo electrónico</label>
+                                            <input type="email" class="form-control" id="email" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="nombre_completo" class="form-label">Nombre completo</label>
+                                            <input type="text" class="form-control" id="nombre_completo" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="telefono" class="form-label">Teléfono</label>
+                                            <input type="tel" class="form-control" id="telefono">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="cargo" class="form-label">Cargo</label>
+                                            <input type="text" class="form-control" id="cargo">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="departamento" class="form-label">Departamento</label>
+                                            <input type="text" class="form-control" id="departamento">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="fecha_nacimiento" class="form-label">Fecha de nacimiento</label>
+                                            <input type="date" class="form-control" id="fecha_nacimiento">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="direccion" class="form-label">Dirección</label>
+                                            <input type="text" class="form-control" id="direccion">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="biografia" class="form-label">Biografía</label>
+                                        <textarea class="form-control" id="biografia" rows="3"></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Habilidades</label>
+                                        <div id="habilidades-container" class="d-flex flex-wrap gap-2 mb-2">
+                                            <!-- Las habilidades se generarán dinámicamente aquí -->
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="nueva-habilidad" placeholder="Nueva habilidad">
+                                            <button class="btn btn-outline-secondary" type="button" id="add-habilidad">Añadir</button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Redes Sociales</label>
+                                        <div class="mb-2">
+                                            <div class="input-group mb-2">
+                                                <span class="input-group-text"><i class="fab fa-linkedin"></i></span>
+                                                <input type="text" class="form-control" id="linkedin" placeholder="URL de LinkedIn">
+                                            </div>
+                                            <div class="input-group mb-2">
+                                                <span class="input-group-text"><i class="fab fa-twitter"></i></span>
+                                                <input type="text" class="form-control" id="twitter" placeholder="URL de Twitter">
+                                            </div>
+                                            <div class="input-group mb-2">
+                                                <span class="input-group-text"><i class="fab fa-facebook"></i></span>
+                                                <input type="text" class="form-control" id="facebook" placeholder="URL de Facebook">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="button" class="btn btn-outline-secondary me-2" id="btn-reset">
+                                            <i class="fas fa-undo me-1"></i>Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Guardar Cambios
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Cambio de contraseña -->
+                        <div class="card mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-key me-2"></i>Cambiar Contraseña</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="password-form">
+                                    <div class="mb-3">
+                                        <label for="current_password" class="form-label">Contraseña actual</label>
+                                        <input type="password" class="form-control" id="current_password" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new_password" class="form-label">Nueva contraseña</label>
+                                        <input type="password" class="form-control" id="new_password" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="confirm_password" class="form-label">Confirmar nueva contraseña</label>
+                                        <input type="password" class="form-control" id="confirm_password" required>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Actualizar Contraseña
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle con Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
+    <!-- Scripts principales -->
+    <script src="../js/common/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/perfil/perfil.js"></script>
+</body>
+</html>

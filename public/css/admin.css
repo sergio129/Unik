@@ -1853,3 +1853,205 @@ button.small:hover {
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
+
+/* Añadir estos estilos al final del archivo css existente */
+
+/* Estilos para el modal de perfil */
+.profile-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.profile-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 20px;
+  border: 3px solid #f0f0f0;
+}
+
+.profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-basic-info {
+  flex: 1;
+}
+
+.profile-basic-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.4rem;
+}
+
+.profile-basic-info p {
+  margin: 0 0 5px 0;
+  color: #666;
+}
+
+/* Tabs de perfil */
+.profile-tabs {
+  margin-bottom: 20px;
+}
+
+.nav-tabs {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.nav-item {
+  margin-right: 5px;
+}
+
+.nav-link {
+  display: inline-block;
+  padding: 8px 15px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: #f9f9f9;
+}
+
+.nav-link.active {
+  background-color: #fff;
+  border-color: #ddd;
+  border-bottom: 2px solid #0056b3;
+  color: #0056b3;
+}
+
+.tab-content {
+  padding: 15px 0;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* Información del perfil */
+.profile-info-group {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -10px;
+}
+
+.profile-info-item {
+  flex: 1 1 calc(50% - 20px);
+  margin: 10px;
+  min-width: 200px;
+}
+
+.profile-info-item.full-width {
+  flex-basis: 100%;
+}
+
+.profile-info-item label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #666;
+}
+
+.profile-info-item p {
+  margin: 0;
+  padding: 8px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  min-height: 20px;
+}
+
+/* Habilidades */
+.profile-section {
+  margin-bottom: 20px;
+}
+
+.profile-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.skill-badge {
+  background-color: #e9ecef;
+  border-radius: 20px;
+  padding: 5px 15px;
+  display: inline-block;
+}
+
+/* Redes sociales */
+.social-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.social-links li {
+  margin-bottom: 10px;
+}
+
+.social-links a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+}
+
+.social-links i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
+
+.social-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+  color: white;
+}
+
+.social-icon.linkedin {
+  background-color: #0077b5;
+}
+
+.social-icon.twitter {
+  background-color: #1da1f2;
+}
+
+.social-icon.facebook {
+  background-color: #1877f2;
+}
+
+/* Acciones del perfil */
+.profile-actions {
+  margin-top: 20px;
+  text-align: right;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+/* Estilos para los botones del formulario de usuario */
+#btn-view-profile {
+  display: none;
+}
