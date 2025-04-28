@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
       categoriasListElement.innerHTML = paginatedItems.map(categoria => {
         // Obtener información de la categoría padre si existe
         const categoriaPadre = categoria.categoria_padre ? 
-          `<a href="#" class="btn-link" data-id="${categoria.categoria_padre.id}">${categoria.categoria_padre.nombre}</a>` : 
+          `<a href="#" class="btn-link btn-ver-categoria" data-id="${categoria.categoria_padre.id}">${categoria.categoria_padre.nombre}</a>` : 
           '<span class="text-muted">-</span>';
 
         // Clase para mostrar la indentación basada en el nivel de la categoría
@@ -372,8 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
               ${categoria.nivel > 1 ? 
                 '<i class="fas fa-level-down-alt" style="transform: rotate(-90deg); margin-right: 5px; opacity: 0.5;"></i>' : ''} 
               ${categoria.nombre}
-              ${categoria.subcategorias && categoria.subcategorias.length > 0 ? 
-                `<span class="badge info">${categoria.subcategorias.length} subcategorías</span>` : ''}
             </td>
             <td>${categoria.descripcion || '-'}</td>
             <td>${categoriaPadre}</td>
@@ -661,6 +659,46 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- Funciones de Acciones CRUD ---
+  // Cargar lista de categorías disponibles para ser padre (excluyendo la categoría actual en edición)
+  const cargarCategoriasPadre = (categoriaIdExcluir) => {
+    const categoriaPadreSelect = document.getElementById('categoria_padre_id');
+    categoriaPadreSelect.innerHTML = '<option value="">Ninguna (Categoría principal)</option>';
+    
+    // Filtrar categorías activas que no son la actual ni subcategorías de la actual
+    const categoriasElegibles = allCategorias.filter(cat => {
+      return cat.activo && (!categoriaIdExcluir || cat.id !== parseInt(categoriaIdExcluir));
+    });
+    
+    // Ordenar las categorías elegibles
+    const categoriasOrdenadas = categoriasElegibles.sort((a, b) => {
+      // Primero ordenar por nivel
+      if (a.nivel !== b.nivel) {
+        return a.nivel - b.nivel;
+      }
+      // Si tienen el mismo nivel, ordenar por nombre
+      return a.nombre.localeCompare(b.nombre);
+    });
+    
+    categoriasOrdenadas.forEach(cat => {
+      // Añadir indentación según el nivel
+      const indentacion = '&nbsp;'.repeat((cat.nivel - 1) * 4);
+      const opcion = document.createElement('option');
+      opcion.value = cat.id;
+      opcion.innerHTML = `${indentacion}${cat.nivel > 1 ? '↳ ' : ''}${cat.nombre}`;
+      categoriaPadreSelect.appendChild(opcion);
+    });
+  };
+  
+  // Mostrar modal para añadir una subcategoría
+  const showAddSubcategoryModal = (parentId, parentName) => {
+    resetForm();
+    modalTitle.textContent = `Nueva Subcategoría de "${parentName}"`;
+    document.getElementById('categoria_padre_id').value = parentId;
+    document.getElementById('activo-group').style.display = 'none';
+    cargarCategoriasPadre();
+    showModal(categoryModal);
+  };
+
   const showProductos = async (categoriaId, categoriaNombre) => {
     categoriaNombreSpan.textContent = categoriaNombre;
     productosListElement.innerHTML = '';
@@ -776,6 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activoInput.value = categoria.activo.toString();
 
       document.getElementById('activo-group').style.display = 'block';
+      cargarCategoriasPadre(categoria.id);
       showModal(categoryModal);
     } catch (error) {
       console.error('Error:', error);
@@ -828,7 +867,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const categoriaData = {
       nombre: nombreInput.value.trim(),
-      descripcion: descripcionInput.value.trim()
+      descripcion: descripcionInput.value.trim(),
+      categoria_padre_id: document.getElementById('categoria_padre_id').value || null
     };
 
     if (isEdit) {
@@ -942,6 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetForm();
     modalTitle.textContent = 'Nueva Categoría';
     document.getElementById('activo-group').style.display = 'none';
+    cargarCategoriasPadre();
     showModal(categoryModal);
   });
 
@@ -992,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   categoriasListElement.addEventListener('click', (event) => {
     const target = event.target;
-    const actionButton = target.closest('.btn-edit, .btn-delete, .btn-show-productos');
+    const actionButton = target.closest('.btn-edit, .btn-delete, .btn-show-productos, .btn-add-subcategory');
     
     if (!actionButton) return;
 
@@ -1006,6 +1047,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showDeleteConfirm(categoriaId, categoriaNombre);
     } else if (actionButton.classList.contains('btn-show-productos')) {
       showProductos(categoriaId, categoriaNombre);
+    } else if (actionButton.classList.contains('btn-add-subcategory')) {
+      showAddSubcategoryModal(categoriaId, categoriaNombre);
     }
   });
 
