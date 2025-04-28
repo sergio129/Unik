@@ -1,6 +1,7 @@
 // Controlador para la gestión de usuarios
 const Usuario = require('../models/usuario.model');
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize'); // Añadimos la importación de operadores
 
 // Obtener todos los usuarios
 exports.getAllUsers = async (req, res) => {
@@ -64,7 +65,8 @@ exports.createUser = async (req, res) => {
   try {
     const { 
       username, password, email, nombre_completo, rol,
-      telefono, cargo, departamento 
+      telefono, cargo, departamento, direccion, fecha_nacimiento,
+      biografia, habilidades, redes_sociales
     } = req.body;
     
     // Validación básica
@@ -84,7 +86,38 @@ exports.createUser = async (req, res) => {
       });
     }
     
-    // Crear nuevo usuario con campos extendidos
+    // Procesar habilidades y redes sociales como JSON si son strings
+    let habilidadesData = habilidades;
+    if (typeof habilidades === 'string' && habilidades) {
+      try {
+        habilidadesData = JSON.parse(habilidades);
+      } catch (e) {
+        habilidadesData = habilidades.split(',').map(h => h.trim()).filter(h => h !== '');
+      }
+    }
+    
+    let redesSocialesData = redes_sociales;
+    if (typeof redes_sociales === 'string' && redes_sociales) {
+      try {
+        redesSocialesData = JSON.parse(redes_sociales);
+      } catch (e) {
+        redesSocialesData = {};
+      }
+    }
+    
+    // Validar la fecha de nacimiento
+    let fechaNacimientoValida = null;
+    if (fecha_nacimiento) {
+      // Intentar parsear la fecha
+      const fechaParsed = new Date(fecha_nacimiento);
+      // Verificar si la fecha es válida
+      if (!isNaN(fechaParsed.getTime())) {
+        // Formatear la fecha en formato YYYY-MM-DD para MySQL
+        fechaNacimientoValida = fechaParsed.toISOString().split('T')[0];
+      }
+    }
+    
+    // Crear nuevo usuario con todos los campos
     const newUser = await Usuario.create({
       username,
       password, // El hash se genera en el hook beforeCreate
@@ -93,7 +126,12 @@ exports.createUser = async (req, res) => {
       rol: rol || 'vendedor', // Por defecto es vendedor si no se especifica
       telefono,
       cargo,
-      departamento
+      departamento,
+      direccion,
+      fecha_nacimiento: fechaNacimientoValida,
+      biografia,
+      habilidades: habilidadesData,
+      redes_sociales: redesSocialesData
     });
     
     return res.status(201).json({
@@ -107,7 +145,10 @@ exports.createUser = async (req, res) => {
         rol: newUser.rol,
         telefono: newUser.telefono,
         cargo: newUser.cargo,
-        departamento: newUser.departamento
+        departamento: newUser.departamento,
+        direccion: newUser.direccion,
+        fecha_nacimiento: newUser.fecha_nacimiento,
+        biografia: newUser.biografia
       }
     });
   } catch (error) {
@@ -126,7 +167,8 @@ exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const { 
       username, password, email, nombre_completo, rol,
-      telefono, cargo, departamento 
+      telefono, cargo, departamento, direccion, fecha_nacimiento,
+      biografia, habilidades, redes_sociales
     } = req.body;
     
     // Verificar si el usuario existe
@@ -149,6 +191,45 @@ exports.updateUser = async (req, res) => {
       }
     }
     
+    // Procesar habilidades y redes sociales si están presentes
+    let habilidadesData = undefined;
+    if (habilidades !== undefined) {
+      if (typeof habilidades === 'string') {
+        try {
+          habilidadesData = JSON.parse(habilidades);
+        } catch (e) {
+          habilidadesData = habilidades.split(',').map(h => h.trim()).filter(h => h !== '');
+        }
+      } else {
+        habilidadesData = habilidades;
+      }
+    }
+    
+    let redesSocialesData = undefined;
+    if (redes_sociales !== undefined) {
+      if (typeof redes_sociales === 'string') {
+        try {
+          redesSocialesData = JSON.parse(redes_sociales);
+        } catch (e) {
+          redesSocialesData = {};
+        }
+      } else {
+        redesSocialesData = redes_sociales;
+      }
+    }
+    
+    // Validar la fecha de nacimiento
+    let fechaNacimientoValida = null;
+    if (fecha_nacimiento) {
+      // Intentar parsear la fecha
+      const fechaParsed = new Date(fecha_nacimiento);
+      // Verificar si la fecha es válida
+      if (!isNaN(fechaParsed.getTime())) {
+        // Formatear la fecha en formato YYYY-MM-DD para MySQL
+        fechaNacimientoValida = fechaParsed.toISOString().split('T')[0];
+      }
+    }
+    
     // Preparar datos a actualizar, incluyendo campos extendidos
     const updateData = {};
     if (username) updateData.username = username;
@@ -160,6 +241,11 @@ exports.updateUser = async (req, res) => {
     if (telefono !== undefined) updateData.telefono = telefono;
     if (cargo !== undefined) updateData.cargo = cargo;
     if (departamento !== undefined) updateData.departamento = departamento;
+    if (direccion !== undefined) updateData.direccion = direccion;
+    if (fecha_nacimiento !== undefined) updateData.fecha_nacimiento = fechaNacimientoValida;
+    if (biografia !== undefined) updateData.biografia = biografia;
+    if (habilidadesData !== undefined) updateData.habilidades = habilidadesData;
+    if (redesSocialesData !== undefined) updateData.redes_sociales = redesSocialesData;
     
     // Si hay nueva contraseña, hashearla
     if (password) {
@@ -170,19 +256,25 @@ exports.updateUser = async (req, res) => {
     // Actualizar usuario
     await usuario.update(updateData);
     
+    // Preparar los datos para la respuesta
+    const respuestaData = {
+      id: usuario.id,
+      username: updateData.username || usuario.username,
+      email: updateData.email || usuario.email,
+      nombre_completo: updateData.nombre_completo || usuario.nombre_completo,
+      rol: updateData.rol || usuario.rol,
+      telefono: updateData.telefono !== undefined ? updateData.telefono : usuario.telefono,
+      cargo: updateData.cargo !== undefined ? updateData.cargo : usuario.cargo,
+      departamento: updateData.departamento !== undefined ? updateData.departamento : usuario.departamento,
+      direccion: updateData.direccion !== undefined ? updateData.direccion : usuario.direccion,
+      fecha_nacimiento: updateData.fecha_nacimiento !== undefined ? updateData.fecha_nacimiento : usuario.fecha_nacimiento,
+      biografia: updateData.biografia !== undefined ? updateData.biografia : usuario.biografia
+    };
+    
     return res.status(200).json({
       success: true,
       message: 'Usuario actualizado exitosamente',
-      data: {
-        id: usuario.id,
-        username: updateData.username || usuario.username,
-        email: updateData.email || usuario.email,
-        nombre_completo: updateData.nombre_completo || usuario.nombre_completo,
-        rol: updateData.rol || usuario.rol,
-        telefono: updateData.telefono !== undefined ? updateData.telefono : usuario.telefono,
-        cargo: updateData.cargo !== undefined ? updateData.cargo : usuario.cargo,
-        departamento: updateData.departamento !== undefined ? updateData.departamento : usuario.departamento
-      }
+      data: respuestaData
     });
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
@@ -310,7 +402,7 @@ exports.getUserStats = async (req, res) => {
     const newUsers = await Usuario.count({
       where: {
         fecha_creacion: {
-          [Usuario.sequelize.Op.gte]: lastMonth
+          [Op.gte]: lastMonth
         }
       }
     });
@@ -319,7 +411,7 @@ exports.getUserStats = async (req, res) => {
     const activeUsers = await Usuario.count({
       where: {
         ultimo_acceso: {
-          [Usuario.sequelize.Op.gte]: lastMonth
+          [Op.gte]: lastMonth
         }
       }
     });
@@ -360,7 +452,7 @@ exports.getUserCharts = async (req, res) => {
       ],
       where: {
         fecha_creacion: {
-          [Usuario.sequelize.Op.gte]: lastYear
+          [Op.gte]: lastYear
         }
       },
       group: [Usuario.sequelize.fn('DATE_FORMAT', Usuario.sequelize.col('fecha_creacion'), '%Y-%m')]
@@ -374,7 +466,7 @@ exports.getUserCharts = async (req, res) => {
       ],
       where: {
         ultimo_acceso: {
-          [Usuario.sequelize.Op.gte]: lastYear
+          [Op.gte]: lastYear
         }
       },
       group: [Usuario.sequelize.fn('DATE_FORMAT', Usuario.sequelize.col('ultimo_acceso'), '%Y-%m')]

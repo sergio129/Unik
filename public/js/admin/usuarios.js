@@ -552,7 +552,33 @@ async function loadUserData(userId) {
       document.getElementById('telefono').value = user.telefono || '';
       document.getElementById('cargo').value = user.cargo || '';
       document.getElementById('departamento').value = user.departamento || '';
-      document.getElementById('habilidades').value = user.habilidades || '';
+      document.getElementById('direccion').value = user.direccion || '';
+      document.getElementById('biografia').value = user.biografia || '';
+      
+      // Formatear la fecha de nacimiento para el input type="date"
+      if (user.fecha_nacimiento) {
+        const fecha = new Date(user.fecha_nacimiento);
+        if (!isNaN(fecha.getTime())) {
+          // Formato YYYY-MM-DD para input type="date"
+          const fechaFormateada = fecha.toISOString().split('T')[0];
+          document.getElementById('fecha_nacimiento').value = fechaFormateada;
+        }
+      }
+      
+      // Cargar habilidades
+      document.getElementById('habilidades').value = Array.isArray(user.habilidades) ? user.habilidades.join(', ') : (user.habilidades || '');
+      
+      // Cargar redes sociales si existen
+      if (user.redes_sociales) {
+        let redes = typeof user.redes_sociales === 'string' ? 
+                    JSON.parse(user.redes_sociales) : user.redes_sociales;
+        
+        if (redes) {
+          document.getElementById('linkedin').value = redes.linkedin || '';
+          document.getElementById('twitter').value = redes.twitter || '';
+          document.getElementById('facebook').value = redes.facebook || '';
+        }
+      }
       
       // Renderizar etiquetas de habilidades
       initializeSkillsField();
