@@ -126,6 +126,14 @@ try {
     console.log('❌ Error loading whatsapp routes:', error.message);
 }
 
+try {
+    const movimientosRoutes = require('./routes/movimientos-prisma.routes');
+    app.use('/api/movimientos', movimientosRoutes);
+    console.log('✅ Movimientos routes loaded');
+} catch (error) {
+    console.log('❌ Error loading movimientos routes:', error.message);
+}
+
 // Ruta para health check
 app.get('/api/health', async (req, res) => {
     try {
