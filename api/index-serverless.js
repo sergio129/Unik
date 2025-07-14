@@ -35,97 +35,46 @@ app.use((req, res, next) => {
     next();
 });
 
+// Función helper para cargar rutas de forma segura
+function loadRoute(routePath, mountPath) {
+    try {
+        const route = require(routePath);
+        app.use(mountPath, route);
+        console.log(`✅ ${mountPath} routes loaded`);
+        return true;
+    } catch (error) {
+        console.error(`❌ Error loading ${mountPath} routes:`, error.message);
+        return false;
+    }
+}
+
 // Cargar rutas de API con manejo de errores mejorado
 console.log('🔄 Cargando rutas de API...');
 
-// Auth routes
-try {
-    const authRoutes = require('../src/routes/auth-prisma.routes');
-    app.use('/api/auth', authRoutes);
-    console.log('✅ Auth routes loaded');
-} catch (error) {
-    console.error('❌ Error loading auth routes:', error.message);
-}
+// Cargar rutas en orden de prioridad
+const routes = [
+    { path: '../src/routes/auth-prisma.routes', mount: '/api/auth' },
+    { path: '../src/routes/usuarios-prisma.routes', mount: '/api/usuarios' },
+    { path: '../src/routes/categorias-prisma.routes', mount: '/api/categorias' },
+    { path: '../src/routes/productos-prisma.routes', mount: '/api/productos' },
+    { path: '../src/routes/ventas-prisma.routes', mount: '/api/ventas' },
+    { path: '../src/routes/pedidos-prisma.routes', mount: '/api/pedidos' },
+    { path: '../src/routes/clientes-prisma.routes', mount: '/api/clientes' },
+    { path: '../src/routes/actividad-prisma.routes', mount: '/api/actividad' },
+    { path: '../src/routes/movimientos-prisma.routes', mount: '/api/movimientos' }
+];
 
-// Usuarios routes
-try {
-    const usuariosRoutes = require('../src/routes/usuarios-prisma.routes');
-    app.use('/api/usuarios', usuariosRoutes);
-    console.log('✅ Usuarios routes loaded');
-} catch (error) {
-    console.error('❌ Error loading usuarios routes:', error.message);
-}
+routes.forEach(route => {
+    loadRoute(route.path, route.mount);
+});
 
-// Categorias routes
-try {
-    const categoriasRoutes = require('../src/routes/categorias-prisma.routes');
-    app.use('/api/categorias', categoriasRoutes);
-    console.log('✅ Categorias routes loaded');
-} catch (error) {
-    console.error('❌ Error loading categorias routes:', error.message);
-}
-
-// Productos routes
-try {
-    const productosRoutes = require('../src/routes/productos-prisma.routes');
-    app.use('/api/productos', productosRoutes);
-    console.log('✅ Productos routes loaded');
-} catch (error) {
-    console.error('❌ Error loading productos routes:', error.message);
-}
-
-// Ventas routes
-try {
-    const ventasRoutes = require('../src/routes/ventas-prisma.routes');
-    app.use('/api/ventas', ventasRoutes);
-    console.log('✅ Ventas routes loaded');
-} catch (error) {
-    console.error('❌ Error loading ventas routes:', error.message);
-}
-
-// Pedidos routes
-try {
-    const pedidosRoutes = require('../src/routes/pedidos-prisma.routes');
-    app.use('/api/pedidos', pedidosRoutes);
-    console.log('✅ Pedidos routes loaded');
-} catch (error) {
-    console.error('❌ Error loading pedidos routes:', error.message);
-}
-
-// Clientes routes
-try {
-    const clientesRoutes = require('../src/routes/clientes-prisma.routes');
-    app.use('/api/clientes', clientesRoutes);
-    console.log('✅ Clientes routes loaded');
-} catch (error) {
-    console.error('❌ Error loading clientes routes:', error.message);
-}
-
-// Actividad routes
-try {
-    const actividadRoutes = require('../src/routes/actividad-prisma.routes');
-    app.use('/api/actividad', actividadRoutes);
-    console.log('✅ Actividad routes loaded');
-} catch (error) {
-    console.error('❌ Error loading actividad routes:', error.message);
-}
-
-// WhatsApp routes
+// Intentar cargar WhatsApp solo si está disponible
 try {
     const whatsappRoutes = require('../src/routes/whatsapp.routes');
     app.use('/api/whatsapp', whatsappRoutes);
     console.log('✅ WhatsApp routes loaded');
 } catch (error) {
-    console.error('❌ Error loading whatsapp routes:', error.message);
-}
-
-// Movimientos routes
-try {
-    const movimientosRoutes = require('../src/routes/movimientos-prisma.routes');
-    app.use('/api/movimientos', movimientosRoutes);
-    console.log('✅ Movimientos routes loaded');
-} catch (error) {
-    console.error('❌ Error loading movimientos routes:', error.message);
+    console.log('⚠️ WhatsApp routes not available in serverless environment');
 }
 
 // Ruta para health check
@@ -150,79 +99,45 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
+// Función helper para enviar archivos HTML de forma segura
+function sendHTMLFile(res, filename) {
+    try {
+        const filePath = path.join(__dirname, '../public', filename);
+        res.sendFile(filePath);
+    } catch (error) {
+        console.error(`Error serving ${filename}:`, error);
+        res.status(404).send('Page not found');
+    }
+}
+
 // Rutas de páginas HTML
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'login.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
-});
+app.get('/', (req, res) => sendHTMLFile(res, 'index.html'));
+app.get('/login', (req, res) => sendHTMLFile(res, 'login.html'));
+app.get('/dashboard', (req, res) => sendHTMLFile(res, 'dashboard.html'));
 
 // Rutas para páginas de inventario
-app.get('/inventario/productos', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/inventario', 'productos.html'));
-});
-
-app.get('/inventario/categorias', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/inventario', 'categorias.html'));
-});
-
-app.get('/inventario/movimientos', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/inventario', 'movimientos.html'));
-});
-
-app.get('/inventario', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/inventario', 'inventario.html'));
-});
+app.get('/inventario/productos', (req, res) => sendHTMLFile(res, 'inventario/productos.html'));
+app.get('/inventario/categorias', (req, res) => sendHTMLFile(res, 'inventario/categorias.html'));
+app.get('/inventario/movimientos', (req, res) => sendHTMLFile(res, 'inventario/movimientos.html'));
+app.get('/inventario', (req, res) => sendHTMLFile(res, 'inventario/inventario.html'));
 
 // Rutas para páginas de ventas
-app.get('/ventas/ventas', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
-});
-
-app.get('/ventas/clientes', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/ventas', 'clientes.html'));
-});
-
-app.get('/ventas/historial', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/ventas', 'historial.html'));
-});
-
-app.get('/ventas', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
-});
+app.get('/ventas/ventas', (req, res) => sendHTMLFile(res, 'ventas/ventas.html'));
+app.get('/ventas/clientes', (req, res) => sendHTMLFile(res, 'ventas/clientes.html'));
+app.get('/ventas/historial', (req, res) => sendHTMLFile(res, 'ventas/historial.html'));
+app.get('/ventas', (req, res) => sendHTMLFile(res, 'ventas/ventas.html'));
 
 // Rutas para páginas de pedidos
-app.get('/pedidos/pedidos', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
-});
-
-app.get('/pedidos', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
-});
+app.get('/pedidos/pedidos', (req, res) => sendHTMLFile(res, 'pedidos/pedidos.html'));
+app.get('/pedidos', (req, res) => sendHTMLFile(res, 'pedidos/pedidos.html'));
 
 // Rutas para páginas de administración
-app.get('/admin/usuarios', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/admin', 'usuarios.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/admin', 'usuarios.html'));
-});
+app.get('/admin/usuarios', (req, res) => sendHTMLFile(res, 'admin/usuarios.html'));
+app.get('/admin', (req, res) => sendHTMLFile(res, 'admin/usuarios.html'));
 
 // Rutas para páginas de perfil
-app.get('/perfil/perfil', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
-});
-
-app.get('/perfil', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
-});
+app.get('/perfil/perfil', (req, res) => sendHTMLFile(res, 'perfil/perfil.html'));
+app.get('/perfil', (req, res) => sendHTMLFile(res, 'perfil/perfil.html'));
 
 // Catch-all handler para rutas no encontradas
 app.get('*', (req, res) => {
@@ -242,14 +157,13 @@ app.get('*', (req, res) => {
                 '/api/pedidos/*',
                 '/api/clientes/*',
                 '/api/actividad/*',
-                '/api/whatsapp/*',
                 '/api/movimientos/*'
             ]
         });
     }
     
     // Para cualquier otra ruta, servir la página principal
-    res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
+    sendHTMLFile(res, 'dashboard.html');
 });
 
 // Middleware para manejo de errores
