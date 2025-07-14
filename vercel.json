@@ -1,11 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "src/index-prisma.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -20,11 +14,6 @@
       "dest": "/public/$1"
     }
   ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret", 
-    "NODE_ENV": "production"
-  },
   "functions": {
     "src/index-prisma.js": {
       "maxDuration": 30
