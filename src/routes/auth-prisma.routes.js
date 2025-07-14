@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth-prisma.controller');
-const { authenticateToken } = require('../middlewares/auth.middleware');
+const { authenticateToken } = require('../middlewares/auth-prisma.middleware');
 
 // Rutas públicas
 router.post('/login', authController.login);

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const ventasController = require('../controllers/ventas-prisma.controller');
-const { authenticateToken, authorizeRoles } = require('../middlewares/auth.middleware');
+const { authenticateToken, authorizeRoles } = require('../middlewares/auth-prisma.middleware');
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
