@@ -3,35 +3,35 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/login",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/dashboard",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/inventario/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/ventas/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/pedidos/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/admin/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/perfil/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html|mp3))",
@@ -39,11 +39,11 @@
     },
     {
       "src": "/",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index.js"
     }
   ],
   "functions": {
-    "api/index-serverless.js": {
+    "api/index.js": {
       "maxDuration": 30
     }
   },
