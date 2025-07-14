@@ -3,7 +3,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/src/index-prisma.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html))",
@@ -15,7 +15,7 @@
     }
   ],
   "functions": {
-    "src/index-prisma.js": {
+    "api/index.js": {
       "maxDuration": 30
     }
   }
