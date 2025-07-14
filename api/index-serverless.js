@@ -7,20 +7,24 @@ const path = require('path');
 require('dotenv').config();
 
 // Verificar variables de entorno críticas
-if (!process.env.DATABASE_URL) {
-    console.error('❌ ERROR: DATABASE_URL no está configurada');
-    process.exit(1);
+const hasDatabaseUrl = !!process.env.DATABASE_URL;
+if (!hasDatabaseUrl) {
+    console.error('❌ WARNING: DATABASE_URL no está configurada - modo degradado');
 }
 
 // Inicializar Prisma con manejo de errores
 let prisma;
 try {
-    const { PrismaClient } = require('@prisma/client');
-    prisma = new PrismaClient({
-        log: ['error'],
-        errorFormat: 'minimal'
-    });
-    console.log('✅ Prisma inicializado correctamente');
+    if (hasDatabaseUrl) {
+        const { PrismaClient } = require('@prisma/client');
+        prisma = new PrismaClient({
+            log: ['error'],
+            errorFormat: 'minimal'
+        });
+        console.log('✅ Prisma inicializado correctamente');
+    } else {
+        throw new Error('DATABASE_URL not configured');
+    }
 } catch (error) {
     console.error('❌ Error inicializando Prisma:', error.message);
     // Crear un mock de prisma para evitar que la app crashee
@@ -245,13 +249,15 @@ app.use((error, req, res, next) => {
 
 console.log('📝 Servidor serverless configurado para Vercel');
 
-// Manejo de errores no capturados
+// Manejo de errores no capturados (sin terminar el proceso)
 process.on('unhandledRejection', (reason, promise) => {
     console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    // No terminar el proceso en serverless
 });
 
 process.on('uncaughtException', (error) => {
     console.error('💥 Uncaught Exception:', error);
+    // No terminar el proceso en serverless
 });
 
 // Export para Vercel
