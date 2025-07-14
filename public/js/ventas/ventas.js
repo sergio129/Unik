@@ -1432,7 +1432,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
       
-      const response = await fetch('/api/ventas/nueva', {
+      const response = await fetch('/api/ventas/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1452,7 +1452,7 @@ document.addEventListener('DOMContentLoaded', function() {
       Swal.fire({
         icon: 'success',
         title: 'Venta realizada',
-        text: `Factura ${resultado.factura.numero} generada correctamente`,
+        text: `Venta ${resultado.factura.numero_venta || resultado.factura.numero} generada correctamente`,
         confirmButtonText: 'Ver factura'
       }).then((result) => {
         if (result.isConfirmed) {

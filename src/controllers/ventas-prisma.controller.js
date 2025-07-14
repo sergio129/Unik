@@ -139,10 +139,10 @@ exports.createVenta = async (req, res) => {
   try {
     const { cliente_id, items, metodo_pago, observaciones } = req.body;
     
-    if (!cliente_id || !items || items.length === 0) {
+    if (!items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Datos incompletos para crear la venta'
+        message: 'Debe agregar al menos un producto para crear la venta'
       });
     }
     
@@ -150,7 +150,7 @@ exports.createVenta = async (req, res) => {
     const userId = req.user?.id || 1;
     
     const resultado = await prisma.$transaction(async (tx) => {
-      // Verificar stock de productos
+      // Verificar stock de productos y obtener información
       for (const item of items) {
         const producto = await tx.producto.findUnique({
           where: { codigo: item.producto_codigo }
@@ -160,53 +160,63 @@ exports.createVenta = async (req, res) => {
           throw new Error(`Producto con código ${item.producto_codigo} no encontrado`);
         }
         
-        if (producto.cantidad < item.cantidad) {
-          throw new Error(`Stock insuficiente para el producto ${producto.nombre}. Stock disponible: ${producto.cantidad}`);
+        if (producto.stock < item.cantidad) {
+          throw new Error(`Stock insuficiente para el producto ${producto.nombre}. Stock disponible: ${producto.stock}`);
         }
+        
+        // Añadir el ID del producto al item para usarlo después
+        item.producto_id = producto.id;
       }
       
       // Calcular totales
       let subtotal = 0;
       for (const item of items) {
-        subtotal += item.precio * item.cantidad;
+        subtotal += item.precio_unitario * item.cantidad;
       }
       
-      const impuestos = subtotal * 0.19; // IVA del 19%
-      const total = subtotal + impuestos;
+      const impuestos = 0; // Sin IVA según configuración del frontend
+      const total = subtotal;
       
-      // Generar número de factura
-      const ultimaFactura = await tx.factura.findFirst({
-        orderBy: { numero: 'desc' }
+      // Generar número de venta
+      const ultimaVenta = await tx.venta.findFirst({
+        orderBy: { numero_venta: 'desc' }
       });
       
-      const numeroFactura = ultimaFactura ? ultimaFactura.numero + 1 : 1;
+      // Extraer el número de la última venta (formato V000001)
+      let numeroVenta = 1;
+      if (ultimaVenta && ultimaVenta.numero_venta) {
+        const match = ultimaVenta.numero_venta.match(/V(\d+)/);
+        if (match) {
+          numeroVenta = parseInt(match[1]) + 1;
+        }
+      }
       
-      // Crear la factura
-      const nuevaFactura = await tx.factura.create({
+      const numeroVentaFormateado = `V${numeroVenta.toString().padStart(6, '0')}`;
+      
+      // Crear la venta
+      const nuevaVenta = await tx.venta.create({
         data: {
-          numero: numeroFactura,
-          cliente_id: parseInt(cliente_id),
-          fecha: new Date(),
+          numero_venta: numeroVentaFormateado,
+          cliente_id: cliente_id ? parseInt(cliente_id) : null,
           subtotal: subtotal,
           impuestos: impuestos,
           total: total,
           metodo_pago: metodo_pago || 'efectivo',
           observaciones: observaciones || null,
-          estado: 'pagada',
-          usuario_id: userId
+          estado: 'completada'
         }
       });
       
-      // Crear detalles de la factura y actualizar stock
+      // Crear items de la venta y actualizar stock
       for (const item of items) {
-        // Crear detalle
-        await tx.detalleFactura.create({
+        // Crear item de venta
+        await tx.itemVenta.create({
           data: {
-            factura_id: nuevaFactura.id,
-            producto_codigo: item.producto_codigo,
+            venta_id: nuevaVenta.id,
+            producto_id: item.producto_id,
             cantidad: item.cantidad,
-            precio_unitario: item.precio,
-            subtotal: item.precio * item.cantidad
+            precio: item.precio_unitario,
+            subtotal: item.precio_unitario * item.cantidad
           }
         });
         
@@ -215,37 +225,37 @@ exports.createVenta = async (req, res) => {
           where: { codigo: item.producto_codigo }
         });
         
-        const nuevoStock = producto.cantidad - item.cantidad;
+        const nuevoStock = producto.stock - item.cantidad;
         
         await tx.producto.update({
           where: { codigo: item.producto_codigo },
-          data: { cantidad: nuevoStock }
+          data: { stock: nuevoStock }
         });
         
         // Registrar movimiento de inventario
         await tx.movimientoInventario.create({
           data: {
-            producto_codigo: item.producto_codigo,
-            tipo_movimiento: 'salida',
+            producto_id: item.producto_id,
+            tipo: 'venta',
             cantidad: item.cantidad,
-            stock_anterior: producto.cantidad,
-            stock_nuevo: nuevoStock,
-            motivo: `Venta - Factura #${numeroFactura}`,
-            usuario_id: userId,
-            documento_referencia: `F${numeroFactura.toString().padStart(8, '0')}`
+            stock_anterior: producto.stock,
+            stock_actual: nuevoStock,
+            motivo: `Venta - ${numeroVentaFormateado}`,
+            referencia: numeroVentaFormateado,
+            usuario_id: userId
           }
         });
       }
       
-      return nuevaFactura;
+      return nuevaVenta;
     });
     
-    // Obtener la factura completa
-    const facturaCompleta = await prisma.factura.findUnique({
+    // Obtener la venta completa con sus relaciones
+    const ventaCompleta = await prisma.venta.findUnique({
       where: { id: resultado.id },
       include: {
         cliente: true,
-        detalles: {
+        items: {
           include: {
             producto: {
               select: { codigo: true, nombre: true }
@@ -258,7 +268,8 @@ exports.createVenta = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Venta realizada con éxito',
-      data: facturaCompleta
+      data: ventaCompleta,
+      factura: ventaCompleta // Para compatibilidad con el frontend
     });
   } catch (error) {
     console.error('Error al crear venta:', error);

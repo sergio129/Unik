@@ -16,6 +16,7 @@ router.get('/:id/pdf', ventasController.generarPDF);
 
 // Rutas de modificación
 router.post('/', authorizeRoles(['admin', 'empleado', 'vendedor']), ventasController.createVenta);
+router.post('/nueva', authorizeRoles(['admin', 'empleado', 'vendedor']), ventasController.createVenta); // Alias para compatibilidad
 router.put('/:id/anular', authorizeRoles(['admin']), ventasController.anularFactura);
 router.post('/:id/devolucion', authorizeRoles(['admin', 'empleado']), ventasController.procesarDevolucion);
 
