@@ -9,6 +9,7 @@ router.use(authenticateToken);
 
 // Rutas de consulta
 router.get('/', productosController.getAllProductos);
+router.get('/ventas', productosController.getProductosParaVentas); // Nueva ruta para ventas
 router.get('/count', productosController.getProductosCount);
 router.get('/search', productosController.searchProductos);
 router.get('/bajo-stock', productosController.getProductosBajoStock);

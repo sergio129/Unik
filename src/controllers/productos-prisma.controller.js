@@ -51,6 +51,15 @@ exports.getAllProductos = async (req, res) => {
     
     const whereConditions = {};
     
+    // Por defecto, solo mostrar productos activos (especialmente para ventas)
+    // Solo si se especifica explícitamente activo=false, mostrar inactivos
+    if (activo !== undefined) {
+      whereConditions.activo = activo === 'true';
+    } else {
+      // Por defecto mostrar solo productos activos
+      whereConditions.activo = true;
+    }
+    
     // Filtro de búsqueda
     if (buscar) {
       whereConditions.OR = [
@@ -63,11 +72,6 @@ exports.getAllProductos = async (req, res) => {
     // Filtrar por categoría
     if (categoria) {
       whereConditions.categoria_id = parseInt(categoria);
-    }
-    
-    // Filtrar por activo/inactivo
-    if (activo !== undefined) {
-      whereConditions.activo = activo === 'true';
     }
     
     // Filtrar productos con bajo stock
@@ -784,6 +788,75 @@ exports.getHistorialPrecios = async (req, res) => {
       success: false,
       message: 'Error al obtener historial de precios',
       error: error.message
+    });
+  }
+};
+
+// Obtener productos específicamente para ventas (solo activos)
+exports.getProductosParaVentas = async (req, res) => {
+  try {
+    const { buscar, categoria, soloConStock } = req.query;
+    
+    const whereConditions = {
+      activo: true // Siempre solo productos activos para ventas
+    };
+    
+    // Filtro de búsqueda
+    if (buscar) {
+      whereConditions.OR = [
+        { nombre: { contains: buscar, mode: 'insensitive' } },
+        { codigo: { contains: buscar, mode: 'insensitive' } },
+        { descripcion: { contains: buscar, mode: 'insensitive' } }
+      ];
+    }
+    
+    // Filtrar por categoría
+    if (categoria) {
+      whereConditions.categoria_id = parseInt(categoria);
+    }
+    
+    // Filtrar solo productos con stock
+    if (soloConStock === 'true') {
+      whereConditions.stock = {
+        gt: 0
+      };
+    }
+    
+    const productos = await prisma.producto.findMany({
+      where: whereConditions,
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        descripcion: true,
+        precio: true,
+        stock: true,
+        stock_minimo: true,
+        categoria: {
+          select: { id: true, nombre: true }
+        },
+        activo: true
+      },
+      orderBy: { nombre: 'asc' }
+    });
+    
+    // Transformar datos para compatibilidad con frontend
+    const productosTransformados = productos.map(producto => ({
+      ...producto,
+      cantidad: producto.stock, // Mapear stock a cantidad para compatibilidad
+      precio: parseFloat(producto.precio)
+    }));
+    
+    return res.status(200).json({
+      success: true,
+      data: productosTransformados
+    });
+  } catch (error) {
+    console.error('Error al obtener productos para ventas:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }
 };

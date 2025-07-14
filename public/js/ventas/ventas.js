@@ -635,9 +635,13 @@ document.addEventListener('DOMContentLoaded', function() {
       
       let productos = [];
       
-      // Primero intentamos buscar productos por nombre, código o descripción
+      // Usar la nueva ruta específica para ventas que garantiza productos activos
       try {
-        const response = await fetch(`/api/productos?buscar=${encodeURIComponent(termino)}`, {
+        const params = new URLSearchParams();
+        if (termino) params.append('buscar', termino);
+        if (soloConStock) params.append('soloConStock', 'true');
+        
+        const response = await fetch(`/api/productos/ventas?${params.toString()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -648,11 +652,33 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
       } catch (error) {
-        console.error('Error en búsqueda principal:', error);
+        console.error('Error en búsqueda de productos para ventas:', error);
+        
+        // Fallback a la búsqueda original con filtro de activos
+        try {
+          const params = new URLSearchParams();
+          if (termino) params.append('buscar', termino);
+          params.append('activo', 'true'); // Forzar solo productos activos
+          
+          const response = await fetch(`/api/productos?${params.toString()}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              productos = result.data.map(p => ({
+                ...p,
+                cantidad: p.stock || p.cantidad || 0 // Asegurar compatibilidad
+              }));
+            }
+          }
+        } catch (fallbackError) {
+          console.error('Error en búsqueda fallback:', fallbackError);
+        }
       }
       
-      // Si no se encontraron productos o el término parece código de barras, 
-      // intentamos buscar directamente por código de barras
+      // Si no se encontraron productos y hay un término, intentar búsqueda por código de barras
       if (productos.length === 0 && termino !== '') {
         try {
           const barcodeResponse = await fetch(`/api/productos/barcode/${encodeURIComponent(termino)}`, {
@@ -662,8 +688,12 @@ document.addEventListener('DOMContentLoaded', function() {
           if (barcodeResponse.ok) {
             const barcodeResult = await barcodeResponse.json();
             if (barcodeResult.success && barcodeResult.data) {
-              // Si encontramos el producto por código de barras, lo agregamos a los resultados
-              productos.push(barcodeResult.data);
+              // Verificar que el producto esté activo
+              const producto = barcodeResult.data;
+              if (producto.activo) {
+                producto.cantidad = producto.stock || producto.cantidad || 0;
+                productos.push(producto);
+              }
             }
           }
         } catch (barcodeError) {
@@ -671,13 +701,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       
-      // Si después de ambos intentos no hay productos, mostramos mensaje de no encontrados
+      // Si después de todos los intentos no hay productos, mostrar mensaje
       if (productos.length === 0) {
-        listaProductos.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron productos</td></tr>';
+        listaProductos.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron productos activos</td></tr>';
         return;
       }
       
-      let productosFiltrados = soloConStock ? productos.filter(p => p.cantidad > 0) : productos;
+      // Filtrar por stock si es necesario (doble verificación)
+      let productosFiltrados = soloConStock ? productos.filter(p => (p.cantidad || p.stock || 0) > 0) : productos;
       
       // Limitar a los primeros 20 resultados para mejor rendimiento
       productosFiltrados = productosFiltrados.slice(0, 20);
@@ -857,19 +888,32 @@ document.addEventListener('DOMContentLoaded', function() {
     let html = '';
     
     productos.forEach(producto => {
-      const stockClass = producto.cantidad <= producto.stock_minimo ? 'text-danger' : '';
+      // Asegurar que tenemos un valor de stock válido
+      const stock = producto.cantidad || producto.stock || 0;
+      const stockMinimo = producto.stock_minimo || 5;
+      const precio = parseFloat(producto.precio || 0);
+      
+      const stockClass = stock <= stockMinimo ? 'text-danger' : (stock <= stockMinimo * 2 ? 'text-warning' : '');
       
       html += `<tr class="producto-item">
         <td>${producto.codigo}</td>
         <td>${producto.nombre}</td>
-        <td class="text-end">$${parseFloat(producto.precio).toFixed(2)}</td>
-        <td class="text-end ${stockClass}">${producto.cantidad}</td>
+        <td class="text-end">$${precio.toFixed(2)}</td>
+        <td class="text-end ${stockClass}">${stock}</td>
         <td class="text-center">
-          <button class="btn btn-sm btn-primary btn-agregar" data-codigo="${producto.codigo}">
+          <button class="btn btn-sm btn-primary btn-agregar" data-codigo="${producto.codigo}" ${stock <= 0 ? 'disabled' : ''}>
             <i class="fas fa-plus"></i>
           </button>
         </td>
       </tr>`;
+      
+      // Asegurar que el producto en cache tenga los campos correctos
+      productosCache[producto.codigo] = {
+        ...producto,
+        cantidad: stock,
+        stock: stock,
+        precio: precio
+      };
     });
     
     listaProductos.innerHTML = html;
@@ -887,21 +931,36 @@ document.addEventListener('DOMContentLoaded', function() {
       row.addEventListener('click', (e) => {
         if (!e.target.classList.contains('btn-agregar') && !e.target.classList.contains('fa-plus')) {
           const codigo = row.querySelector('.btn-agregar').getAttribute('data-codigo');
-          mostrarSeleccionCantidad(productosCache[codigo]);
+          const producto = productosCache[codigo];
+          if (producto && (producto.cantidad || producto.stock || 0) > 0) {
+            mostrarSeleccionCantidad(producto);
+          }
         }
       });
     });
   }
 
   function mostrarSeleccionCantidad(producto) {
+    const stock = producto.cantidad || producto.stock || 0;
+    const precio = parseFloat(producto.precio || 0);
+    
+    if (stock <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin stock',
+        text: 'Este producto no tiene stock disponible'
+      });
+      return;
+    }
+    
     productoSeleccionado.value = `${producto.codigo} - ${producto.nombre}`;
     productoCodigo.value = producto.codigo;
-    precioUnitario.value = parseFloat(producto.precio).toFixed(2);
+    precioUnitario.value = precio.toFixed(2);
     cantidadAgregar.value = 1;
-    stockDisponible.value = producto.cantidad;
+    stockDisponible.value = stock;
     
     // Establecer cantidad máxima
-    cantidadAgregar.max = producto.cantidad;
+    cantidadAgregar.max = stock;
     
     // Calcular subtotal inicial
     calcularSubtotalProducto();
