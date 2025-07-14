@@ -48,6 +48,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Middleware para logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`Request URL: ${req.url}`);
     next();
 });
 
@@ -169,24 +170,29 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
 });
 
-// Rutas para páginas HTML de inventario
+// Rutas para páginas HTML de inventario (orden específico a general)
 app.get('/inventario/productos', (req, res) => {
+    console.log('Serving inventario/productos.html');
     res.sendFile(path.join(__dirname, '../public/inventario', 'productos.html'));
 });
 
 app.get('/inventario/categorias', (req, res) => {
+    console.log('Serving inventario/categorias.html');
     res.sendFile(path.join(__dirname, '../public/inventario', 'categorias.html'));
 });
 
 app.get('/inventario/movimientos', (req, res) => {
+    console.log('Serving inventario/movimientos.html');
     res.sendFile(path.join(__dirname, '../public/inventario', 'movimientos.html'));
 });
 
 app.get('/inventario', (req, res) => {
+    console.log('Serving inventario/inventario.html');
     res.sendFile(path.join(__dirname, '../public/inventario', 'inventario.html'));
 });
 
 app.get('/inventario/', (req, res) => {
+    console.log('Serving inventario/inventario.html (with trailing slash)');
     res.sendFile(path.join(__dirname, '../public/inventario', 'inventario.html'));
 });
 
