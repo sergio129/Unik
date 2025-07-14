@@ -185,15 +185,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Validación en tiempo real para mejorar UX
     usernameInput.addEventListener('input', function() {
-        validateInput(usernameInput, 'Por favor ingrese un nombre de usuario válido');
+        validateInput(usernameInput, 'Por favor ingrese un nombre de usuario válido', 'username');
     });
     
     passwordInput.addEventListener('input', function() {
-        validateInput(passwordInput, 'La contraseña debe tener al menos 6 caracteres');
+        validateInput(passwordInput, 'La contraseña debe tener al menos 6 caracteres', 'password');
     });
     
-    function validateInput(input, message) {
-        const isValid = input.checkValidity();
+    function validateInput(input, message, fieldType) {
+        let isValid = true;
+        
+        if (fieldType === 'username') {
+            isValid = input.value.trim().length > 0;
+        } else if (fieldType === 'password') {
+            // No aplicar validación estricta de longitud aquí, solo verificar que no esté vacío
+            isValid = input.value.length > 0;
+        } else {
+            isValid = input.checkValidity();
+        }
         
         if (!isValid) {
             input.classList.add('input-error');
