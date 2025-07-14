@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "api/index-serverless.js": {
-      "runtime": "@vercel/node",
-      "maxDuration": 30,
-      "memory": 1024
+  "builds": [
+    {
+      "src": "api/index-serverless.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
