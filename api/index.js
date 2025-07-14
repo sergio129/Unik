@@ -1,100 +1,79 @@
-// Servidor serverless optimizado para Vercel
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-// Cargar dotenv primero
-require('dotenv').config();
-
-// Verificar variables de entorno críticas
-const hasDatabaseUrl = !!process.env.DATABASE_URL;
-if (!hasDatabaseUrl) {
-    console.error('❌ WARNING: DATABASE_URL no está configurada - modo degradado');
-}
-
-// Inicializar Prisma con manejo de errores
-let prisma;
-try {
-    if (hasDatabaseUrl) {
-        const { PrismaClient } = require('@prisma/client');
-        prisma = new PrismaClient({
-            log: ['error'],
-            errorFormat: 'minimal'
-        });
-        console.log('✅ Prisma inicializado correctamente');
-    } else {
-        throw new Error('DATABASE_URL not configured');
-    }
-} catch (error) {
-    console.error('❌ Error inicializando Prisma:', error.message);
-    // Crear un mock de prisma para evitar que la app crashee
-    prisma = {
-        $queryRaw: () => Promise.reject(new Error('Database not available')),
-        $disconnect: () => Promise.resolve()
-    };
-}
-
-// Hacer que prisma sea accesible globalmente
-global.prisma = prisma;
-global.whatsappInitialized = false;
-
 const app = express();
 
-// Middleware para CORS más permisivo para Vercel
-app.use(cors({
-    origin: true, // Permite cualquier origen en production
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
-}));
+// Middleware básico
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Middleware para parsing
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Configurar Express para servir archivos estáticos
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Middleware para archivos estáticos
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Middleware para logging
+// Configurar cabeceras CORS
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.header('Allow', 'GET, POST, OPTIONS, PUT, DELETE');
+  next();
 });
 
-// Función helper para cargar rutas de forma segura
-function loadRoute(routePath, mountPath) {
-    try {
-        const route = require(routePath);
+// Middleware para verificar autenticación en rutas protegidas
+const checkAuth = (req, res, next) => {
+  // Para API calls, verificar el token en el header
+  if (req.headers.authorization) {
+    return next();
+  }
+  
+  // Para peticiones del navegador, usar localStorage
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <title>Verificando autenticación</title>
+    </head>
+    <body>
+      <script>
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('usuario');
         
-        // Verificar que la ruta exporta una función válida de Express
-        if (typeof route !== 'function') {
-            console.error(`❌ ${mountPath} routes: exported value is not a function`);
-            return false;
+        if (!token || !user) {
+          // No hay sesión, redirigir al login
+          window.location.href = '/login';
+        } else {
+          // Hay sesión, proceder normalmente
+          document.write('Redirigiendo...');
+          setTimeout(() => {
+            let path = '${req.path}';
+            
+            if (path === '/dashboard') {
+              window.location.replace('/dashboard.html');
+            } else if (path === '/ventas') {
+              window.location.replace('/ventas/ventas.html');
+            } else if (path === '/inventario') {
+              window.location.replace('/inventario/inventario.html');
+            } else if (path === '/pedidos') {
+              window.location.replace('/pedidos/pedidos.html');
+            } else if (path === '/admin/usuarios') {
+              window.location.replace('/admin/usuarios.html');
+            } else {
+              window.location.replace(path + '.html');
+            }
+          }, 100);
         }
-        
-        app.use(mountPath, route);
-        console.log(`✅ ${mountPath} routes loaded`);
-        return true;
-    } catch (error) {
-        console.error(`❌ Error loading ${mountPath} routes:`, error.message);
-        
-        // Crear ruta de fallback para evitar errores 404
-        app.use(mountPath, (req, res) => {
-            res.status(503).json({
-                success: false,
-                message: `Servicio ${mountPath} temporalmente no disponible`,
-                error: 'Module loading failed'
-            });
-        });
-        
-        return false;
-    }
-}
+      </script>
+    </body>
+    </html>
+  `);
+};
 
-// Cargar rutas de API con manejo de errores mejorado
+// Cargar rutas de API con manejo de errores
 console.log('🔄 Cargando rutas de API...');
 
-// Cargar rutas en orden de prioridad
 const routes = [
     { path: '../src/routes/auth-prisma.routes', mount: '/api/auth' },
     { path: '../src/routes/usuarios-prisma.routes', mount: '/api/usuarios' },
@@ -109,156 +88,126 @@ const routes = [
 
 let loadedRoutes = 0;
 routes.forEach(route => {
-    if (loadRoute(route.path, route.mount)) {
-        loadedRoutes++;
+    try {
+        const routeModule = require(route.path);
+        if (typeof routeModule === 'function') {
+            app.use(route.mount, routeModule);
+            console.log(`✅ ${route.mount} routes loaded`);
+            loadedRoutes++;
+        } else {
+            console.error(`❌ ${route.mount} routes: exported value is not a function`);
+        }
+    } catch (error) {
+        console.error(`❌ Error loading ${route.mount} routes:`, error.message);
+        
+        // Crear ruta de fallback
+        app.use(route.mount, (req, res) => {
+            res.status(503).json({
+                success: false,
+                message: `Servicio ${route.mount} temporalmente no disponible`,
+                error: 'Module loading failed'
+            });
+        });
     }
 });
 
 console.log(`📊 Rutas cargadas: ${loadedRoutes}/${routes.length}`);
 
-// Intentar cargar WhatsApp solo si está disponible
-try {
-    const whatsappRoutes = require('../src/routes/whatsapp.routes');
-    app.use('/api/whatsapp', whatsappRoutes);
-    console.log('✅ WhatsApp routes loaded');
-} catch (error) {
-    console.log('⚠️ WhatsApp routes not available in serverless environment');
-    
-    // Crear rutas de fallback para WhatsApp
-    app.use('/api/whatsapp', (req, res) => {
-        res.status(503).json({
-            success: false,
-            message: 'Servicio de WhatsApp no disponible en el entorno serverless',
-            error: 'Service not supported'
-        });
-    });
-}
+// Ruta básica para la API
+app.get('/api', (req, res) => {
+  res.json({ message: 'API de La UNIKa', status: 'OK' });
+});
 
-// Ruta para health check
-app.get('/api/health', async (req, res) => {
-    const health = {
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'production',
-        vercel: true,
-        database: 'unknown',
         routes: `${loadedRoutes}/${routes.length} loaded`,
-        memory: process.memoryUsage(),
-        uptime: process.uptime(),
-        node_version: process.version
-    };
-
-    try {
-        // Verificar conexión a base de datos
-        await prisma.$queryRaw`SELECT 1`;
-        health.database = 'connected';
-        health.status = 'OK';
-    } catch (error) {
-        health.database = 'disconnected';
-        health.database_error = error.message;
-        health.status = 'DEGRADED';
-    }
-
-    const statusCode = health.status === 'OK' ? 200 : 503;
-    res.status(statusCode).json(health);
-});
-
-// Función helper para enviar archivos HTML de forma segura
-function sendHTMLFile(res, filename) {
-    try {
-        const filePath = path.join(__dirname, '../public', filename);
-        res.sendFile(filePath);
-    } catch (error) {
-        console.error(`Error serving ${filename}:`, error);
-        res.status(404).send('Page not found');
-    }
-}
-
-// Rutas de páginas HTML
-app.get('/', (req, res) => sendHTMLFile(res, 'index.html'));
-app.get('/login', (req, res) => sendHTMLFile(res, 'login.html'));
-app.get('/dashboard', (req, res) => sendHTMLFile(res, 'dashboard.html'));
-
-// Rutas para páginas de inventario
-app.get('/inventario/productos', (req, res) => sendHTMLFile(res, 'inventario/productos.html'));
-app.get('/inventario/categorias', (req, res) => sendHTMLFile(res, 'inventario/categorias.html'));
-app.get('/inventario/movimientos', (req, res) => sendHTMLFile(res, 'inventario/movimientos.html'));
-app.get('/inventario', (req, res) => sendHTMLFile(res, 'inventario/inventario.html'));
-
-// Rutas para páginas de ventas
-app.get('/ventas/ventas', (req, res) => sendHTMLFile(res, 'ventas/ventas.html'));
-app.get('/ventas/clientes', (req, res) => sendHTMLFile(res, 'ventas/clientes.html'));
-app.get('/ventas/historial', (req, res) => sendHTMLFile(res, 'ventas/historial.html'));
-app.get('/ventas', (req, res) => sendHTMLFile(res, 'ventas/ventas.html'));
-
-// Rutas para páginas de pedidos
-app.get('/pedidos/pedidos', (req, res) => sendHTMLFile(res, 'pedidos/pedidos.html'));
-app.get('/pedidos', (req, res) => sendHTMLFile(res, 'pedidos/pedidos.html'));
-
-// Rutas para páginas de administración
-app.get('/admin/usuarios', (req, res) => sendHTMLFile(res, 'admin/usuarios.html'));
-app.get('/admin', (req, res) => sendHTMLFile(res, 'admin/usuarios.html'));
-
-// Rutas para páginas de perfil
-app.get('/perfil/perfil', (req, res) => sendHTMLFile(res, 'perfil/perfil.html'));
-app.get('/perfil', (req, res) => sendHTMLFile(res, 'perfil/perfil.html'));
-
-// Catch-all handler para rutas no encontradas
-app.use('*', (req, res) => {
-    // Si es una ruta de API que no existe, devolver JSON 404
-    if (req.path.startsWith('/api/')) {
-        return res.status(404).json({
-            success: false,
-            message: 'Endpoint no encontrado',
-            path: req.path,
-            method: req.method,
-            availableEndpoints: [
-                '/api/health',
-                '/api/auth/*',
-                '/api/usuarios/*',
-                '/api/categorias/*',
-                '/api/productos/*',
-                '/api/ventas/*',
-                '/api/pedidos/*',
-                '/api/clientes/*',
-                '/api/actividad/*',
-                '/api/movimientos/*'
-            ]
-        });
-    }
-    
-    // Para cualquier otra ruta, servir la página principal
-    try {
-        sendHTMLFile(res, 'dashboard.html');
-    } catch (error) {
-        console.error('Error serving fallback page:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-// Middleware para manejo de errores
-app.use((error, req, res, next) => {
-    console.error('💥 Error no controlado:', error);
-    res.status(500).json({
-        success: false,
-        message: 'Error interno del servidor',
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
-        timestamp: new Date().toISOString()
+        version: '1.0.0'
     });
 });
 
-console.log('📝 Servidor serverless configurado para Vercel');
-
-// Manejo de errores no capturados (sin terminar el proceso)
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-    // No terminar el proceso en serverless
+// Ruta específica para la página de login (sin extensión .html)
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 });
 
-process.on('uncaughtException', (error) => {
-    console.error('💥 Uncaught Exception:', error);
-    // No terminar el proceso en serverless
+// Ruta para el dashboard (protegida)
+app.get('/dashboard', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'dashboard.html'));
 });
+
+// Ruta para el administrador de usuarios (protegida, solo admin)
+app.get('/admin/usuarios', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin', 'usuarios.html'));
+});
+
+// Rutas para el módulo de inventario
+app.get('/inventario', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'inventario', 'inventario.html'));
+});
+
+app.get('/inventario/categorias', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'inventario', 'categorias.html'));
+});
+
+app.get('/inventario/productos', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'inventario', 'productos.html'));
+});
+
+app.get('/inventario/movimientos', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'inventario', 'movimientos.html'));
+});
+
+// Rutas para el módulo de pedidos
+app.get('/pedidos', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'pedidos', 'pedidos.html'));
+});
+
+// Rutas para el módulo de ventas
+app.get('/ventas', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'ventas', 'ventas.html'));
+});
+
+app.get('/ventas/clientes', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'ventas', 'clientes.html'));
+});
+
+app.get('/ventas/historial', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'ventas', 'historial.html'));
+});
+
+// Ruta para servir el frontend en la raíz
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+// Manejador de errores para rutas no encontradas de la API
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'Ruta de API no encontrada' });
+});
+
+// Manejador para servir el frontend en cualquier otra ruta
+app.use((req, res) => {
+  // Para archivos específicos
+  if (req.path.includes('.')) {
+    res.status(404).send('Archivo no encontrado');
+  } else {
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  }
+});
+
+// Manejador de errores
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Error interno del servidor',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
+  });
+});
+
+console.log('📝 Servidor configurado para Vercel');
 
 // Export para Vercel
 module.exports = app;
