@@ -2,7 +2,7 @@
   "name": "unika",
   "version": "1.0.0",
   "description": "Sistema web para gestión de negocio La UNIKa",
-  "main": "src/index-prisma.js",
+  "main": "api/index.js",
   "scripts": {
     "preinstall": "node -e \"process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true; process.env.PUPPETEER_SKIP_DOWNLOAD=true\"",
     "start": "node src/index-prisma.js",
@@ -34,7 +34,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
-    "node-qrcode": "^2.1.0",
+    "qrcode": "^1.5.3",
     "nodemailer": "^6.9.19",
     "puppeteer": "^23.10.4",
     "qrcode-terminal": "^0.12.0",
