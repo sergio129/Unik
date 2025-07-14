@@ -40,9 +40,7 @@ exports.getAllUsuarios = async (req, res) => {
           rol: true,
           activo: true,
           ultimo_acceso: true,
-          createdAt: true,
-          telefono: true,
-          direccion: true
+          createdAt: true
         },
         orderBy: { createdAt: 'desc' },
         skip: offset,
@@ -88,9 +86,7 @@ exports.getUsuarioById = async (req, res) => {
         ultimo_acceso: true,
         createdAt: true,
         updatedAt: true,
-        telefono: true,
-        direccion: true,
-        configuraciones: true
+        perfil: true
       }
     });
     
@@ -124,10 +120,7 @@ exports.createUsuario = async (req, res) => {
       password,
       nombre_completo,
       rol = 'empleado',
-      activo = true,
-      telefono,
-      direccion,
-      configuraciones
+      activo = true
     } = req.body;
     
     // Validaciones básicas
@@ -176,10 +169,7 @@ exports.createUsuario = async (req, res) => {
         password: passwordHash,
         nombre_completo: nombre_completo.trim(),
         rol: rol,
-        activo: Boolean(activo),
-        telefono: telefono?.trim() || null,
-        direccion: direccion?.trim() || null,
-        configuraciones: configuraciones || null
+        activo: Boolean(activo)
       },
       select: {
         id: true,
@@ -188,9 +178,7 @@ exports.createUsuario = async (req, res) => {
         nombre_completo: true,
         rol: true,
         activo: true,
-        createdAt: true,
-        telefono: true,
-        direccion: true
+        createdAt: true
       }
     });
     
@@ -219,10 +207,7 @@ exports.updateUsuario = async (req, res) => {
       password,
       nombre_completo,
       rol,
-      activo,
-      telefono,
-      direccion,
-      configuraciones
+      activo
     } = req.body;
     
     // Verificar que el usuario existe
@@ -274,9 +259,6 @@ exports.updateUsuario = async (req, res) => {
     if (nombre_completo) datosActualizacion.nombre_completo = nombre_completo.trim();
     if (rol) datosActualizacion.rol = rol;
     if (activo !== undefined) datosActualizacion.activo = Boolean(activo);
-    if (telefono !== undefined) datosActualizacion.telefono = telefono?.trim() || null;
-    if (direccion !== undefined) datosActualizacion.direccion = direccion?.trim() || null;
-    if (configuraciones !== undefined) datosActualizacion.configuraciones = configuraciones;
     
     // Hash de nueva contraseña si se proporciona
     if (password) {
@@ -295,9 +277,7 @@ exports.updateUsuario = async (req, res) => {
         nombre_completo: true,
         rol: true,
         activo: true,
-        updatedAt: true,
-        telefono: true,
-        direccion: true
+        updatedAt: true
       }
     });
     
@@ -445,10 +425,7 @@ exports.updatePerfil = async (req, res) => {
     
     const {
       nombre_completo,
-      email,
-      telefono,
-      direccion,
-      configuraciones
+      email
     } = req.body;
     
     // Verificar email único si se está cambiando
@@ -474,9 +451,6 @@ exports.updatePerfil = async (req, res) => {
     const datosActualizacion = {};
     if (nombre_completo) datosActualizacion.nombre_completo = nombre_completo.trim();
     if (email) datosActualizacion.email = email.trim().toLowerCase();
-    if (telefono !== undefined) datosActualizacion.telefono = telefono?.trim() || null;
-    if (direccion !== undefined) datosActualizacion.direccion = direccion?.trim() || null;
-    if (configuraciones !== undefined) datosActualizacion.configuraciones = configuraciones;
     
     const usuarioActualizado = await prisma.usuario.update({
       where: { id: userId },
@@ -487,9 +461,7 @@ exports.updatePerfil = async (req, res) => {
         email: true,
         nombre_completo: true,
         rol: true,
-        telefono: true,
-        direccion: true,
-        configuraciones: true
+        perfil: true
       }
     });
     
