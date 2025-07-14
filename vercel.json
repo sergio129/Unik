@@ -2,17 +2,17 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/index.js",
+      "src": "src/index-prisma.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/src/index.js"
+      "dest": "/src/index-prisma.js"
     },
     {
-      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html))",
       "dest": "/public/$1"
     },
     {
@@ -22,11 +22,11 @@
   ],
   "env": {
     "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret",
+    "JWT_SECRET": "@jwt_secret", 
     "NODE_ENV": "production"
   },
   "functions": {
-    "src/index.js": {
+    "src/index-prisma.js": {
       "maxDuration": 30
     }
   }
