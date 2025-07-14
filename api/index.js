@@ -186,6 +186,10 @@ app.get('/inventario', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/inventario', 'inventario.html'));
 });
 
+app.get('/inventario/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/inventario', 'inventario.html'));
+});
+
 // Rutas para páginas HTML de ventas
 app.get('/ventas/ventas', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
@@ -203,12 +207,20 @@ app.get('/ventas', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
 });
 
+app.get('/ventas/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
+});
+
 // Rutas para páginas HTML de pedidos
 app.get('/pedidos/pedidos', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
 });
 
 app.get('/pedidos', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
+});
+
+app.get('/pedidos/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
 });
 
@@ -221,12 +233,20 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin', 'usuarios.html'));
 });
 
+app.get('/admin/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin', 'usuarios.html'));
+});
+
 // Rutas para páginas HTML de perfil
 app.get('/perfil/perfil', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
 });
 
 app.get('/perfil', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
+});
+
+app.get('/perfil/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
 });
 
