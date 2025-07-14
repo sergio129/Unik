@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/index-serverless.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/index-serverless.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30,
+      "memory": 1024
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -48,11 +49,6 @@
       "dest": "/api/index-serverless.js"
     }
   ],
-  "functions": {
-    "api/index-serverless.js": {
-      "maxDuration": 31
-    }
-  },
   "env": {
     "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
     "PUPPETEER_SKIP_DOWNLOAD": "true"
