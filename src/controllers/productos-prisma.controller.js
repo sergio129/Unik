@@ -105,7 +105,7 @@ exports.getProductoByCodigo = async (req, res) => {
           select: { id: true, nombre: true }
         },
         unidad_medida: {
-          select: { id: true, nombre: true, simbolo: true }
+          select: { id: true, nombre: true, abreviacion: true }
         },
         codigos_barras: true,
         movimientos_inventario: {
@@ -509,9 +509,18 @@ exports.getProductosBajoStock = async (req, res) => {
       where: {
         AND: [
           {
-            cantidad: {
-              lte: prisma.producto.fields.stock_minimo
-            }
+            OR: [
+              {
+                stock: {
+                  lte: prisma.producto.fields.stock_minimo || 5
+                }
+              },
+              {
+                stock: {
+                  lte: 5  // Fallback si stock_minimo es null
+                }
+              }
+            ]
           },
           { activo: true }
         ]
@@ -522,7 +531,7 @@ exports.getProductosBajoStock = async (req, res) => {
         }
       },
       orderBy: [
-        { cantidad: 'asc' },
+        { stock: 'asc' },
         { nombre: 'asc' }
       ]
     });
@@ -678,6 +687,27 @@ exports.getEstadisticasProductos = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Obtener el conteo total de productos
+exports.getProductosCount = async (req, res) => {
+  try {
+    const total = await prisma.producto.count({
+      where: { activo: true }
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: { total }
+    });
+  } catch (error) {
+    console.error('Error al obtener conteo de productos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener conteo de productos',
       error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }
