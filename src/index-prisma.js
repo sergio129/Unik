@@ -137,6 +137,67 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'dashboard.html'));
 });
 
+// Rutas para páginas HTML de inventario
+app.get('/inventario/productos', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/inventario', 'productos.html'));
+});
+
+app.get('/inventario/categorias', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/inventario', 'categorias.html'));
+});
+
+app.get('/inventario/movimientos', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/inventario', 'movimientos.html'));
+});
+
+app.get('/inventario', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/inventario', 'inventario.html'));
+});
+
+// Rutas para páginas HTML de ventas
+app.get('/ventas/ventas', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
+});
+
+app.get('/ventas/clientes', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/ventas', 'clientes.html'));
+});
+
+app.get('/ventas/historial', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/ventas', 'historial.html'));
+});
+
+app.get('/ventas', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/ventas', 'ventas.html'));
+});
+
+// Rutas para páginas HTML de pedidos
+app.get('/pedidos/pedidos', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
+});
+
+app.get('/pedidos', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/pedidos', 'pedidos.html'));
+});
+
+// Rutas para páginas HTML de administración
+app.get('/admin/usuarios', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin', 'usuarios.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin', 'usuarios.html'));
+});
+
+// Rutas para páginas HTML de perfil
+app.get('/perfil/perfil', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
+});
+
+app.get('/perfil', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/perfil', 'perfil.html'));
+});
+
 // Socket.IO para notificaciones en tiempo real
 io.on('connection', (socket) => {
     console.log('👤 Usuario conectado:', socket.id);

@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok && data.success) {
                 // Verificar si el rol del usuario coincide con el rol seleccionado
-                if (data.user.rol !== selectedRole) {
+                if (data.data.user.rol !== selectedRole) {
                     showError(`Acceso denegado: No tiene permisos para ingresar como ${selectedRole === 'admin' ? 'administrador' : 
                               selectedRole === 'vendedor' ? 'asesor/vendedor' : 'inventario'}`);
                     return;
@@ -304,14 +304,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveCredentials(username, rememberMe);
                 
                 // Guardar token y datos del usuario en localStorage
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('token', data.data.token);
+                localStorage.setItem('usuario', JSON.stringify(data.data.user));
                 
                 showSuccess('Inicio de sesión exitoso. Redirigiendo...');
                 
                 // Redireccionar según el rol del usuario
                 setTimeout(() => {
-                    switch(data.user.rol) {
+                    switch(data.data.user.rol) {
                         case 'admin':
                             window.location.href = '/dashboard';
                             break;
