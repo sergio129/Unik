@@ -102,6 +102,14 @@ try {
     console.log('❌ Error loading pedidos routes:', error.message);
 }
 
+try {
+    const clientesRoutes = require('./routes/clientes-prisma.routes');
+    app.use('/api/clientes', clientesRoutes);
+    console.log('✅ Clientes routes loaded');
+} catch (error) {
+    console.log('❌ Error loading clientes routes:', error.message);
+}
+
 // Ruta para health check
 app.get('/api/health', async (req, res) => {
     try {
