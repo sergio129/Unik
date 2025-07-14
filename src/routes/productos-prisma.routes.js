@@ -23,4 +23,7 @@ router.delete('/:codigo', authorizeRoles(['admin']), productosController.deleteP
 // Gestión de stock
 router.put('/:codigo/stock', authorizeRoles(['admin', 'empleado']), productosController.updateStock);
 
+// Gestión de estado (activar/desactivar)
+router.patch('/:codigo/estado', authorizeRoles(['admin', 'empleado']), productosController.updateEstado);
+
 module.exports = router;

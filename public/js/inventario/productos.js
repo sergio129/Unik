@@ -560,7 +560,7 @@ function showProductoDetalle(productoId) {
     const producto = data.data || data;
     
     // Asegurarnos de que tenemos valores correctos para precios
-    const precioCompra = parseFloat(producto.precio_compra || 0).toFixed(2);
+    const precioCompra = parseFloat(producto.precio_costo || 0).toFixed(2);
     const precioVenta = parseFloat(producto.precio_venta || producto.precio || 0).toFixed(2);
     
     // Crear el contenido del modal
@@ -700,6 +700,14 @@ function loadProductos() {
     return response.json();
   })
   .then(data => {
+    // DEBUG: Verificar datos recibidos del servidor
+    console.log('🔍 DEBUG: Datos de productos recibidos:', data);
+    if (data.data && data.data.length > 0) {
+      console.log('🔍 DEBUG: Primer producto:', data.data[0]);
+      console.log('🔍 DEBUG: precio_costo del primer producto:', data.data[0].precio_costo, typeof data.data[0].precio_costo);
+      console.log('🔍 DEBUG: precio del primer producto:', data.data[0].precio, typeof data.data[0].precio);
+    }
+    
     // Verificar los resultados obtenidos
     console.log(`Productos recibidos: ${data.productos ? data.productos.length : 0} productos`);
     if (categoriaId) {
@@ -817,7 +825,7 @@ function renderProductos() {
     
     // Asegurarnos de que tenemos valores correctos para precios
     // El backend devuelve "precio" que corresponde al precio de venta en el frontend
-    const precioCompra = parseFloat(producto.precio_compra || 0).toFixed(2);
+    const precioCompra = parseFloat(producto.precio_costo || 0).toFixed(2);
     const precioVenta = producto.precio_venta 
                         ? parseFloat(producto.precio_venta).toFixed(2) 
                         : parseFloat(producto.precio || 0).toFixed(2); // Usar precio como respaldo
@@ -944,7 +952,7 @@ function openProductoModal(productoId = null) {
       document.getElementById('categoria_id').value = producto.categoria_id || '';
       
       // Para el precio_venta, usar el campo precio si precio_venta no está disponible
-      document.getElementById('precio_compra').value = parseFloat(producto.precio_compra || 0).toFixed(2);
+      document.getElementById('precio_compra').value = parseFloat(producto.precio_costo || 0).toFixed(2);
       document.getElementById('precio_venta').value = producto.precio_venta 
                                                     ? parseFloat(producto.precio_venta).toFixed(2)
                                                     : parseFloat(producto.precio || 0).toFixed(2);
@@ -1042,6 +1050,7 @@ function saveProducto() {
   
   // Si es un nuevo producto, agregar stock inicial
   if (!currentProductoId && document.getElementById('stock_inicial')) {
+    formData.append('stock_inicial', document.getElementById('stock_inicial').value || 0);
     formData.append('stock', document.getElementById('stock_inicial').value || 0);
     formData.append('cantidad', document.getElementById('stock_inicial').value || 0);
   }
@@ -2272,7 +2281,7 @@ function renderInactiveProducts(products) {
       <td>${producto.codigo || '-'}</td>
       <td>${producto.nombre}</td>
       <td>${producto.categoria ? producto.categoria.nombre : 'Sin categoría'}</td>
-      <td>$${parseFloat(producto.precio_compra || 0).toFixed(2)}</td>
+      <td>$${parseFloat(producto.precio_costo || 0).toFixed(2)}</td>
       <td>$${parseFloat(producto.precio_venta || producto.precio || 0).toFixed(2)}</td>
       <td>
         <div class="actions">
@@ -2954,16 +2963,16 @@ function iniciarEscanerParaBusqueda() {
                   <h3>${producto.nombre}</h3>
                   <p class="product-code">Código: ${producto.codigo}</p>
                   <p class="product-category">Categoría: ${producto.categoria ? producto.categoria.nombre : 'Sin categoría'}</p>
-                  <p class="product-stock ${parseInt(producto.cantidad || 0) <= parseInt(producto.stock_minimo || 0) ? 'low-stock' : ''}">
-                    <i class="fas fa-layer-group"></i> Stock: <strong>${producto.cantidad || 0}</strong> ${producto.unidad_medida || 'unidad(es)'}
-                    ${parseInt(producto.cantidad || 0) <= parseInt(producto.stock_minimo || 0) ? ' <span class="badge warning">Stock Bajo</span>' : ''}
+                  <p class="product-stock ${parseInt(producto.stock || 0) <= parseInt(producto.stock_minimo || 0) ? 'low-stock' : ''}">
+                    <i class="fas fa-layer-group"></i> Stock: <strong>${producto.stock || 0}</strong> ${producto.unidad_medida || 'unidad(es)'}
+                    ${parseInt(producto.stock || 0) <= parseInt(producto.stock_minimo || 0) ? ' <span class="badge warning">Stock Bajo</span>' : ''}
                   </p>
                 </div>
               </div>
               <div class="product-details">
                 <div class="detail-row">
                   <span class="detail-label">Precio Compra:</span>
-                  <span class="detail-value">$${parseFloat(producto.precio_compra || 0).toFixed(2)}</span>
+                  <span class="detail-value">$${parseFloat(producto.precio_costo || 0).toFixed(2)}</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Precio Venta:</span>

@@ -486,16 +486,16 @@ function startScanner(previewElement, onDetected) {
                               <h3>${producto.nombre}</h3>
                               <p class="product-code">Código: ${producto.codigo}</p>
                               <p class="product-category">Categoría: ${producto.categoria ? producto.categoria.nombre : 'Sin categoría'}</p>
-                              <p class="product-stock ${parseInt(producto.cantidad || 0) <= parseInt(producto.stock_minimo || 0) ? 'low-stock' : ''}">
-                                <i class="fas fa-layer-group"></i> Stock: <strong>${producto.cantidad || 0}</strong> ${producto.unidad_medida || 'unidad(es)'}
-                                ${parseInt(producto.cantidad || 0) <= parseInt(producto.stock_minimo || 0) ? ' <span class="badge warning">Stock Bajo</span>' : ''}
+                              <p class="product-stock ${parseInt(producto.stock || 0) <= parseInt(producto.stock_minimo || 0) ? 'low-stock' : ''}">
+                                <i class="fas fa-layer-group"></i> Stock: <strong>${producto.stock || 0}</strong> ${producto.unidad_medida || 'unidad(es)'}
+                                ${parseInt(producto.stock || 0) <= parseInt(producto.stock_minimo || 0) ? ' <span class="badge warning">Stock Bajo</span>' : ''}
                               </p>
                             </div>
                           </div>
                           <div class="product-details">
                             <div class="detail-row">
                               <span class="detail-label">Precio Compra:</span>
-                              <span class="detail-value">$${parseFloat(producto.precio_compra || 0).toFixed(2)}</span>
+                              <span class="detail-value">$${parseFloat(producto.precio_costo || 0).toFixed(2)}</span>
                             </div>
                             <div class="detail-row">
                               <span class="detail-label">Precio Venta:</span>

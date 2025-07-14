@@ -144,12 +144,14 @@ exports.createProducto = async (req, res) => {
       nombre,
       descripcion,
       categoria_id,
-      precio_compra,
-      precio_venta,
+      precio_costo,
+      precio,
+      stock_inicial,
       stock_minimo,
       unidad_medida_id,
       activo = true
     } = req.body;
+    console.log('📦 DATOS RECIBIDOS:', { codigo, nombre, descripcion, categoria_id, precio_costo, precio, stock_inicial });
     
     // Validaciones básicas
     if (!codigo || !nombre || !categoria_id) {
@@ -192,9 +194,9 @@ exports.createProducto = async (req, res) => {
           nombre: nombre.trim(),
           descripcion: descripcion?.trim() || null,
           categoria_id: parseInt(categoria_id),
-          precio: precio_venta ? parseFloat(precio_venta) : 0, // Campo obligatorio
-          precio_costo: precio_compra ? parseFloat(precio_compra) : null, // Campo opcional
-          stock: 0, // Stock inicial
+          precio: precio ? parseFloat(precio) : 0, // Campo obligatorio (precio de venta)
+          precio_costo: precio_costo ? parseFloat(precio_costo) : null, // Campo opcional
+          stock: stock_inicial ? parseInt(stock_inicial) : 0, // Stock inicial desde el frontend
           stock_minimo: stock_minimo ? parseInt(stock_minimo) : 5,
           unidad_medida_id: unidad_medida_id ? parseInt(unidad_medida_id) : null,
           activo: Boolean(activo)
@@ -627,6 +629,59 @@ exports.getProductosCount = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener conteo de productos',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
+
+// Actualizar estado de un producto (activar/desactivar)
+exports.updateEstado = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    const { activo } = req.body; // Ignoramos resetearStock por ahora
+
+    console.log('🔄 ACTUALIZAR ESTADO:', { codigo, activo, body: req.body });
+
+    // Validar que el estado sea booleano
+    if (typeof activo !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'El estado debe ser verdadero o falso'
+      });
+    }
+
+    // Verificar que el producto existe
+    const productoExistente = await prisma.producto.findUnique({
+      where: { codigo }
+    });
+
+    if (!productoExistente) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    // Actualizar el estado
+    const productoActualizado = await prisma.producto.update({
+      where: { codigo },
+      data: { activo },
+      include: {
+        categoria: true
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Producto ${activo ? 'activado' : 'desactivado'} exitosamente`,
+      data: productoActualizado
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar estado del producto:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
       error: process.env.NODE_ENV === 'development' ? error.message : null
     });
   }
