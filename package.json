@@ -10,10 +10,10 @@
     "start:legacy": "node src/index.js",
     "dev:legacy": "nodemon src/index.js",
     "build": "npm run db:generate",
-    "vercel-build": "npm run db:generate && npm run db:deploy",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy",
+    "vercel-build": "npm run db:generate",
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate dev",
+    "db:deploy": "npx prisma migrate deploy",
     "db:seed": "node src/utils/seed.js",
     "init-admin": "node src/utils/initAdmin-prisma.js",
     "init-admin:legacy": "node src/utils/initAdmin.js",
@@ -34,15 +34,15 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
-    "qrcode": "^1.5.3",
-    "nodemailer": "^6.9.19",
+    "nodemailer": "^6.10.1",
     "puppeteer": "^23.10.4",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "socket.io": "^4.8.1",
     "whatsapp-web.js": "^1.26.0"
   },
   "devDependencies": {
-    "prisma": "^5.10.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "prisma": "^5.10.0"
   }
 }
