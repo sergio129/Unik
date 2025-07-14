@@ -2,11 +2,33 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { PrismaClient } = require('@prisma/client');
+
+// Cargar dotenv primero
 require('dotenv').config();
 
-// Inicializar Prisma
-const prisma = new PrismaClient();
+// Verificar variables de entorno críticas
+if (!process.env.DATABASE_URL) {
+    console.error('❌ ERROR: DATABASE_URL no está configurada');
+    process.exit(1);
+}
+
+// Inicializar Prisma con manejo de errores
+let prisma;
+try {
+    const { PrismaClient } = require('@prisma/client');
+    prisma = new PrismaClient({
+        log: ['error'],
+        errorFormat: 'minimal'
+    });
+    console.log('✅ Prisma inicializado correctamente');
+} catch (error) {
+    console.error('❌ Error inicializando Prisma:', error.message);
+    // Crear un mock de prisma para evitar que la app crashee
+    prisma = {
+        $queryRaw: () => Promise.reject(new Error('Database not available')),
+        $disconnect: () => Promise.resolve()
+    };
+}
 
 // Hacer que prisma sea accesible globalmente
 global.prisma = prisma;
@@ -81,9 +103,14 @@ const routes = [
     { path: '../src/routes/movimientos-prisma.routes', mount: '/api/movimientos' }
 ];
 
+let loadedRoutes = 0;
 routes.forEach(route => {
-    loadRoute(route.path, route.mount);
+    if (loadRoute(route.path, route.mount)) {
+        loadedRoutes++;
+    }
 });
+
+console.log(`📊 Rutas cargadas: ${loadedRoutes}/${routes.length}`);
 
 // Intentar cargar WhatsApp solo si está disponible
 try {
@@ -105,24 +132,31 @@ try {
 
 // Ruta para health check
 app.get('/api/health', async (req, res) => {
+    const health = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'production',
+        vercel: true,
+        database: 'unknown',
+        routes: `${loadedRoutes}/${routes.length} loaded`,
+        memory: process.memoryUsage(),
+        uptime: process.uptime(),
+        node_version: process.version
+    };
+
     try {
         // Verificar conexión a base de datos
         await prisma.$queryRaw`SELECT 1`;
-        res.json({ 
-            status: 'OK', 
-            timestamp: new Date().toISOString(),
-            database: 'connected',
-            environment: process.env.NODE_ENV || 'production',
-            vercel: true
-        });
+        health.database = 'connected';
+        health.status = 'OK';
     } catch (error) {
-        res.status(500).json({ 
-            status: 'ERROR', 
-            timestamp: new Date().toISOString(),
-            database: 'disconnected',
-            error: error.message
-        });
+        health.database = 'disconnected';
+        health.database_error = error.message;
+        health.status = 'DEGRADED';
     }
+
+    const statusCode = health.status === 'OK' ? 200 : 503;
+    res.status(statusCode).json(health);
 });
 
 // Función helper para enviar archivos HTML de forma segura
@@ -210,6 +244,15 @@ app.use((error, req, res, next) => {
 });
 
 console.log('📝 Servidor serverless configurado para Vercel');
+
+// Manejo de errores no capturados
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('💥 Uncaught Exception:', error);
+});
 
 // Export para Vercel
 module.exports = app;
