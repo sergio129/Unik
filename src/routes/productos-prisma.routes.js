@@ -14,6 +14,7 @@ router.get('/search', productosController.searchProductos);
 router.get('/bajo-stock', productosController.getProductosBajoStock);
 router.get('/estadisticas', productosController.getEstadisticasProductos);
 router.get('/:codigo', productosController.getProductoByCodigo);
+router.get('/:codigo/historial-precios', productosController.getHistorialPrecios);
 
 // Rutas de modificación (requieren permisos)
 router.post('/', authorizeRoles(['admin', 'empleado']), productosController.uploadProductImage, productosController.createProducto);

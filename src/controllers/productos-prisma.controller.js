@@ -692,4 +692,92 @@ exports.updateEstado = async (req, res) => {
 // Middleware de upload
 exports.uploadProductImage = upload.single('imagen');
 
+// Obtener historial de precios de un producto
+exports.getHistorialPrecios = async (req, res) => {
+  try {
+    const { codigo } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+
+    // Verificar que el producto existe
+    const producto = await prisma.producto.findUnique({
+      where: { codigo: codigo }
+    });
+
+    if (!producto) {
+      return res.status(404).json({
+        success: false,
+        message: 'Producto no encontrado'
+      });
+    }
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Obtener historial de precios
+    const historial = await prisma.historialPrecios.findMany({
+      where: {
+        producto_id: producto.id
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      skip: offset,
+      take: parseInt(limit)
+    });
+
+    // Obtener información de usuarios para cada entrada del historial
+    const historialConUsuarios = await Promise.all(
+      historial.map(async (entrada) => {
+        let usuario = null;
+        if (entrada.usuario_id) {
+          usuario = await prisma.usuario.findUnique({
+            where: { id: entrada.usuario_id },
+            select: {
+              id: true,
+              nombre_completo: true,
+              email: true
+            }
+          });
+        }
+        return {
+          ...entrada,
+          usuario
+        };
+      })
+    );
+
+    // Obtener total para paginación
+    const total = await prisma.historialPrecios.count({
+      where: {
+        producto_id: producto.id
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        producto: {
+          codigo: producto.codigo,
+          nombre: producto.nombre,
+          precio_actual: producto.precio
+        },
+        historial: historialConUsuarios,
+        pagination: {
+          total,
+          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: parseInt(page),
+          limit: parseInt(limit)
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener historial de precios:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener historial de precios',
+      error: error.message
+    });
+  }
+};
+
 module.exports = exports;

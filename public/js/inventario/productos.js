@@ -1376,7 +1376,7 @@ function showHistorialPrecios(productoId) {
     return response.json();
   })
   .then(data => {
-    renderHistorialPrecios(data.data || []);
+    renderHistorialPrecios(data.data.historial || []);
   })
   .catch(error => {
     console.error('Error al cargar historial de precios:', error);
@@ -1399,7 +1399,7 @@ function renderHistorialPrecios(historial) {
   const historialList = document.getElementById('precios-list');
   
   if (!historial || historial.length === 0) {
-    historialList.innerHTML = '<tr><td colspan="6" class="text-center">No hay cambios de precios registrados</td></tr>';
+    historialList.innerHTML = '<tr><td colspan="7" class="text-center">No hay cambios de precios registrados</td></tr>';
     return;
   }
   
@@ -1407,27 +1407,19 @@ function renderHistorialPrecios(historial) {
   
   historial.forEach(registro => {
     const row = document.createElement('tr');
-    const fecha = new Date(registro.fecha_creacion).toLocaleString();
+    const fecha = new Date(registro.createdAt).toLocaleString();
     
-    // Calcular el porcentaje de cambio
-    const precioAnterior = parseFloat(registro.precio_anterior);
-    const precioNuevo = parseFloat(registro.precio_nuevo);
-    let cambio = '';
-    
-    if (precioAnterior > 0) {
-      const porcentaje = ((precioNuevo - precioAnterior) / precioAnterior) * 100;
-      const signo = porcentaje >= 0 ? '+' : '';
-      cambio = `<span class="${porcentaje >= 0 ? 'precio-aumento' : 'precio-reduccion'}">${signo}${porcentaje.toFixed(2)}%</span>`;
-    }
+    // Como solo tenemos el precio actual, no podemos calcular cambio porcentual
+    const precio = parseFloat(registro.precio);
     
     row.innerHTML = `
       <td>${fecha}</td>
-      <td>${registro.tipo_precio === 'compra' ? 'Precio de compra' : 'Precio de venta'}</td>
-      <td class="precio-anterior">$${precioAnterior.toFixed(2)}</td>
-      <td class="precio-nuevo">$${precioNuevo.toFixed(2)}</td>
-      <td>${cambio}</td>
+      <td>Cambio de precio</td>
+      <td>-</td>
+      <td class="precio-nuevo">$${precio.toFixed(2)}</td>
+      <td>-</td>
       <td>${registro.motivo || '-'}</td>
-      <td>${registro.usuario ? registro.usuario.nombre_completo || registro.usuario.username : '-'}</td>
+      <td>${registro.usuario ? registro.usuario.nombre_completo || registro.usuario.email : '-'}</td>
     `;
     
     historialList.appendChild(row);
