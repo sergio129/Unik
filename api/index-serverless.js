@@ -43,7 +43,7 @@ function loadRoute(routePath, mountPath) {
         console.log(`✅ ${mountPath} routes loaded`);
         return true;
     } catch (error) {
-        console.error(`❌ Error loading ${mountPath} routes:`, error.message);
+        console.error(`❌ Error  loading ${mountPath} routes:`, error.message);
         return false;
     }
 }
