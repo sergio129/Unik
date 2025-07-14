@@ -4,7 +4,7 @@
  */
 
 const whatsappService = require('../services/whatsappService');
-const pedidosService = require('../services/pedidosService');
+// const pedidosService = require('../services/pedidosService'); // Comentado temporalmente - necesita migración a Prisma
 
 /**
  * Obtiene el estado actual de la conexión de WhatsApp
