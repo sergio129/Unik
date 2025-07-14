@@ -1,0 +1,58 @@
+/* Estilos adicionales para la aplicación Vue de login */
+
+/* Estilo para el logo fallback */
+.logo-fallback {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #333;
+  font-weight: bold;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+/* Estilos para la etiqueta de versión */
+.version-tag {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Estilos adicionales para dispositivos móviles */
+@media (max-width: 480px) {
+  .login-container {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  
+  .login-header {
+    border-radius: 0;
+  }
+  
+  .login-form {
+    padding: 20px 15px;
+  }
+}
+
+/* Efecto de transición para el modal */
+.modal {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
