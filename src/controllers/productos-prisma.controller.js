@@ -64,8 +64,8 @@ exports.getAllProductos = async (req, res) => {
     
     // Filtrar productos con bajo stock
     if (bajoStock === 'true') {
-      whereConditions.cantidad = {
-        lte: prisma.producto.fields.stock_minimo
+      whereConditions.stock = {
+        lte: 5 // Usar un valor fijo por ahora
       };
     }
     
@@ -147,10 +147,8 @@ exports.createProducto = async (req, res) => {
       precio_compra,
       precio_venta,
       stock_minimo,
-      stock_maximo,
       unidad_medida_id,
-      activo = true,
-      codigos_barras
+      activo = true
     } = req.body;
     
     // Validaciones básicas
@@ -194,67 +192,14 @@ exports.createProducto = async (req, res) => {
           nombre: nombre.trim(),
           descripcion: descripcion?.trim() || null,
           categoria_id: parseInt(categoria_id),
-          precio_compra: precio_compra ? parseFloat(precio_compra) : 0,
-          precio_venta: precio_venta ? parseFloat(precio_venta) : 0,
-          cantidad: 0, // Stock inicial
-          stock_minimo: stock_minimo ? parseInt(stock_minimo) : 0,
-          stock_maximo: stock_maximo ? parseInt(stock_maximo) : 0,
+          precio: precio_venta ? parseFloat(precio_venta) : 0, // Campo obligatorio
+          precio_costo: precio_compra ? parseFloat(precio_compra) : null, // Campo opcional
+          stock: 0, // Stock inicial
+          stock_minimo: stock_minimo ? parseInt(stock_minimo) : 5,
           unidad_medida_id: unidad_medida_id ? parseInt(unidad_medida_id) : null,
           activo: Boolean(activo)
         }
       });
-      
-      // Registrar historial de precios si se proporcionaron
-      if (precio_compra && precio_compra > 0) {
-        await tx.historialPrecios.create({
-          producto_codigo: nuevoProducto.codigo,
-          precio_anterior: 0,
-          precio_nuevo: parseFloat(precio_compra),
-          tipo_precio: 'compra',
-          usuario_id: req.user?.id || 1,
-          motivo: 'Creación inicial del producto'
-        });
-      }
-      
-      if (precio_venta && precio_venta > 0) {
-        await tx.historialPrecios.create({
-          producto_codigo: nuevoProducto.codigo,
-          precio_anterior: 0,
-          precio_nuevo: parseFloat(precio_venta),
-          tipo_precio: 'venta',
-          usuario_id: req.user?.id || 1,
-          motivo: 'Creación inicial del producto'
-        });
-      }
-      
-      // Procesar códigos de barras si existen
-      if (codigos_barras) {
-        let dataBarras;
-        try {
-          dataBarras = typeof codigos_barras === 'string' ? JSON.parse(codigos_barras) : codigos_barras;
-        } catch (e) {
-          dataBarras = [];
-        }
-        
-        if (Array.isArray(dataBarras) && dataBarras.length > 0) {
-          for (const codigoBarras of dataBarras) {
-            // Verificar que el código de barras no existe
-            const codigoExistente = await tx.codigoBarras.findUnique({
-              where: { codigo: codigoBarras.codigo }
-            });
-            
-            if (!codigoExistente) {
-              await tx.codigoBarras.create({
-                data: {
-                  producto_codigo: nuevoProducto.codigo,
-                  codigo: codigoBarras.codigo,
-                  tipo: codigoBarras.tipo || 'EAN13'
-                }
-              });
-            }
-          }
-        }
-      }
       
       return nuevoProducto;
     });
@@ -285,10 +230,8 @@ exports.updateProducto = async (req, res) => {
       precio_compra,
       precio_venta,
       stock_minimo,
-      stock_maximo,
       unidad_medida_id,
-      activo,
-      codigos_barras
+      activo
     } = req.body;
     
     // Verificar que el producto existe
@@ -312,39 +255,15 @@ exports.updateProducto = async (req, res) => {
           ...(nombre && { nombre: nombre.trim() }),
           ...(descripcion !== undefined && { descripcion: descripcion?.trim() || null }),
           ...(categoria_id && { categoria_id: parseInt(categoria_id) }),
-          ...(precio_compra !== undefined && { precio_compra: parseFloat(precio_compra) || 0 }),
-          ...(precio_venta !== undefined && { precio_venta: parseFloat(precio_venta) || 0 }),
+          ...(precio_compra !== undefined && { precio_costo: parseFloat(precio_compra) || 0 }),
+          ...(precio_venta !== undefined && { precio: parseFloat(precio_venta) || 0 }),
           ...(stock_minimo !== undefined && { stock_minimo: parseInt(stock_minimo) || 0 }),
-          ...(stock_maximo !== undefined && { stock_maximo: parseInt(stock_maximo) || 0 }),
           ...(unidad_medida_id !== undefined && { 
             unidad_medida_id: unidad_medida_id ? parseInt(unidad_medida_id) : null 
           }),
           ...(activo !== undefined && { activo: Boolean(activo) })
         }
       });
-      
-      // Registrar cambios de precios en el historial
-      if (precio_compra !== undefined && parseFloat(precio_compra) !== productoExistente.precio_compra) {
-        await tx.historialPrecios.create({
-          producto_codigo: codigo,
-          precio_anterior: productoExistente.precio_compra,
-          precio_nuevo: parseFloat(precio_compra) || 0,
-          tipo_precio: 'compra',
-          usuario_id: req.user?.id || 1,
-          motivo: 'Actualización de precio de compra'
-        });
-      }
-      
-      if (precio_venta !== undefined && parseFloat(precio_venta) !== productoExistente.precio_venta) {
-        await tx.historialPrecios.create({
-          producto_codigo: codigo,
-          precio_anterior: productoExistente.precio_venta,
-          precio_nuevo: parseFloat(precio_venta) || 0,
-          tipo_precio: 'venta',
-          usuario_id: req.user?.id || 1,
-          motivo: 'Actualización de precio de venta'
-        });
-      }
       
       return productoActualizado;
     });
@@ -400,12 +319,12 @@ exports.deleteProducto = async (req, res) => {
     await prisma.$transaction(async (tx) => {
       // Eliminar códigos de barras
       await tx.codigoBarras.deleteMany({
-        where: { producto_codigo: codigo }
+        where: { producto_id: producto.id }
       });
       
       // Eliminar historial de precios
       await tx.historialPrecios.deleteMany({
-        where: { producto_codigo: codigo }
+        where: { producto_id: producto.id }
       });
       
       // Eliminar el producto
@@ -455,7 +374,7 @@ exports.updateStock = async (req, res) => {
       });
     }
     
-    const cantidadAnterior = producto.cantidad;
+    const cantidadAnterior = producto.stock;
     const cantidadNueva = cantidadNum;
     
     // Actualizar en transacción
@@ -463,20 +382,20 @@ exports.updateStock = async (req, res) => {
       // Actualizar stock
       await tx.producto.update({
         where: { codigo },
-        data: { cantidad: cantidadNueva }
+        data: { stock: cantidadNueva }
       });
       
       // Registrar movimiento
       await tx.movimientoInventario.create({
         data: {
-          producto_codigo: codigo,
-          tipo_movimiento: cantidadNueva > cantidadAnterior ? 'entrada' : 'salida',
+          producto_id: producto.id,
+          tipo: cantidadNueva > cantidadAnterior ? 'entrada' : 'salida',
           cantidad: Math.abs(cantidadNueva - cantidadAnterior),
           stock_anterior: cantidadAnterior,
-          stock_nuevo: cantidadNueva,
+          stock_actual: cantidadNueva,
           motivo: motivo || 'Ajuste manual de inventario',
           usuario_id: req.user?.id || 1,
-          documento_referencia: null
+          referencia: null
         }
       });
     });
@@ -620,7 +539,7 @@ exports.getEstadisticasProductos = async (req, res) => {
       prisma.producto.count({
         where: {
           AND: [
-            { cantidad: { lte: prisma.producto.fields.stock_minimo } },
+            { stock: { lte: prisma.producto.fields.stock_minimo } },
             { activo: true }
           ]
         }
@@ -628,7 +547,7 @@ exports.getEstadisticasProductos = async (req, res) => {
       prisma.producto.count({
         where: {
           AND: [
-            { cantidad: 0 },
+            { stock: 0 },
             { activo: true }
           ]
         }
