@@ -40,11 +40,11 @@ exports.getAllUsuarios = async (req, res) => {
           rol: true,
           activo: true,
           ultimo_acceso: true,
-          created_at: true,
+          createdAt: true,
           telefono: true,
           direccion: true
         },
-        orderBy: { created_at: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip: offset,
         take: parseInt(limit)
       }),
@@ -86,8 +86,8 @@ exports.getUsuarioById = async (req, res) => {
         rol: true,
         activo: true,
         ultimo_acceso: true,
-        created_at: true,
-        updated_at: true,
+        createdAt: true,
+        updatedAt: true,
         telefono: true,
         direccion: true,
         configuraciones: true
@@ -188,7 +188,7 @@ exports.createUsuario = async (req, res) => {
         nombre_completo: true,
         rol: true,
         activo: true,
-        created_at: true,
+        createdAt: true,
         telefono: true,
         direccion: true
       }
@@ -295,7 +295,7 @@ exports.updateUsuario = async (req, res) => {
         nombre_completo: true,
         rol: true,
         activo: true,
-        updated_at: true,
+        updatedAt: true,
         telefono: true,
         direccion: true
       }

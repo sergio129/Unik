@@ -76,8 +76,23 @@ exports.getFacturaById = async (req, res) => {
   try {
     const { id } = req.params;
     
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de factura requerido'
+      });
+    }
+    
+    const facturaId = parseInt(id);
+    if (isNaN(facturaId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de factura inválido'
+      });
+    }
+    
     const factura = await prisma.factura.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: facturaId },
       include: {
         cliente: true,
         detalles: {

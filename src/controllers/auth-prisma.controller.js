@@ -199,7 +199,7 @@ exports.register = async (req, res) => {
         email: true,
         nombre_completo: true,
         rol: true,
-        created_at: true
+        createdAt: true
       }
     });
     
