@@ -6,17 +6,45 @@
       "dest": "/api/index.js"
     },
     {
-      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html))",
+      "src": "/login",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/inventario/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/ventas/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/pedidos/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/perfil/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html|mp3))",
       "dest": "/public/$1"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "src": "/",
+      "dest": "/api/index.js"
     }
   ],
   "functions": {
     "api/index.js": {
-      "maxDuration": 30
+      "maxDuration": 31
     }
   },
   "env": {
