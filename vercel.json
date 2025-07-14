@@ -14,7 +14,7 @@
       "dest": "/api/index.js"
     },
     {
-      "src": "/inventario/(.*)",
+      "src": "/inventario",
       "dest": "/api/index.js"
     },
     {
