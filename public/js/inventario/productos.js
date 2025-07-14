@@ -1376,6 +1376,11 @@ function showHistorialPrecios(productoId) {
     return response.json();
   })
   .then(data => {
+    console.log('DEBUG Historial: datos completos recibidos:', data);
+    console.log('DEBUG Historial: data.data:', data.data);
+    console.log('DEBUG Historial: data.data.historial:', data.data.historial);
+    console.log('DEBUG Historial: Tipo de data.data.historial:', typeof data.data.historial);
+    console.log('DEBUG Historial: Array.isArray(data.data.historial):', Array.isArray(data.data.historial));
     renderHistorialPrecios(data.data.historial || []);
   })
   .catch(error => {
@@ -1396,6 +1401,10 @@ function closeHistorialPreciosModal() {
 }
 
 function renderHistorialPrecios(historial) {
+  console.log('DEBUG renderHistorialPrecios: Recibido:', historial);
+  console.log('DEBUG renderHistorialPrecios: Tipo:', typeof historial);
+  console.log('DEBUG renderHistorialPrecios: Es array:', Array.isArray(historial));
+  
   const historialList = document.getElementById('precios-list');
   
   if (!historial || historial.length === 0) {
