@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Verificar que el usuario sea administrador
 function checkAdminPermissions() {
   try {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem('usuario')); // Cambiado de 'user' a 'usuario'
     if (!user || user.rol !== 'admin') {
       // Redirigir si no es administrador
       window.location.href = '/dashboard';
@@ -693,7 +693,7 @@ function createUserNotification(type, username) {
     }
     
     // Obtener usuario actual
-    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const currentUser = JSON.parse(localStorage.getItem('usuario')); // Cambiado de 'user' a 'usuario'
     if (!currentUser) return;
     
     // Enviar notificación

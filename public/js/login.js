@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.auth) {
-                    const user = JSON.parse(localStorage.getItem('user')) || {};
+                    const user = JSON.parse(localStorage.getItem('usuario')) || {};
                     switch(user.rol) {
                         case 'admin':
                             window.location.href = '/dashboard';

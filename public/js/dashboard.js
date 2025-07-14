@@ -21,10 +21,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function initDashboard() {
     // Configurar el nombre de usuario
     const userDisplay = document.getElementById('user-display');
-    const userData = JSON.parse(localStorage.getItem('userData'));
+    const userData = JSON.parse(localStorage.getItem('usuario')); // Corregido de 'userData' a 'usuario'
     
-    if (userData && userData.nombre) {
-        userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${userData.nombre}`;
+    if (userData && userData.nombre_completo) {
+        userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${userData.nombre_completo}`;
+    } else if (userData && userData.username) {
+        userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${userData.username}`;
     } else {
         userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Usuario';
     }
@@ -33,7 +35,7 @@ function initDashboard() {
     const logoutButton = document.querySelector('.user-menu button');
     logoutButton.addEventListener('click', function() {
         localStorage.removeItem('token');
-        localStorage.removeItem('userData');
+        localStorage.removeItem('usuario'); // Corregido de 'userData' a 'usuario'
         window.location.href = '/login';
     });
     
@@ -43,7 +45,7 @@ function initDashboard() {
 
 // Configurar elementos según el rol del usuario
 function configureUserRoleElements() {
-    const userData = JSON.parse(localStorage.getItem('userData'));
+    const userData = JSON.parse(localStorage.getItem('usuario')); // Corregido de 'userData' a 'usuario'
     const adminElements = document.querySelectorAll('.admin-only');
     
     if (userData && userData.rol === 'admin') {
