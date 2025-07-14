@@ -118,6 +118,14 @@ try {
     console.log('❌ Error loading actividad routes:', error.message);
 }
 
+try {
+    const whatsappRoutes = require('./routes/whatsapp.routes');
+    app.use('/api/whatsapp', whatsappRoutes);
+    console.log('✅ WhatsApp routes loaded');
+} catch (error) {
+    console.log('❌ Error loading whatsapp routes:', error.message);
+}
+
 // Ruta para health check
 app.get('/api/health', async (req, res) => {
     try {
