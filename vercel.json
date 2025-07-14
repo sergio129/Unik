@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/index-serverless.js": {
-      "runtime": "nodejs18.x",
+      "runtime": "@vercel/node",
       "maxDuration": 30,
       "memory": 1024
     }
