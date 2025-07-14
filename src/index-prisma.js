@@ -110,6 +110,14 @@ try {
     console.log('❌ Error loading clientes routes:', error.message);
 }
 
+try {
+    const actividadRoutes = require('./routes/actividad-prisma.routes');
+    app.use('/api/actividad', actividadRoutes);
+    console.log('✅ Actividad routes loaded');
+} catch (error) {
+    console.log('❌ Error loading actividad routes:', error.message);
+}
+
 // Ruta para health check
 app.get('/api/health', async (req, res) => {
     try {

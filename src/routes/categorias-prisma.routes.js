@@ -11,6 +11,7 @@ router.use(authenticateToken);
 router.get('/', categoriasController.getAllCategorias);
 router.get('/search', categoriasController.searchCategorias);
 router.get('/estadisticas', categoriasController.getEstadisticasCategorias);
+router.get('/stats/productos', categoriasController.getEstadisticasProductosPorCategoria);
 router.get('/:id', categoriasController.getCategoriaById);
 router.get('/:id/productos', categoriasController.getProductosCategoria);
 

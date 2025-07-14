@@ -590,3 +590,53 @@ exports.bulkUpdateCategorias = async (req, res) => {
     });
   }
 };
+
+// Obtener estadísticas de productos por categoría
+exports.getEstadisticasProductosPorCategoria = async (req, res) => {
+  try {
+    const categorias = await prisma.categoria.findMany({
+      select: {
+        id: true,
+        nombre: true,
+        productos: {
+          select: {
+            id: true,
+            nombre: true,
+            stock: true,
+            precio: true,
+            activo: true
+          },
+          where: {
+            activo: true
+          }
+        }
+      },
+      orderBy: {
+        nombre: 'asc'
+      }
+    });
+
+    const estadisticas = categorias.map(categoria => ({
+      id: categoria.id,
+      nombre: categoria.nombre,
+      total_productos: categoria.productos.length,
+      stock_total: categoria.productos.reduce((sum, producto) => sum + (producto.stock || 0), 0),
+      valor_inventario: categoria.productos.reduce((sum, producto) => {
+        return sum + ((producto.stock || 0) * parseFloat(producto.precio || 0));
+      }, 0),
+      productos_sin_stock: categoria.productos.filter(p => (p.stock || 0) === 0).length
+    }));
+
+    res.json({
+      success: true,
+      data: estadisticas
+    });
+  } catch (error) {
+    console.error('Error al obtener estadísticas de productos por categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas de productos por categoría',
+      error: process.env.NODE_ENV === 'development' ? error.message : null
+    });
+  }
+};
