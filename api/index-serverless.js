@@ -39,11 +39,28 @@ app.use((req, res, next) => {
 function loadRoute(routePath, mountPath) {
     try {
         const route = require(routePath);
+        
+        // Verificar que la ruta exporta una función válida de Express
+        if (typeof route !== 'function') {
+            console.error(`❌ ${mountPath} routes: exported value is not a function`);
+            return false;
+        }
+        
         app.use(mountPath, route);
         console.log(`✅ ${mountPath} routes loaded`);
         return true;
     } catch (error) {
-        console.error(`❌ Error  loading ${mountPath} routes:`, error.message);
+        console.error(`❌ Error loading ${mountPath} routes:`, error.message);
+        
+        // Crear ruta de fallback para evitar errores 404
+        app.use(mountPath, (req, res) => {
+            res.status(503).json({
+                success: false,
+                message: `Servicio ${mountPath} temporalmente no disponible`,
+                error: 'Module loading failed'
+            });
+        });
+        
         return false;
     }
 }
@@ -75,6 +92,15 @@ try {
     console.log('✅ WhatsApp routes loaded');
 } catch (error) {
     console.log('⚠️ WhatsApp routes not available in serverless environment');
+    
+    // Crear rutas de fallback para WhatsApp
+    app.use('/api/whatsapp', (req, res) => {
+        res.status(503).json({
+            success: false,
+            message: 'Servicio de WhatsApp no disponible en el entorno serverless',
+            error: 'Service not supported'
+        });
+    });
 }
 
 // Ruta para health check
@@ -140,13 +166,14 @@ app.get('/perfil/perfil', (req, res) => sendHTMLFile(res, 'perfil/perfil.html'))
 app.get('/perfil', (req, res) => sendHTMLFile(res, 'perfil/perfil.html'));
 
 // Catch-all handler para rutas no encontradas
-app.get('*', (req, res) => {
+app.use('*', (req, res) => {
     // Si es una ruta de API que no existe, devolver JSON 404
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({
             success: false,
             message: 'Endpoint no encontrado',
             path: req.path,
+            method: req.method,
             availableEndpoints: [
                 '/api/health',
                 '/api/auth/*',
@@ -163,7 +190,12 @@ app.get('*', (req, res) => {
     }
     
     // Para cualquier otra ruta, servir la página principal
-    sendHTMLFile(res, 'dashboard.html');
+    try {
+        sendHTMLFile(res, 'dashboard.html');
+    } catch (error) {
+        console.error('Error serving fallback page:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
 
 // Middleware para manejo de errores

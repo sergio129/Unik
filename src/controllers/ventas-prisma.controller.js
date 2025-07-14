@@ -2,7 +2,15 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = global.prisma || new PrismaClient();
 
-const PDFDocument = require('pdfkit');
+// Importar PDFKit de forma segura
+let PDFDocument;
+try {
+    PDFDocument = require('pdfkit');
+} catch (error) {
+    console.warn('pdfkit no disponible en este entorno');
+    PDFDocument = null;
+}
+
 const fs = require('fs');
 const path = require('path');
 
@@ -571,6 +579,15 @@ exports.getEstadisticasVentas = async (req, res) => {
 // Generar PDF de factura
 exports.generarPDF = async (req, res) => {
   try {
+    // Verificar si PDFDocument está disponible
+    if (!PDFDocument) {
+      return res.status(503).json({
+        success: false,
+        message: 'Generación de PDF no disponible en este entorno',
+        error: 'PDFKit not available'
+      });
+    }
+    
     const { id } = req.params;
     
     // Obtener factura completa

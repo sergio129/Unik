@@ -6,7 +6,15 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 const Excel = require('exceljs');
-const csv = require('fast-csv');
+
+// Importar CSV de forma segura
+let csv;
+try {
+    csv = require('fast-csv');
+} catch (error) {
+    console.warn('fast-csv no disponible en este entorno');
+    csv = null;
+}
 
 // Configurar multer para el almacenamiento de imágenes
 const storage = multer.diskStorage({
