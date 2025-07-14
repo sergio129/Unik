@@ -2,42 +2,42 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index-serverless.js",
+      "src": "api/index-serverless-minimal.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/login",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/dashboard",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/inventario/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/ventas/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/pedidos/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/admin/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/perfil/(.*)",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     },
     {
       "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|html|mp3))",
@@ -45,7 +45,7 @@
     },
     {
       "src": "/",
-      "dest": "/api/index-serverless.js"
+      "dest": "/api/index-serverless-minimal.js"
     }
   ],
   "env": {
